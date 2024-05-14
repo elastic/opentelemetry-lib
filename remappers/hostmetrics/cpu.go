@@ -29,7 +29,7 @@ func remapCPUMetrics(
 	_ pcommon.Resource,
 	dataset string,
 ) error {
-	var timestamp pcommon.Timestamp // Use the timestamp of the last read datapoint
+	var timestamp pcommon.Timestamp
 	var numCores int64
 	var totalPercent, idlePercent, systemPercent, userPercent, stealPercent,
 		iowaitPercent, nicePercent, irqPercent, softirqPercent float64
