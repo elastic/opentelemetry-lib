@@ -1,27 +1,51 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package hostmetrics
 
 import (
+	"errors"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func addCPUMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, dataset string) error {
-	var timestamp pcommon.Timestamp
+func remapCPUMetrics(
+	src, out pmetric.MetricSlice,
+	_ pcommon.Resource,
+	dataset string,
+) error {
+	var timestamp pcommon.Timestamp // Use the timestamp of the last read datapoint
 	var numCores int64
 	var totalPercent, idlePercent, systemPercent, userPercent, stealPercent,
 		iowaitPercent, nicePercent, irqPercent, softirqPercent float64
 
-	// iterate all metrics in the current scope and generate the additional Elastic system integration metrics
-	for i := 0; i < metrics.Len(); i++ {
-		metric := metrics.At(i)
-		if metric.Name() == "system.cpu.logical.count" {
+	// iterate all metrics in the current scope and generate the additional Elastic
+	// system integration metrics.
+	for i := 0; i < src.Len(); i++ {
+		metric := src.At(i)
+		switch metric.Name() {
+		case "system.cpu.logical.count":
 			dp := metric.Sum().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
-
 			numCores = dp.IntValue()
-		} else if metric.Name() == "system.cpu.utilization" {
+		case "system.cpu.utilization":
 			dataPoints := metric.Gauge().DataPoints()
 			for j := 0; j < dataPoints.Len(); j++ {
 				dp := dataPoints.At(j)
@@ -61,23 +85,8 @@ func addCPUMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, datas
 		}
 	}
 
-	totalNorm := totalPercent / float64(numCores)
-	idleNorm := idlePercent / float64(numCores)
-	systemNorm := systemPercent / float64(numCores)
-	userNorm := userPercent / float64(numCores)
-	stealNorm := stealPercent / float64(numCores)
-	iowaitNorm := iowaitPercent / float64(numCores)
-	niceNorm := nicePercent / float64(numCores)
-	irqNorm := irqPercent / float64(numCores)
-	softirqNorm := softirqPercent / float64(numCores)
-
-	addMetrics(metrics, resource, dataset,
-		metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.cpu.cores",
-			timestamp: timestamp,
-			intValue:  &numCores,
-		},
+	// Add all metrics that are independent of cpu logical count.
+	addMetrics(out, dataset, emptyMutator,
 		metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.total.pct",
@@ -131,6 +140,38 @@ func addCPUMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, datas
 			name:        "system.cpu.softirq.pct",
 			timestamp:   timestamp,
 			doubleValue: &softirqPercent,
+		},
+	)
+
+	// TODO (lahsivjar): Remove the dependency on the system.cpu.logical.count
+	// metric. The num of cores can be derived from the system.cpu.utilization
+	// metric using the cpu dimension.
+	if numCores == 0 {
+		return errors.New("system.cpu.logical.count metric is missing in the hostmetrics")
+	}
+
+	totalNorm := totalPercent / float64(numCores)
+	idleNorm := idlePercent / float64(numCores)
+	systemNorm := systemPercent / float64(numCores)
+	userNorm := userPercent / float64(numCores)
+	stealNorm := stealPercent / float64(numCores)
+	iowaitNorm := iowaitPercent / float64(numCores)
+	niceNorm := nicePercent / float64(numCores)
+	irqNorm := irqPercent / float64(numCores)
+	softirqNorm := softirqPercent / float64(numCores)
+
+	addMetrics(out, dataset, emptyMutator,
+		metric{
+			dataType:  pmetric.MetricTypeSum,
+			name:      "system.cpu.cores",
+			timestamp: timestamp,
+			intValue:  &numCores,
+		},
+		metric{
+			dataType:  pmetric.MetricTypeSum,
+			name:      "system.load.cores",
+			timestamp: timestamp,
+			intValue:  &numCores,
 		},
 		metric{
 			dataType:    pmetric.MetricTypeGauge,

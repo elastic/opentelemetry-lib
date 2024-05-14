@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package hostmetrics
 
 import (
@@ -7,9 +24,13 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func addNetworkMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, dataset string) error {
-	for i := 0; i < metrics.Len(); i++ {
-		metric := metrics.At(i)
+func remapNetworkMetrics(
+	src, out pmetric.MetricSlice,
+	resource pcommon.Resource,
+	dataset string,
+) error {
+	for i := 0; i < src.Len(); i++ {
+		metric := src.At(i)
 		dataPoints := metric.Sum().DataPoints()
 		for j := 0; j < dataPoints.Len(); j++ {
 			dp := dataPoints.At(j)
@@ -28,9 +49,9 @@ func addNetworkMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 
 				switch direction.Str() {
 				case "receive":
-					addDeviceMetric(metrics, resource, dataset, name, device, "in", timestamp, value)
+					addDeviceMetric(out, timestamp, dataset, name, device, "in", value)
 				case "transmit":
-					addDeviceMetric(metrics, resource, dataset, name, device, "out", timestamp, value)
+					addDeviceMetric(out, timestamp, dataset, name, device, "out", value)
 				}
 			}
 		}
@@ -39,9 +60,12 @@ func addNetworkMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 	return nil
 }
 
-func addDeviceMetric(metrics pmetric.MetricSlice, resource pcommon.Resource,
-	dataset, name, device, direction string, timestamp pcommon.Timestamp, value int64) {
-
+func addDeviceMetric(
+	out pmetric.MetricSlice,
+	timestamp pcommon.Timestamp,
+	dataset, name, device, direction string,
+	value int64,
+) {
 	metricsToAdd := map[string]string{
 		"system.network.io":      "system.network.%s.bytes",
 		"system.network.packets": "system.network.%s.packets",
@@ -50,16 +74,15 @@ func addDeviceMetric(metrics pmetric.MetricSlice, resource pcommon.Resource,
 	}
 
 	if metricNetworkES, ok := metricsToAdd[name]; ok {
-		attributes := pcommon.NewMap()
-		attributes.PutStr("system.network.name", device)
-
-		addMetrics(metrics, resource, dataset,
+		addMetrics(out, dataset,
+			func(dp pmetric.NumberDataPoint) {
+				dp.Attributes().PutStr("system.network.name", device)
+			},
 			metric{
-				dataType:   pmetric.MetricTypeSum,
-				name:       fmt.Sprintf(metricNetworkES, direction),
-				timestamp:  timestamp,
-				intValue:   &value,
-				attributes: &attributes,
+				dataType:  pmetric.MetricTypeSum,
+				name:      fmt.Sprintf(metricNetworkES, direction),
+				timestamp: timestamp,
+				intValue:  &value,
 			})
 	}
 }

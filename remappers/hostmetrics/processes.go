@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package hostmetrics
 
 import (
@@ -5,16 +22,18 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func addProcessSummaryMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, dataset string) error {
+func remapProcessesMetrics(
+	src, out pmetric.MetricSlice,
+	_ pcommon.Resource,
+	dataset string,
+) error {
 	var timestamp pcommon.Timestamp
 	var idleProcesses, sleepingProcesses, stoppedProcesses, zombieProcesses, totalProcesses int64
 
-	// iterate all metrics in the current scope and generate the additional Elastic system integration metrics
-	for i := 0; i < metrics.Len(); i++ {
-		metric := metrics.At(i)
+	for i := 0; i < src.Len(); i++ {
+		metric := src.At(i)
 		if metric.Name() == "system.processes.count" {
 			dataPoints := metric.Sum().DataPoints()
-			// iterate over the datapoints corresponding to different 'status' attributes
 			for j := 0; j < dataPoints.Len(); j++ {
 				dp := dataPoints.At(j)
 				if timestamp == 0 {
@@ -42,7 +61,7 @@ func addProcessSummaryMetrics(metrics pmetric.MetricSlice, resource pcommon.Reso
 
 	}
 
-	addMetrics(metrics, resource, dataset,
+	addMetrics(out, dataset, emptyMutator,
 		metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.summary.idle",

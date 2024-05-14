@@ -1,27 +1,45 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package hostmetrics
 
 import (
+	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-/*type dataType int
-const (
-	Gauge dataType = iota
-	Sum
-)*/
+var emptyMutator = func(pmetric.NumberDataPoint) {}
 
 type metric struct {
-	dataType       pmetric.MetricType
+	intValue       *int64
+	doubleValue    *float64
 	name           string
 	timestamp      pcommon.Timestamp
 	startTimestamp pcommon.Timestamp
-	intValue       *int64
-	doubleValue    *float64
-	attributes     *pcommon.Map
+	dataType       pmetric.MetricType
 }
 
-func addMetrics(ms pmetric.MetricSlice, resource pcommon.Resource, dataset string, metrics ...metric) {
+func addMetrics(
+	ms pmetric.MetricSlice,
+	dataset string,
+	mutator func(dp pmetric.NumberDataPoint),
+	metrics ...metric,
+) {
 	ms.EnsureCapacity(ms.Len() + len(metrics))
 
 	for _, metric := range metrics {
@@ -47,15 +65,9 @@ func addMetrics(ms pmetric.MetricSlice, resource pcommon.Resource, dataset strin
 			dp.SetStartTimestamp(metric.startTimestamp)
 		}
 
-		if metric.attributes != nil {
-			metric.attributes.CopyTo(dp.Attributes())
+		dp.Attributes().PutBool(common.OTelTranslatedLabel, true)
+		if dataset != "" {
+			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
-		if dataset == "system.process" {
-			// Add resource attribute as an attribute to each datapoint.
-			//TODO: Combine this the way we are setting attributes in network scraper
-			addProcessAttributes(resource, dp)
-		}
-		dp.Attributes().PutStr("event.provider", "hostmetrics") // This attribute is added to all the OTELtranslated metrics.
-		dp.Attributes().PutStr("data_stream.dataset", dataset)
 	}
 }
