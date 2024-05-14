@@ -6,7 +6,6 @@ import (
 )
 
 /*type dataType int
-
 const (
 	Gauge dataType = iota
 	Sum
