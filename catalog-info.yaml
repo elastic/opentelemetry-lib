@@ -4,11 +4,11 @@
 apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
-  name: buildkite-pipeline-openetelemetry-lib
-  description: Buildkite Pipeline for openetelemetry-lib
+  name: buildkite-pipeline-opentelemetry-lib
+  description: Buildkite Pipeline for opentelemetry-lib
   links:
     - title: Pipeline
-      url: https://buildkite.com/elastic/openetelemetry-lib
+      url: https://buildkite.com/elastic/opentelemetry-lib
 
 spec:
   type: buildkite-pipeline
@@ -18,10 +18,10 @@ spec:
     apiVersion: buildkite.elastic.dev/v1
     kind: Pipeline
     metadata:
-      name: openetelemetry-lib
+      name: opentelemetry-lib
       description: Golang library containing common code for OpenTelemetry<>Elastic compatibility
     spec:
-      repository: elastic/openetelemetry-lib
+      repository: elastic/opentelemetry-lib
       pipeline_file: ".buildkite/pipeline.yml"
       teams:
         obs-infraobs-integrations:
