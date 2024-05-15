@@ -69,5 +69,7 @@ func addMetrics(
 		if dataset != "" {
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
+
+		mutator(dp)
 	}
 }

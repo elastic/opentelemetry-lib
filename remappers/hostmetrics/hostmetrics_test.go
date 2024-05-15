@@ -34,6 +34,12 @@ import (
 var (
 	Sum   = pmetric.MetricTypeSum
 	Gauge = pmetric.MetricTypeGauge
+
+	// Test values to make assertion easier
+	PPID      int64  = 101
+	ProcOwner string = "root"
+	ProcPath  string = "/bin/run"
+	ProcName  string = "runner"
 )
 
 func TestRemap(t *testing.T) {
@@ -48,17 +54,26 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 	outAttr := func(scraper string) map[string]any {
 		m := map[string]any{common.OTelTranslatedLabel: true}
 		if systemIntegration {
-			m[common.DatastreamDatasetLabel] = fmt.Sprintf("system.%s", scraper)
+			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
+		}
+
+		switch scraper {
+		case "process":
+			m["process.parent.pid"] = PPID
+			m["user.name"] = ProcOwner
+			m["process.executable"] = ProcPath
+			m["process.name"] = ProcName
 		}
 		return m
 	}
 	now := pcommon.NewTimestampFromTime(time.Now())
 
 	for _, tc := range []struct {
-		name     string
-		scraper  string
-		input    []testMetric
-		expected []testMetric
+		name          string
+		scraper       string
+		resourceAttrs map[string]any
+		input         []testMetric
+		expected      []testMetric
 	}{
 		{
 			name:    "cpu",
@@ -171,6 +186,12 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 		{
 			name:    "process",
 			scraper: "process",
+			resourceAttrs: map[string]any{
+				"process.parent_pid":      PPID,
+				"process.owner":           ProcOwner,
+				"process.executable.path": ProcPath,
+				"process.executable.name": ProcName,
+			},
 			input: []testMetric{
 				{Type: Sum, Name: "process.threads", DP: testDP{Ts: now, Int: ptr(int64(7))}},
 				{Type: Gauge, Name: "process.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(15.0)}},
@@ -202,15 +223,35 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "system.process.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process")}},
 			},
 		},
+		{
+			name:    "processes",
+			scraper: "processes",
+			input: []testMetric{
+				{Type: Sum, Name: "system.processes.count", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: map[string]any{"status": "idle"}}},
+				{Type: Sum, Name: "system.processes.count", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: map[string]any{"status": "sleeping"}}},
+				{Type: Sum, Name: "system.processes.count", DP: testDP{Ts: now, Int: ptr(int64(5)), Attrs: map[string]any{"status": "stopped"}}},
+				{Type: Sum, Name: "system.processes.count", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: map[string]any{"status": "zombies"}}},
+			},
+			expected: []testMetric{
+				{Type: Sum, Name: "system.process.summary.idle", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.sleeping", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.stopped", DP: testDP{Ts: now, Int: ptr(int64(5)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.zombie", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.total", DP: testDP{Ts: now, Int: ptr(int64(16)), Attrs: outAttr("processes")}},
+			},
+		},
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.name, id), func(t *testing.T) {
 			sm := pmetric.NewScopeMetrics()
 			sm.Scope().SetName(fmt.Sprintf("%s/%s", scopePrefix, tc.scraper))
 			testMetricToMetricSlice(t, tc.input, sm.Metrics())
 
+			resource := pcommon.NewResource()
+			resource.Attributes().FromRaw(tc.resourceAttrs)
+
 			actual := pmetric.NewMetricSlice()
 			r := NewRemapper(zaptest.NewLogger(t), remapOpts...)
-			r.Remap(sm, actual, pcommon.NewResource())
+			r.Remap(sm, actual, resource)
 			assert.Empty(t, cmp.Diff(tc.expected, metricSliceToTestMetric(t, actual), cmpopts.EquateApprox(0, 0.001)))
 		})
 	}
