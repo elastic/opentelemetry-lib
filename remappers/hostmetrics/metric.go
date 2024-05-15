@@ -65,7 +65,7 @@ func addMetrics(
 			dp.SetStartTimestamp(metric.startTimestamp)
 		}
 
-		dp.Attributes().PutBool(common.OTelTranslatedLabel, true)
+		dp.Attributes().PutStr("event.provider", "hostmetrics")
 		if dataset != "" {
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}

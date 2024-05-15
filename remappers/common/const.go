@@ -18,10 +18,6 @@
 package common
 
 const (
-	// OTelTranslatedLabel is added as an attribute to each datapoint that
-	// is translated from otel.
-	OTelTranslatedLabel = "otel_translated"
-
 	// DatastreamDatasetLabel defines a dataset label for attributes.
 	DatastreamDatasetLabel = "data_stream.dataset"
 )

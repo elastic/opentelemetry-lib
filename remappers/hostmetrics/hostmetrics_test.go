@@ -53,7 +53,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 
 	systemIntegration := newConfig(remapOpts...).SystemIntegrationDataset
 	outAttr := func(scraper string) map[string]any {
-		m := map[string]any{common.OTelTranslatedLabel: true}
+		m := map[string]any{"event.provider": "hostmetrics"}
 		if systemIntegration {
 			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
 		}
