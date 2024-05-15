@@ -40,6 +40,7 @@ var (
 	ProcOwner string = "root"
 	ProcPath  string = "/bin/run"
 	ProcName  string = "runner"
+	Device    string = "en0"
 )
 
 func TestRemap(t *testing.T) {
@@ -63,6 +64,8 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["user.name"] = ProcOwner
 			m["process.executable"] = ProcPath
 			m["process.name"] = ProcName
+		case "network":
+			m["system.network.name"] = Device
 		}
 		return m
 	}
@@ -238,6 +241,30 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.process.summary.stopped", DP: testDP{Ts: now, Int: ptr(int64(5)), Attrs: outAttr("processes")}},
 				{Type: Sum, Name: "system.process.summary.zombie", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("processes")}},
 				{Type: Sum, Name: "system.process.summary.total", DP: testDP{Ts: now, Int: ptr(int64(16)), Attrs: outAttr("processes")}},
+			},
+		},
+		{
+			name:    "network",
+			scraper: "network",
+			input: []testMetric{
+				{Type: Sum, Name: "system.network.io", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+				{Type: Sum, Name: "system.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+				{Type: Sum, Name: "system.network.packets", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+				{Type: Sum, Name: "system.network.packets", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+				{Type: Sum, Name: "system.network.dropped", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+				{Type: Sum, Name: "system.network.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+				{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+				{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+			},
+			expected: []testMetric{
+				{Type: Sum, Name: "system.network.in.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.out.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.in.packets", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.out.packets", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.in.dropped", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.out.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.in.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.out.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: outAttr("network")}},
 			},
 		},
 	} {

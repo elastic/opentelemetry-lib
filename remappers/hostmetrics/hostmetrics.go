@@ -95,7 +95,7 @@ func (r *Remapper) Remap(
 	case "processes":
 		err = remapProcessesMetrics(src.Metrics(), out, resource, dataset)
 	case "network":
-		err = remapProcessesMetrics(src.Metrics(), out, resource, dataset)
+		err = remapNetworkMetrics(src.Metrics(), out, resource, dataset)
 	}
 
 	if err != nil {
