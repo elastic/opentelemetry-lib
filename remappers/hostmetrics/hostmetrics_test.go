@@ -331,6 +331,16 @@ func BenchmarkRemap(b *testing.B) {
 			{Type: Sum, Name: "process.disk.io", DP: testDP{Ts: now, Int: ptr(int64(1024))}},
 			{Type: Sum, Name: "process.disk.operations", DP: testDP{Ts: now, Int: ptr(int64(10))}},
 		},
+		"network": []testMetric{
+			{Type: Sum, Name: "system.network.io", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+			{Type: Sum, Name: "system.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+			{Type: Sum, Name: "system.network.packets", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+			{Type: Sum, Name: "system.network.packets", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+			{Type: Sum, Name: "system.network.dropped", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+			{Type: Sum, Name: "system.network.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+			{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
+			{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+		},
 	}
 
 	scopeMetrics := make([]pmetric.ScopeMetrics, 0, len(in))
