@@ -58,9 +58,10 @@ func NewRemapper(logger *zap.Logger, opts ...Option) *Remapper {
 
 // Remap remaps an OTel ScopeMetrics to a list of OTel metrics such that the
 // remapped metrics could be trivially converted into Elastic system metrics.
-// The current remapping logic assumes that each Metric in the ScopeMetric
-// will have datapoints for a single timestamp only. The remapped metrics are
-// added to the output `MetricSlice`.
+// It accepts the resource attributes to enrich the remapped metrics as per
+// Elastic convention. The current remapping logic assumes that each Metric
+// in the ScopeMetric will have datapoints for a single timestamp only. The
+// remapped metrics are added to the output `MetricSlice`.
 func (r *Remapper) Remap(
 	src pmetric.ScopeMetrics,
 	out pmetric.MetricSlice,
