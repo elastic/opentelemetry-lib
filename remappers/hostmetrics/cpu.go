@@ -143,9 +143,6 @@ func remapCPUMetrics(
 		},
 	)
 
-	// TODO (lahsivjar): Remove the dependency on the system.cpu.logical.count
-	// metric. The num of cores can be derived from the system.cpu.utilization
-	// metric using the cpu dimension.
 	if numCores == 0 {
 		return errors.New("system.cpu.logical.count metric is missing in the hostmetrics")
 	}
