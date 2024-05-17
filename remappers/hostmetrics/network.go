@@ -40,17 +40,19 @@ func remapNetworkMetrics(
 				continue
 			}
 
-			if direction, ok := dp.Attributes().Get("direction"); ok {
-				name := metric.Name()
-				timestamp := dp.Timestamp()
-				value := dp.IntValue()
+			name := metric.Name()
+			timestamp := dp.Timestamp()
+			value := dp.IntValue()
 
-				switch direction.Str() {
-				case "receive":
-					addDeviceMetric(out, timestamp, dataset, name, device.Str(), "in", value)
-				case "transmit":
-					addDeviceMetric(out, timestamp, dataset, name, device.Str(), "out", value)
-				}
+			direction, ok := dp.Attributes().Get("direction")
+			if !ok {
+				continue
+			}
+			switch direction.Str() {
+			case "receive":
+				addDeviceMetric(out, timestamp, dataset, name, device.Str(), "in", value)
+			case "transmit":
+				addDeviceMetric(out, timestamp, dataset, name, device.Str(), "out", value)
 			}
 		}
 	}
