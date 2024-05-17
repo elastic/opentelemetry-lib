@@ -20,6 +20,8 @@ package hostmetrics
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapProcessesMetrics(
@@ -61,32 +63,32 @@ func remapProcessesMetrics(
 
 	}
 
-	addMetrics(out, dataset, emptyMutator,
-		metric{
+	internal.AddMetrics(out, dataset, EmptyMutator,
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.summary.idle",
 			timestamp: timestamp,
 			intValue:  &idleProcesses,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.summary.sleeping",
 			timestamp: timestamp,
 			intValue:  &sleepingProcesses,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.summary.stopped",
 			timestamp: timestamp,
 			intValue:  &stoppedProcesses,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.summary.zombie",
 			timestamp: timestamp,
 			intValue:  &zombieProcesses,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.summary.total",
 			timestamp: timestamp,

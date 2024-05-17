@@ -22,6 +22,8 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapCPUMetrics(
@@ -86,56 +88,56 @@ func remapCPUMetrics(
 	}
 
 	// Add all metrics that are independent of cpu logical count.
-	addMetrics(out, dataset, emptyMutator,
-		metric{
+	internal.AddMetrics(out, dataset, EmptyMutator,
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.total.pct",
 			timestamp:   timestamp,
 			doubleValue: &totalPercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.idle.pct",
 			timestamp:   timestamp,
 			doubleValue: &idlePercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.system.pct",
 			timestamp:   timestamp,
 			doubleValue: &systemPercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.user.pct",
 			timestamp:   timestamp,
 			doubleValue: &userPercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.steal.pct",
 			timestamp:   timestamp,
 			doubleValue: &stealPercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.wait.pct",
 			timestamp:   timestamp,
 			doubleValue: &iowaitPercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.nice.pct",
 			timestamp:   timestamp,
 			doubleValue: &nicePercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.irq.pct",
 			timestamp:   timestamp,
 			doubleValue: &irqPercent,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.softirq.pct",
 			timestamp:   timestamp,
@@ -157,68 +159,68 @@ func remapCPUMetrics(
 	irqNorm := irqPercent / float64(numCores)
 	softirqNorm := softirqPercent / float64(numCores)
 
-	addMetrics(out, dataset, emptyMutator,
-		metric{
+	AddMetrics(out, dataset, EmptyMutator,
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.cpu.cores",
 			timestamp: timestamp,
 			intValue:  &numCores,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.load.cores",
 			timestamp: timestamp,
 			intValue:  &numCores,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.total.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &totalNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.idle.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &idleNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.system.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &systemNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.user.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &userNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.steal.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &stealNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.wait.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &iowaitNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.nice.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &niceNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.irq.norm.pct",
 			timestamp:   timestamp,
 			doubleValue: &irqNorm,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.cpu.softirq.norm.pct",
 			timestamp:   timestamp,

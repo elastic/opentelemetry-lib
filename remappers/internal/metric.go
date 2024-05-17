@@ -23,9 +23,11 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-var emptyMutator = func(pmetric.NumberDataPoint) {}
+// EmptyMutator is a no-op mutator.
+var EmptyMutator = func(pmetric.NumberDataPoint) {}
 
-type metric struct {
+// Metric is a simplified representation of a remapped OTel metric.
+type Metric struct {
 	intValue       *int64
 	doubleValue    *float64
 	name           string
@@ -34,11 +36,12 @@ type metric struct {
 	dataType       pmetric.MetricType
 }
 
-func addMetrics(
+// AddMetrics adds a list of remapped OTel metric to the give MetricSlice.
+func AddMetrics(
 	ms pmetric.MetricSlice,
 	dataset string,
 	mutator func(dp pmetric.NumberDataPoint),
-	metrics ...metric,
+	metrics ...Metric,
 ) {
 	ms.EnsureCapacity(ms.Len() + len(metrics))
 

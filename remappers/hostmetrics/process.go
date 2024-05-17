@@ -20,6 +20,8 @@ package hostmetrics
 import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapProcessMetrics(
@@ -154,99 +156,99 @@ func remapProcessMetrics(
 	processRuntime = timestamp.AsTime().UnixMilli() - startTime
 	cpuPct = cpuTimeValue / float64(processRuntime)
 
-	addMetrics(out, dataset, addProcessResources(resource),
-		metric{
+	internal.AddMetrics(out, dataset, addProcessResources(resource),
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "process.cpu.start_time",
 			timestamp: timestamp,
 			intValue:  &startTime,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.num_threads",
 			timestamp: timestamp,
 			intValue:  &threads,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.process.memory.rss.pct",
 			timestamp:   timestamp,
 			doubleValue: &memUtilPct,
 		},
 		// The process rss bytes have been found to be equal to the memory usage reported by OTEL
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.memory.rss.bytes",
 			timestamp: timestamp,
 			intValue:  &memUsage,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.memory.size",
 			timestamp: timestamp,
 			intValue:  &memVirtual,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.fd.open",
 			timestamp: timestamp,
 			intValue:  &fdOpen,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "process.memory.pct",
 			timestamp:   timestamp,
 			doubleValue: &memUtilPct,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeSum,
 			name:        "system.process.cpu.total.value",
 			timestamp:   timestamp,
 			doubleValue: &cpuTimeValue,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeSum,
 			name:        "system.process.cpu.system.ticks",
 			timestamp:   timestamp,
 			doubleValue: &systemCpuTime,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeSum,
 			name:        "system.process.cpu.user.ticks",
 			timestamp:   timestamp,
 			doubleValue: &userCpuTime,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeSum,
 			name:        "system.process.cpu.total.ticks",
 			timestamp:   timestamp,
 			doubleValue: &cpuTimeValue,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.io.read_bytes",
 			timestamp: timestamp,
 			intValue:  &ioReadBytes,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.io.write_bytes",
 			timestamp: timestamp,
 			intValue:  &ioWriteBytes,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.io.read_ops",
 			timestamp: timestamp,
 			intValue:  &ioReadOperations,
 		},
-		metric{
+		internal.Metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "system.process.io.write_ops",
 			timestamp: timestamp,
 			intValue:  &ioWriteOperations,
 		},
-		metric{
+		internal.Metric{
 			dataType:    pmetric.MetricTypeGauge,
 			name:        "system.process.cpu.total.pct",
 			timestamp:   timestamp,
