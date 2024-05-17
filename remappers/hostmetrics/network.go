@@ -35,10 +35,8 @@ func remapNetworkMetrics(
 		for j := 0; j < dataPoints.Len(); j++ {
 			dp := dataPoints.At(j)
 
-			var device string
-			if d, ok := dp.Attributes().Get("device"); ok {
-				device = d.Str()
-			} else {
+			device, ok := dp.Attributes().Get("device")
+			if !ok {
 				continue
 			}
 
@@ -49,9 +47,9 @@ func remapNetworkMetrics(
 
 				switch direction.Str() {
 				case "receive":
-					addDeviceMetric(out, timestamp, dataset, name, device, "in", value)
+					addDeviceMetric(out, timestamp, dataset, name, device.Str(), "in", value)
 				case "transmit":
-					addDeviceMetric(out, timestamp, dataset, name, device, "out", value)
+					addDeviceMetric(out, timestamp, dataset, name, device.Str(), "out", value)
 				}
 			}
 		}
@@ -73,16 +71,20 @@ func addDeviceMetric(
 		"system.network.errors":  "system.network.%s.errors",
 	}
 
-	if metricNetworkES, ok := metricsToAdd[name]; ok {
-		addMetrics(out, dataset,
-			func(dp pmetric.NumberDataPoint) {
-				dp.Attributes().PutStr("system.network.name", device)
-			},
-			metric{
-				dataType:  pmetric.MetricTypeSum,
-				name:      fmt.Sprintf(metricNetworkES, direction),
-				timestamp: timestamp,
-				intValue:  &value,
-			})
+	metricNetworkES, ok := metricsToAdd[name]
+	if !ok {
+		return
 	}
+
+	addMetrics(out, dataset,
+		func(dp pmetric.NumberDataPoint) {
+			dp.Attributes().PutStr("system.network.name", device)
+		},
+		metric{
+			dataType:  pmetric.MetricTypeSum,
+			name:      fmt.Sprintf(metricNetworkES, direction),
+			timestamp: timestamp,
+			intValue:  &value,
+		},
+	)
 }
