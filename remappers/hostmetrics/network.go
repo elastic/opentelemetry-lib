@@ -26,7 +26,7 @@ import (
 
 func remapNetworkMetrics(
 	src, out pmetric.MetricSlice,
-	resource pcommon.Resource,
+	_ pcommon.Resource,
 	dataset string,
 ) error {
 	for i := 0; i < src.Len(); i++ {

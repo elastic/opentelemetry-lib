@@ -40,6 +40,17 @@ var scraperToElasticDataset = map[string]string{
 	"process":    "system.process",
 }
 
+type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource, dataset string) error
+
+var remapFuncs = map[string]remapFunc{
+	"cpu":       remapCPUMetrics,
+	"memory":    remapMemoryMetrics,
+	"load":      remapLoadMetrics,
+	"process":   remapProcessMetrics,
+	"processes": remapProcessesMetrics,
+	"network":   remapNetworkMetrics,
+}
+
 // Remapper maps the OTel hostmetrics to Elastic system metrics. These remapped
 // metrics power the curated Kibana dashboards. Each datapoint translated using
 // the remapper has the `event.processor` attribute set to `hostmetrics`.
@@ -84,22 +95,12 @@ func (r *Remapper) Remap(
 		}
 	}
 
-	var err error
-	switch scraper {
-	case "cpu":
-		err = remapCPUMetrics(src.Metrics(), out, resource, dataset)
-	case "memory":
-		err = remapMemoryMetrics(src.Metrics(), out, resource, dataset)
-	case "load":
-		err = remapLoadMetrics(src.Metrics(), out, resource, dataset)
-	case "process":
-		err = remapProcessMetrics(src.Metrics(), out, resource, dataset)
-	case "processes":
-		err = remapProcessesMetrics(src.Metrics(), out, resource, dataset)
-	case "network":
-		err = remapNetworkMetrics(src.Metrics(), out, resource, dataset)
+	remapFunc, ok := remapFuncs[scraper]
+	if !ok {
+		return
 	}
 
+	err := remapFunc(src.Metrics(), out, resource, dataset)
 	if err != nil {
 		r.logger.Warn(
 			"failed to remap OTel hostmetrics",
