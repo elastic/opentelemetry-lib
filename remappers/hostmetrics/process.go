@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package hostmetrics
 
 import (
@@ -5,14 +22,19 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, dataset string) error {
+func remapProcessMetrics(
+	src, out pmetric.MetricSlice,
+	resource pcommon.Resource,
+	dataset string,
+) error {
 	var timestamp pcommon.Timestamp
 	var startTime, processRuntime, threads, memUsage, memVirtual, fdOpen, ioReadBytes, ioWriteBytes, ioReadOperations, ioWriteOperations int64
 	var memUtil, memUtilPct, total, cpuTimeValue, systemCpuTime, userCpuTime, cpuPct float64
 
-	for i := 0; i < metrics.Len(); i++ {
-		metric := metrics.At(i)
-		if metric.Name() == "process.threads" {
+	for i := 0; i < src.Len(); i++ {
+		metric := src.At(i)
+		switch metric.Name() {
+		case "process.threads":
 			dp := metric.Sum().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
@@ -21,7 +43,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 				startTime = dp.StartTimestamp().AsTime().UnixMilli()
 			}
 			threads = dp.IntValue()
-		} else if metric.Name() == "process.memory.utilization" {
+		case "process.memory.utilization":
 			dp := metric.Gauge().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
@@ -30,7 +52,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 				startTime = dp.StartTimestamp().AsTime().UnixMilli()
 			}
 			memUtil = dp.DoubleValue()
-		} else if metric.Name() == "process.memory.usage" {
+		case "process.memory.usage":
 			dp := metric.Sum().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
@@ -39,7 +61,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 				startTime = dp.StartTimestamp().AsTime().UnixMilli()
 			}
 			memUsage = dp.IntValue()
-		} else if metric.Name() == "process.memory.virtual" {
+		case "process.memory.virtual":
 			dp := metric.Sum().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
@@ -48,7 +70,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 				startTime = dp.StartTimestamp().AsTime().UnixMilli()
 			}
 			memVirtual = dp.IntValue()
-		} else if metric.Name() == "process.open_file_descriptors" {
+		case "process.open_file_descriptors":
 			dp := metric.Sum().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
@@ -57,7 +79,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 				startTime = dp.StartTimestamp().AsTime().UnixMilli()
 			}
 			fdOpen = dp.IntValue()
-		} else if metric.Name() == "process.cpu.time" {
+		case "process.cpu.time":
 			dataPoints := metric.Sum().DataPoints()
 			for j := 0; j < dataPoints.Len(); j++ {
 				dp := dataPoints.At(j)
@@ -82,7 +104,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 					}
 				}
 			}
-		} else if metric.Name() == "process.disk.io" {
+		case "process.disk.io":
 			dataPoints := metric.Sum().DataPoints()
 			for j := 0; j < dataPoints.Len(); j++ {
 				dp := dataPoints.At(j)
@@ -102,7 +124,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 					}
 				}
 			}
-		} else if metric.Name() == "process.disk.operations" {
+		case "process.disk.operations":
 			dataPoints := metric.Sum().DataPoints()
 			for j := 0; j < dataPoints.Len(); j++ {
 				dp := dataPoints.At(j)
@@ -132,7 +154,7 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 	processRuntime = timestamp.AsTime().UnixMilli() - startTime
 	cpuPct = cpuTimeValue / float64(processRuntime)
 
-	addMetrics(metrics, resource, dataset,
+	addMetrics(out, dataset, addProcessResources(resource),
 		metric{
 			dataType:  pmetric.MetricTypeSum,
 			name:      "process.cpu.start_time",
@@ -235,21 +257,23 @@ func addProcessMetrics(metrics pmetric.MetricSlice, resource pcommon.Resource, d
 	return nil
 }
 
-func addProcessAttributes(resource pcommon.Resource, dp pmetric.NumberDataPoint) {
-	process_ppid, _ := resource.Attributes().Get("process.parent_pid")
-	if process_ppid.Int() != 0 {
-		dp.Attributes().PutInt("process.parent.pid", process_ppid.Int())
-	}
-	process_owner, _ := resource.Attributes().Get("process.owner")
-	if process_owner.Str() != "" {
-		dp.Attributes().PutStr("user.name", process_owner.Str())
-	}
-	process_executable, _ := resource.Attributes().Get("process.executable.path")
-	if process_executable.Str() != "" {
-		dp.Attributes().PutStr("process.executable", process_executable.Str())
-	}
-	process_name, _ := resource.Attributes().Get("process.executable.name")
-	if process_name.Str() != "" {
-		dp.Attributes().PutStr("process.name", process_name.Str())
+func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint) {
+	return func(dp pmetric.NumberDataPoint) {
+		ppid, _ := resource.Attributes().Get("process.parent_pid")
+		if ppid.Int() != 0 {
+			dp.Attributes().PutInt("process.parent.pid", ppid.Int())
+		}
+		owner, _ := resource.Attributes().Get("process.owner")
+		if owner.Str() != "" {
+			dp.Attributes().PutStr("user.name", owner.Str())
+		}
+		exec, _ := resource.Attributes().Get("process.executable.path")
+		if exec.Str() != "" {
+			dp.Attributes().PutStr("process.executable", exec.Str())
+		}
+		name, _ := resource.Attributes().Get("process.executable.name")
+		if name.Str() != "" {
+			dp.Attributes().PutStr("process.name", name.Str())
+		}
 	}
 }
