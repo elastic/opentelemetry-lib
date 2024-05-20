@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/elastic/opentelemetry-lib/remappers/internal"
+	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapMemoryMetrics(
@@ -97,54 +97,54 @@ func remapMemoryMetrics(
 	usedBytes += total
 	actualFree = total - actualUsedBytes
 
-	internal.AddMetrics(out, dataset, EmptyMutator,
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.memory.total",
-			timestamp: timestamp,
-			intValue:  &total,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.memory.total",
+			Timestamp: timestamp,
+			IntValue:  &total,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.memory.free",
-			timestamp: timestamp,
-			intValue:  &free,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.memory.free",
+			Timestamp: timestamp,
+			IntValue:  &free,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.memory.cached",
-			timestamp: timestamp,
-			intValue:  &cached,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.memory.cached",
+			Timestamp: timestamp,
+			IntValue:  &cached,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.memory.used.bytes",
-			timestamp: timestamp,
-			intValue:  &usedBytes,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.memory.used.bytes",
+			Timestamp: timestamp,
+			IntValue:  &usedBytes,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.memory.actual.used.bytes",
-			timestamp: timestamp,
-			intValue:  &actualUsedBytes,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.memory.actual.used.bytes",
+			Timestamp: timestamp,
+			IntValue:  &actualUsedBytes,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.memory.actual.free",
-			timestamp: timestamp,
-			intValue:  &actualFree,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.memory.actual.free",
+			Timestamp: timestamp,
+			IntValue:  &actualFree,
 		},
-		internal.Metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.memory.used.pct",
-			timestamp:   timestamp,
-			doubleValue: &usedPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.memory.used.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &usedPercent,
 		},
-		internal.Metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.memory.actual.used.pct",
-			timestamp:   timestamp,
-			doubleValue: &actualUsedPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.memory.actual.used.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &actualUsedPercent,
 		},
 	)
 

@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/elastic/opentelemetry-lib/remappers/internal"
+	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapProcessesMetrics(
@@ -63,36 +63,36 @@ func remapProcessesMetrics(
 
 	}
 
-	internal.AddMetrics(out, dataset, EmptyMutator,
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.process.summary.idle",
-			timestamp: timestamp,
-			intValue:  &idleProcesses,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.summary.idle",
+			Timestamp: timestamp,
+			IntValue:  &idleProcesses,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.process.summary.sleeping",
-			timestamp: timestamp,
-			intValue:  &sleepingProcesses,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.summary.sleeping",
+			Timestamp: timestamp,
+			IntValue:  &sleepingProcesses,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.process.summary.stopped",
-			timestamp: timestamp,
-			intValue:  &stoppedProcesses,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.summary.stopped",
+			Timestamp: timestamp,
+			IntValue:  &stoppedProcesses,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.process.summary.zombie",
-			timestamp: timestamp,
-			intValue:  &zombieProcesses,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.summary.zombie",
+			Timestamp: timestamp,
+			IntValue:  &zombieProcesses,
 		},
-		internal.Metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.process.summary.total",
-			timestamp: timestamp,
-			intValue:  &totalProcesses,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.summary.total",
+			Timestamp: timestamp,
+			IntValue:  &totalProcesses,
 		},
 	)
 	return nil

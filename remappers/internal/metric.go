@@ -28,12 +28,12 @@ var EmptyMutator = func(pmetric.NumberDataPoint) {}
 
 // Metric is a simplified representation of a remapped OTel metric.
 type Metric struct {
-	intValue       *int64
-	doubleValue    *float64
-	name           string
-	timestamp      pcommon.Timestamp
-	startTimestamp pcommon.Timestamp
-	dataType       pmetric.MetricType
+	IntValue       *int64
+	DoubleValue    *float64
+	Name           string
+	Timestamp      pcommon.Timestamp
+	StartTimestamp pcommon.Timestamp
+	DataType       pmetric.MetricType
 }
 
 // AddMetrics adds a list of remapped OTel metric to the give MetricSlice.
@@ -47,25 +47,25 @@ func AddMetrics(
 
 	for _, metric := range metrics {
 		m := ms.AppendEmpty()
-		m.SetName(metric.name)
+		m.SetName(metric.Name)
 
 		var dp pmetric.NumberDataPoint
-		switch metric.dataType {
+		switch metric.DataType {
 		case pmetric.MetricTypeGauge:
 			dp = m.SetEmptyGauge().DataPoints().AppendEmpty()
 		case pmetric.MetricTypeSum:
 			dp = m.SetEmptySum().DataPoints().AppendEmpty()
 		}
 
-		if metric.intValue != nil {
-			dp.SetIntValue(*metric.intValue)
-		} else if metric.doubleValue != nil {
-			dp.SetDoubleValue(*metric.doubleValue)
+		if metric.IntValue != nil {
+			dp.SetIntValue(*metric.IntValue)
+		} else if metric.DoubleValue != nil {
+			dp.SetDoubleValue(*metric.DoubleValue)
 		}
 
-		dp.SetTimestamp(metric.timestamp)
-		if metric.startTimestamp != 0 {
-			dp.SetStartTimestamp(metric.startTimestamp)
+		dp.SetTimestamp(metric.Timestamp)
+		if metric.StartTimestamp != 0 {
+			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
 		dp.Attributes().PutStr("event.provider", "hostmetrics")

@@ -21,7 +21,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
-	"github.com/elastic/opentelemetry-lib/remappers/internal"
+	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 // system.load.cores is calculated using the cpu remapper and if dataset
@@ -58,24 +58,24 @@ func remapLoadMetrics(
 		}
 	}
 
-	internal.AddMetrics(out, dataset, EmptyMutator,
-		internal.Metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.load.1",
-			timestamp:   timestamp,
-			doubleValue: &l1,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.load.1",
+			Timestamp:   timestamp,
+			DoubleValue: &l1,
 		},
-		internal.Metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.load.5",
-			timestamp:   timestamp,
-			doubleValue: &l5,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.load.5",
+			Timestamp:   timestamp,
+			DoubleValue: &l5,
 		},
-		internal.Metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.load.15",
-			timestamp:   timestamp,
-			doubleValue: &l15,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.load.15",
+			Timestamp:   timestamp,
+			DoubleValue: &l15,
 		},
 	)
 
