@@ -19,74 +19,112 @@ package hostmetrics
 
 import (
 	"fmt"
+	"strings"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
+
+var metricsMapping = map[string]string{
+	"system.network.io":      "system.network.%s.bytes",
+	"system.network.packets": "system.network.%s.packets",
+	"system.network.dropped": "system.network.%s.dropped",
+	"system.network.errors":  "system.network.%s.errors",
+	"host.network.io":        "host.network.%s.bytes",
+	"host.network.packets":   "host.network.%s.packets",
+}
 
 func remapNetworkMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
 	dataset string,
 ) error {
+	var (
+		metricsetPeriod    int64
+		metricsetTimestamp pcommon.Timestamp
+	)
 	for i := 0; i < src.Len(); i++ {
-		metric := src.At(i)
-		dataPoints := metric.Sum().DataPoints()
+		m := src.At(i)
+
+		elasticMetric, ok := metricsMapping[m.Name()]
+		if !ok {
+			continue
+		}
+
+		// Special case handling for host network metrics produced by aggregating
+		// system network metrics and converting to delta temporality. These host
+		// metrics have been aggregated to drop all labels other than direction.
+		transformedHostMetrics := strings.HasPrefix(m.Name(), "host.")
+
+		dataPoints := m.Sum().DataPoints()
 		for j := 0; j < dataPoints.Len(); j++ {
 			dp := dataPoints.At(j)
 
 			device, ok := dp.Attributes().Get("device")
-			if !ok {
+			if !ok && !transformedHostMetrics {
 				continue
 			}
-
-			name := metric.Name()
-			timestamp := dp.Timestamp()
-			value := dp.IntValue()
 
 			direction, ok := dp.Attributes().Get("direction")
 			if !ok {
 				continue
 			}
-			switch direction.Str() {
-			case "receive":
-				addDeviceMetric(out, timestamp, dataset, name, device.Str(), "in", value)
-			case "transmit":
-				addDeviceMetric(out, timestamp, dataset, name, device.Str(), "out", value)
+
+			ts := dp.Timestamp()
+			value := dp.IntValue()
+			metricDataType := pmetric.MetricTypeSum
+			if transformedHostMetrics {
+				// transformed metrics are gauges as they are trasformed from cumulative to delta
+				metricDataType = pmetric.MetricTypeGauge
+				startTs := dp.StartTimestamp()
+				if metricsetPeriod == 0 && startTs != 0 && startTs < ts {
+					metricsetPeriod = int64(ts-startTs) / 1e6
+					metricsetTimestamp = ts
+				}
 			}
+
+			addMetrics(out, dataset,
+				func(dp pmetric.NumberDataPoint) {
+					if deviceStr := device.Str(); deviceStr != "" {
+						dp.Attributes().PutStr("system.network.name", deviceStr)
+					}
+				},
+				metric{
+					dataType: metricDataType,
+					name: fmt.Sprintf(
+						elasticMetric,
+						normalizeDirection(direction, transformedHostMetrics),
+					),
+					timestamp: ts,
+					intValue:  &value,
+				},
+			)
 		}
+	}
+
+	if metricsetPeriod > 0 {
+		addMetrics(out, dataset, emptyMutator, metric{
+			dataType:  pmetric.MetricTypeGauge,
+			name:      "metricset.period",
+			timestamp: metricsetTimestamp,
+			intValue:  &metricsetPeriod,
+		})
 	}
 
 	return nil
 }
 
-func addDeviceMetric(
-	out pmetric.MetricSlice,
-	timestamp pcommon.Timestamp,
-	dataset, name, device, direction string,
-	value int64,
-) {
-	metricsToAdd := map[string]string{
-		"system.network.io":      "system.network.%s.bytes",
-		"system.network.packets": "system.network.%s.packets",
-		"system.network.dropped": "system.network.%s.dropped",
-		"system.network.errors":  "system.network.%s.errors",
+// normalize direction normalizes the OTel direction attribute to Elastic direction.
+func normalizeDirection(dir pcommon.Value, hostMetrics bool) string {
+	var in, out = "in", "out"
+	if hostMetrics {
+		in, out = "ingress", "egress"
 	}
-
-	metricNetworkES, ok := metricsToAdd[name]
-	if !ok {
-		return
+	switch dir.Str() {
+	case "receive":
+		return in
+	case "transmit":
+		return out
 	}
-
-	addMetrics(out, dataset,
-		func(dp pmetric.NumberDataPoint) {
-			dp.Attributes().PutStr("system.network.name", device)
-		},
-		metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      fmt.Sprintf(metricNetworkES, direction),
-			timestamp: timestamp,
-			intValue:  &value,
-		},
-	)
+	return ""
 }

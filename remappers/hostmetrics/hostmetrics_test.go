@@ -52,24 +52,28 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 	t.Helper()
 
 	systemIntegration := newConfig(remapOpts...).SystemIntegrationDataset
-	outAttr := func(scraper string) map[string]any {
+	outAttr := func(scraper string, addExtraAttrs bool) map[string]any {
 		m := map[string]any{"event.provider": "hostmetrics"}
 		if systemIntegration {
 			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
 		}
 
-		switch scraper {
-		case "process":
-			m["process.parent.pid"] = PPID
-			m["user.name"] = ProcOwner
-			m["process.executable"] = ProcPath
-			m["process.name"] = ProcName
-		case "network":
-			m["system.network.name"] = Device
+		if addExtraAttrs {
+			switch scraper {
+			case "process":
+				m["process.parent.pid"] = PPID
+				m["user.name"] = ProcOwner
+				m["process.executable"] = ProcPath
+				m["process.name"] = ProcName
+			case "network":
+				m["system.network.name"] = Device
+			}
 		}
 		return m
 	}
-	now := pcommon.NewTimestampFromTime(time.Now())
+	nowRaw := time.Now()
+	now := pcommon.NewTimestampFromTime(nowRaw)
+	nowMinus10s := pcommon.NewTimestampFromTime(nowRaw.Add(-10 * time.Second))
 
 	for _, tc := range []struct {
 		name          string
@@ -93,26 +97,26 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.cpu.logical.count", DP: testDP{Ts: now, Int: ptr(int64(4))}},
 			},
 			expected: []testMetric{
-				{Type: Gauge, Name: "system.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(1.33), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.idle.pct", DP: testDP{Ts: now, Dbl: ptr(0.82), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.system.pct", DP: testDP{Ts: now, Dbl: ptr(0.68), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.user.pct", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.steal.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.wait.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.nice.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.irq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.softirq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Sum, Name: "system.cpu.cores", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("cpu")}},
-				{Type: Sum, Name: "system.load.cores", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.total.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.3325), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.idle.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.205), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.system.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.17), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.user.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.125), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.steal.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0375), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.wait.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.nice.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.irq.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.softirq.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
+				{Type: Gauge, Name: "system.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(1.33), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.idle.pct", DP: testDP{Ts: now, Dbl: ptr(0.82), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.system.pct", DP: testDP{Ts: now, Dbl: ptr(0.68), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.user.pct", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.steal.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.wait.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.nice.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.irq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.softirq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Sum, Name: "system.cpu.cores", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("cpu", true)}},
+				{Type: Sum, Name: "system.load.cores", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.total.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.3325), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.idle.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.205), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.system.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.17), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.user.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.125), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.steal.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0375), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.wait.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.nice.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.irq.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.softirq.norm.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
 			},
 		},
 		{
@@ -129,15 +133,15 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: map[string]any{"cpu": "cpu1", "state": "steal"}}},
 			},
 			expected: []testMetric{
-				{Type: Gauge, Name: "system.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(1.33), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.idle.pct", DP: testDP{Ts: now, Dbl: ptr(0.82), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.system.pct", DP: testDP{Ts: now, Dbl: ptr(0.68), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.user.pct", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.steal.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.wait.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.nice.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.irq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.softirq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu")}},
+				{Type: Gauge, Name: "system.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(1.33), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.idle.pct", DP: testDP{Ts: now, Dbl: ptr(0.82), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.system.pct", DP: testDP{Ts: now, Dbl: ptr(0.68), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.user.pct", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.steal.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.wait.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.nice.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.irq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
+				{Type: Gauge, Name: "system.cpu.softirq.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("cpu", true)}},
 			},
 		},
 		{
@@ -149,9 +153,9 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "system.cpu.load_average.15m", DP: testDP{Ts: now, Dbl: ptr(0.05)}},
 			},
 			expected: []testMetric{
-				{Type: Gauge, Name: "system.load.1", DP: testDP{Ts: now, Dbl: ptr(0.14), Attrs: outAttr("load")}},
-				{Type: Gauge, Name: "system.load.5", DP: testDP{Ts: now, Dbl: ptr(0.12), Attrs: outAttr("load")}},
-				{Type: Gauge, Name: "system.load.15", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: outAttr("load")}},
+				{Type: Gauge, Name: "system.load.1", DP: testDP{Ts: now, Dbl: ptr(0.14), Attrs: outAttr("load", true)}},
+				{Type: Gauge, Name: "system.load.5", DP: testDP{Ts: now, Dbl: ptr(0.12), Attrs: outAttr("load", true)}},
+				{Type: Gauge, Name: "system.load.15", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: outAttr("load", true)}},
 			},
 		},
 		{
@@ -175,15 +179,15 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			},
 			expected: []testMetric{
 				// total = used + free + buffered + cached as gopsutil calculates used = total - free - buffered - cached
-				{Type: Sum, Name: "system.memory.total", DP: testDP{Ts: now, Int: ptr(int64(7680)), Attrs: outAttr("memory")}},
-				{Type: Sum, Name: "system.memory.free", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("memory")}},
-				{Type: Sum, Name: "system.memory.cached", DP: testDP{Ts: now, Int: ptr(int64(512)), Attrs: outAttr("memory")}},
+				{Type: Sum, Name: "system.memory.total", DP: testDP{Ts: now, Int: ptr(int64(7680)), Attrs: outAttr("memory", true)}},
+				{Type: Sum, Name: "system.memory.free", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("memory", true)}},
+				{Type: Sum, Name: "system.memory.cached", DP: testDP{Ts: now, Int: ptr(int64(512)), Attrs: outAttr("memory", true)}},
 				// used = used + buffered + cached as gopsutil calculates used = total - free - buffered - cached
-				{Type: Sum, Name: "system.memory.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(5632)), Attrs: outAttr("memory")}},
-				{Type: Sum, Name: "system.memory.actual.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(5312)), Attrs: outAttr("memory")}},
-				{Type: Sum, Name: "system.memory.actual.free", DP: testDP{Ts: now, Int: ptr(int64(2368)), Attrs: outAttr("memory")}},
-				{Type: Gauge, Name: "system.memory.used.pct", DP: testDP{Ts: now, Dbl: ptr(0.734), Attrs: outAttr("memory")}},
-				{Type: Gauge, Name: "system.memory.actual.used.pct", DP: testDP{Ts: now, Dbl: ptr(0.69), Attrs: outAttr("memory")}},
+				{Type: Sum, Name: "system.memory.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(5632)), Attrs: outAttr("memory", true)}},
+				{Type: Sum, Name: "system.memory.actual.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(5312)), Attrs: outAttr("memory", true)}},
+				{Type: Sum, Name: "system.memory.actual.free", DP: testDP{Ts: now, Int: ptr(int64(2368)), Attrs: outAttr("memory", true)}},
+				{Type: Gauge, Name: "system.memory.used.pct", DP: testDP{Ts: now, Dbl: ptr(0.734), Attrs: outAttr("memory", true)}},
+				{Type: Gauge, Name: "system.memory.actual.used.pct", DP: testDP{Ts: now, Dbl: ptr(0.69), Attrs: outAttr("memory", true)}},
 			},
 		},
 		{
@@ -208,22 +212,22 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "process.disk.operations", DP: testDP{Ts: now, Int: ptr(int64(10))}},
 			},
 			expected: []testMetric{
-				{Type: Sum, Name: "process.cpu.start_time", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.num_threads", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: outAttr("process")}},
-				{Type: Gauge, Name: "system.process.memory.rss.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.memory.rss.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.memory.size", DP: testDP{Ts: now, Int: ptr(int64(128)), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.fd.open", DP: testDP{Ts: now, Int: ptr(int64(10)), Attrs: outAttr("process")}},
-				{Type: Gauge, Name: "process.memory.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.cpu.total.value", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.cpu.system.ticks", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.cpu.user.ticks", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.cpu.total.ticks", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.io.read_bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.io.write_bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.io.read_ops", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process")}},
-				{Type: Sum, Name: "system.process.io.write_ops", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process")}},
-				{Type: Gauge, Name: "system.process.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process")}},
+				{Type: Sum, Name: "process.cpu.start_time", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.num_threads", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: outAttr("process", true)}},
+				{Type: Gauge, Name: "system.process.memory.rss.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.memory.rss.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.memory.size", DP: testDP{Ts: now, Int: ptr(int64(128)), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.fd.open", DP: testDP{Ts: now, Int: ptr(int64(10)), Attrs: outAttr("process", true)}},
+				{Type: Gauge, Name: "process.memory.pct", DP: testDP{Ts: now, Dbl: ptr(0.15), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.cpu.total.value", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.cpu.system.ticks", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.cpu.user.ticks", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.cpu.total.ticks", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.io.read_bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.io.write_bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.io.read_ops", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process", true)}},
+				{Type: Sum, Name: "system.process.io.write_ops", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("process", true)}},
+				{Type: Gauge, Name: "system.process.cpu.total.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("process", true)}},
 			},
 		},
 		{
@@ -236,11 +240,11 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.processes.count", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: map[string]any{"status": "zombies"}}},
 			},
 			expected: []testMetric{
-				{Type: Sum, Name: "system.process.summary.idle", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: outAttr("processes")}},
-				{Type: Sum, Name: "system.process.summary.sleeping", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr("processes")}},
-				{Type: Sum, Name: "system.process.summary.stopped", DP: testDP{Ts: now, Int: ptr(int64(5)), Attrs: outAttr("processes")}},
-				{Type: Sum, Name: "system.process.summary.zombie", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("processes")}},
-				{Type: Sum, Name: "system.process.summary.total", DP: testDP{Ts: now, Int: ptr(int64(16)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.idle", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: outAttr("processes", true)}},
+				{Type: Sum, Name: "system.process.summary.sleeping", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr("processes", true)}},
+				{Type: Sum, Name: "system.process.summary.stopped", DP: testDP{Ts: now, Int: ptr(int64(5)), Attrs: outAttr("processes", true)}},
+				{Type: Sum, Name: "system.process.summary.zombie", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("processes", true)}},
+				{Type: Sum, Name: "system.process.summary.total", DP: testDP{Ts: now, Int: ptr(int64(16)), Attrs: outAttr("processes", true)}},
 			},
 		},
 		{
@@ -257,14 +261,31 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
 			},
 			expected: []testMetric{
-				{Type: Sum, Name: "system.network.in.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.out.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.in.packets", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.out.packets", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.in.dropped", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.out.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.in.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("network")}},
-				{Type: Sum, Name: "system.network.out.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: outAttr("network")}},
+				{Type: Sum, Name: "system.network.in.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.out.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.in.packets", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.out.packets", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.in.dropped", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.out.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.in.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("network", true)}},
+				{Type: Sum, Name: "system.network.out.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: outAttr("network", true)}},
+			},
+		},
+		{
+			name:    "hostnetwork",
+			scraper: "network",
+			input: []testMetric{
+				{Type: Sum, Name: "host.network.io", DP: testDP{Ts: now, StartTs: nowMinus10s, Int: ptr(int64(1024)), Attrs: map[string]any{"direction": "receive"}}},
+				{Type: Sum, Name: "host.network.io", DP: testDP{Ts: now, StartTs: nowMinus10s, Int: ptr(int64(256)), Attrs: map[string]any{"direction": "transmit"}}},
+				{Type: Sum, Name: "host.network.packets", DP: testDP{Ts: now, StartTs: nowMinus10s, Int: ptr(int64(10)), Attrs: map[string]any{"direction": "receive"}}},
+				{Type: Sum, Name: "host.network.packets", DP: testDP{Ts: now, StartTs: nowMinus10s, Int: ptr(int64(7)), Attrs: map[string]any{"direction": "transmit"}}},
+			},
+			expected: []testMetric{
+				{Type: Gauge, Name: "host.network.ingress.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr("network", false)}},
+				{Type: Gauge, Name: "host.network.egress.bytes", DP: testDP{Ts: now, Int: ptr(int64(256)), Attrs: outAttr("network", false)}},
+				{Type: Gauge, Name: "host.network.ingress.packets", DP: testDP{Ts: now, Int: ptr(int64(10)), Attrs: outAttr("network", false)}},
+				{Type: Gauge, Name: "host.network.egress.packets", DP: testDP{Ts: now, Int: ptr(int64(7)), Attrs: outAttr("network", false)}},
+				{Type: Gauge, Name: "metricset.period", DP: testDP{Ts: now, Int: ptr(int64(10000)), Attrs: outAttr("network", false)}},
 			},
 		},
 	} {
@@ -370,10 +391,11 @@ type testMetric struct {
 }
 
 type testDP struct {
-	Ts    pcommon.Timestamp
-	Dbl   *float64
-	Int   *int64
-	Attrs map[string]any
+	Ts      pcommon.Timestamp
+	StartTs pcommon.Timestamp
+	Dbl     *float64
+	Int     *int64
+	Attrs   map[string]any
 }
 
 func metricSliceToTestMetric(t *testing.T, ms pmetric.MetricSlice) []testMetric {
@@ -396,7 +418,7 @@ func metricSliceToTestMetric(t *testing.T, ms pmetric.MetricSlice) []testMetric 
 		}
 
 		dp := dps.At(0)
-		testMetrics[i].DP = testDP{Ts: dp.Timestamp(), Attrs: dp.Attributes().AsRaw()}
+		testMetrics[i].DP = testDP{Ts: dp.Timestamp(), StartTs: dp.StartTimestamp(), Attrs: dp.Attributes().AsRaw()}
 		switch dp.ValueType() {
 		case pmetric.NumberDataPointValueTypeInt:
 			testMetrics[i].DP.Int = ptr(dp.IntValue())
@@ -427,6 +449,7 @@ func testMetricToMetricSlice(t testing.TB, testMetrics []testMetric, out pmetric
 
 		dp := dps.AppendEmpty()
 		dp.SetTimestamp(testm.DP.Ts)
+		dp.SetStartTimestamp(testm.DP.StartTs)
 		if testm.DP.Int != nil {
 			dp.SetIntValue(*testm.DP.Int)
 		} else if testm.DP.Dbl != nil {
