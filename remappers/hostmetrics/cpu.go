@@ -22,6 +22,8 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapCPUMetrics(
@@ -86,60 +88,60 @@ func remapCPUMetrics(
 	}
 
 	// Add all metrics that are independent of cpu logical count.
-	addMetrics(out, dataset, emptyMutator,
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.total.pct",
-			timestamp:   timestamp,
-			doubleValue: &totalPercent,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.total.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &totalPercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.idle.pct",
-			timestamp:   timestamp,
-			doubleValue: &idlePercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.idle.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &idlePercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.system.pct",
-			timestamp:   timestamp,
-			doubleValue: &systemPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.system.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &systemPercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.user.pct",
-			timestamp:   timestamp,
-			doubleValue: &userPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.user.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &userPercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.steal.pct",
-			timestamp:   timestamp,
-			doubleValue: &stealPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.steal.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &stealPercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.wait.pct",
-			timestamp:   timestamp,
-			doubleValue: &iowaitPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.wait.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &iowaitPercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.nice.pct",
-			timestamp:   timestamp,
-			doubleValue: &nicePercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.nice.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &nicePercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.irq.pct",
-			timestamp:   timestamp,
-			doubleValue: &irqPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.irq.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &irqPercent,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.softirq.pct",
-			timestamp:   timestamp,
-			doubleValue: &softirqPercent,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.softirq.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &softirqPercent,
 		},
 	)
 
@@ -157,72 +159,72 @@ func remapCPUMetrics(
 	irqNorm := irqPercent / float64(numCores)
 	softirqNorm := softirqPercent / float64(numCores)
 
-	addMetrics(out, dataset, emptyMutator,
-		metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.cpu.cores",
-			timestamp: timestamp,
-			intValue:  &numCores,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.cpu.cores",
+			Timestamp: timestamp,
+			IntValue:  &numCores,
 		},
-		metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      "system.load.cores",
-			timestamp: timestamp,
-			intValue:  &numCores,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.load.cores",
+			Timestamp: timestamp,
+			IntValue:  &numCores,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.total.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &totalNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.total.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &totalNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.idle.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &idleNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.idle.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &idleNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.system.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &systemNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.system.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &systemNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.user.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &userNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.user.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &userNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.steal.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &stealNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.steal.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &stealNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.wait.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &iowaitNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.wait.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &iowaitNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.nice.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &niceNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.nice.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &niceNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.irq.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &irqNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.irq.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &irqNorm,
 		},
-		metric{
-			dataType:    pmetric.MetricTypeGauge,
-			name:        "system.cpu.softirq.norm.pct",
-			timestamp:   timestamp,
-			doubleValue: &softirqNorm,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "system.cpu.softirq.norm.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &softirqNorm,
 		},
 	)
 
