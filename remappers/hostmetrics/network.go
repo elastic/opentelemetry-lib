@@ -22,6 +22,8 @@ import (
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapNetworkMetrics(
@@ -78,15 +80,15 @@ func addDeviceMetric(
 		return
 	}
 
-	addMetrics(out, dataset,
+	remappers.AddMetrics(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.network.name", device)
 		},
-		metric{
-			dataType:  pmetric.MetricTypeSum,
-			name:      fmt.Sprintf(metricNetworkES, direction),
-			timestamp: timestamp,
-			intValue:  &value,
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      fmt.Sprintf(metricNetworkES, direction),
+			Timestamp: timestamp,
+			IntValue:  &value,
 		},
 	)
 }

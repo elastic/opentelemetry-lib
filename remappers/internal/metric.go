@@ -23,46 +23,49 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-var emptyMutator = func(pmetric.NumberDataPoint) {}
+// EmptyMutator is a no-op mutator.
+var EmptyMutator = func(pmetric.NumberDataPoint) {}
 
-type metric struct {
-	intValue       *int64
-	doubleValue    *float64
-	name           string
-	timestamp      pcommon.Timestamp
-	startTimestamp pcommon.Timestamp
-	dataType       pmetric.MetricType
+// Metric is a simplified representation of a remapped OTel metric.
+type Metric struct {
+	IntValue       *int64
+	DoubleValue    *float64
+	Name           string
+	Timestamp      pcommon.Timestamp
+	StartTimestamp pcommon.Timestamp
+	DataType       pmetric.MetricType
 }
 
-func addMetrics(
+// AddMetrics adds a list of remapped OTel metric to the give MetricSlice.
+func AddMetrics(
 	ms pmetric.MetricSlice,
 	dataset string,
 	mutator func(dp pmetric.NumberDataPoint),
-	metrics ...metric,
+	metrics ...Metric,
 ) {
 	ms.EnsureCapacity(ms.Len() + len(metrics))
 
 	for _, metric := range metrics {
 		m := ms.AppendEmpty()
-		m.SetName(metric.name)
+		m.SetName(metric.Name)
 
 		var dp pmetric.NumberDataPoint
-		switch metric.dataType {
+		switch metric.DataType {
 		case pmetric.MetricTypeGauge:
 			dp = m.SetEmptyGauge().DataPoints().AppendEmpty()
 		case pmetric.MetricTypeSum:
 			dp = m.SetEmptySum().DataPoints().AppendEmpty()
 		}
 
-		if metric.intValue != nil {
-			dp.SetIntValue(*metric.intValue)
-		} else if metric.doubleValue != nil {
-			dp.SetDoubleValue(*metric.doubleValue)
+		if metric.IntValue != nil {
+			dp.SetIntValue(*metric.IntValue)
+		} else if metric.DoubleValue != nil {
+			dp.SetDoubleValue(*metric.DoubleValue)
 		}
 
-		dp.SetTimestamp(metric.timestamp)
-		if metric.startTimestamp != 0 {
-			dp.SetStartTimestamp(metric.startTimestamp)
+		dp.SetTimestamp(metric.Timestamp)
+		if metric.StartTimestamp != 0 {
+			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
 		dp.Attributes().PutStr("event.provider", "hostmetrics")
