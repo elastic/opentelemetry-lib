@@ -26,88 +26,59 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+// remapDiskMetrics remaps disk-related metrics from the source to the output metric slice.
 func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset string) error {
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
 		switch metric.Name() {
-		case "system.disk.io", "system.disk.operations":
-			dataPoints := metric.Sum().DataPoints()
-			for j := 0; j < dataPoints.Len(); j++ {
-				dp := dataPoints.At(j)
-
-				device, ok := dp.Attributes().Get("device")
-				if !ok {
-					continue
-				}
-
-				var multiplier int64 = 1
-				if direction, ok := dp.Attributes().Get("direction"); ok {
-					name := metric.Name()
-					timestamp := dp.Timestamp()
-					value := dp.IntValue()
-					addDiskMetric(out, dataset, name, device.Str(), direction.Str(), timestamp, value, multiplier)
-				}
-			}
-		case "system.disk.operation_time":
-			var multiplier float64
-			dataPoints := metric.Sum().DataPoints()
-			for j := 0; j < dataPoints.Len(); j++ {
-				dp := dataPoints.At(j)
-				timestamp := dp.Timestamp()
-				value := dp.DoubleValue()
-				multiplier = 1000 // Elastic saves this value in milliseconds
-
-				device, ok := dp.Attributes().Get("device")
-				if !ok {
-					continue
-				}
-
-				if direction, ok := dp.Attributes().Get("direction"); ok {
-					addDiskMetric(out, dataset, metric.Name(), device.Str(), direction.Str(), timestamp, value, multiplier)
-				}
-			}
-		case "system.disk.io_time":
-			var multiplier float64
-			dataPoints := metric.Sum().DataPoints()
-			for j := 0; j < dataPoints.Len(); j++ {
-				dp := dataPoints.At(j)
-				timestamp := dp.Timestamp()
-				value := dp.DoubleValue()
-				multiplier = 1000 // Elastic saves this value in milliseconds
-
-				device, ok := dp.Attributes().Get("device")
-				if !ok {
-					continue
-				}
-				addDiskMetric(out, dataset, metric.Name(), device.Str(), "", timestamp, value, multiplier)
-			}
-		case "system.disk.pending_operations":
-			dataPoints := metric.Sum().DataPoints()
-			for j := 0; j < dataPoints.Len(); j++ {
-				dp := dataPoints.At(j)
-				timestamp := dp.Timestamp()
-				value := dp.IntValue()
-
-				device, ok := dp.Attributes().Get("device")
-				if !ok {
-					continue
-				}
-
-				var multiplier int64 = 1
-				addDiskMetric(out, dataset, metric.Name(), device.Str(), "", timestamp, value, multiplier)
-			}
+		case "system.disk.io", "system.disk.operations", "system.disk.pending_operations":
+			remapDiskIntMetrics(metric, out, dataset, 1)
+		case "system.disk.operation_time", "system.disk.io_time":
+			remapDiskFloatMetrics(metric, out, dataset, 1000)
 		}
 	}
 	return nil
 }
 
-func addDiskMetric[T interface {
-	constraints.Integer | constraints.Float
-}](out pmetric.MetricSlice,
+// remapDiskIntMetrics processes integer-based disk metrics.
+func remapDiskIntMetrics(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier int64) {
+	dataPoints := metric.Sum().DataPoints()
+	for j := 0; j < dataPoints.Len(); j++ {
+		dp := dataPoints.At(j)
+		if device, ok := dp.Attributes().Get("device"); ok {
+			timestamp := dp.Timestamp()
+			value := dp.IntValue()
+			direction, _ := dp.Attributes().Get("direction")
+			addDiskMetric(out, dataset, metric.Name(), device.Str(), direction.Str(), timestamp, value, multiplier)
+		} else {
+			fmt.Printf("Missing 'device' attribute for metric: %s\n", metric.Name())
+		}
+	}
+}
+
+// processFloatMetrics processes float-based disk metrics.
+func remapDiskFloatMetrics(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier float64) {
+	dataPoints := metric.Sum().DataPoints()
+	for j := 0; j < dataPoints.Len(); j++ {
+		dp := dataPoints.At(j)
+		if device, ok := dp.Attributes().Get("device"); ok {
+			timestamp := dp.Timestamp()
+			value := dp.DoubleValue()
+			direction, _ := dp.Attributes().Get("direction")
+			addDiskMetric(out, dataset, metric.Name(), device.Str(), direction.Str(), timestamp, value, multiplier)
+		} else {
+			fmt.Printf("Missing 'device' attribute for metric: %s\n", metric.Name())
+		}
+	}
+}
+
+// addDiskMetric adds a remapped disk metric to the output slice.
+func addDiskMetric[T constraints.Integer | constraints.Float](
+	out pmetric.MetricSlice,
 	dataset, name, device, direction string,
 	timestamp pcommon.Timestamp,
-	value, multiplier T) {
-
+	value T, multiplier T,
+) {
 	metricsToAdd := map[string]string{
 		"system.disk.io":                 "system.diskio.%s.bytes",
 		"system.disk.operations":         "system.diskio.%s.count",
@@ -118,16 +89,21 @@ func addDiskMetric[T interface {
 
 	metricNetworkES, ok := metricsToAdd[name]
 	if !ok {
+		fmt.Printf("Unknown metric name: %s\n", name)
 		return
 	}
 
+	scaledValue := value * multiplier
 	var intValue *int64
 	var doubleValue *float64
-	scaledValue := value * multiplier
-	if i, ok := any(scaledValue).(int64); ok {
-		intValue = &i
-	} else if d, ok := any(scaledValue).(float64); ok {
-		doubleValue = &d
+	switch v := any(scaledValue).(type) {
+	case int64:
+		intValue = &v
+	case float64:
+		doubleValue = &v
+	default:
+		fmt.Printf("Unsupported value type for metric: %s\n", name)
+		return
 	}
 
 	remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
