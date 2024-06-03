@@ -121,13 +121,13 @@ func addDiskMetric[T interface {
 		return
 	}
 
-	var intValue int64
-	var doubleValue float64
+	var intValue *int64
+	var doubleValue *float64
 	scaledValue := value * multiplier
 	if i, ok := any(scaledValue).(int64); ok {
-		intValue = i
+		intValue = &i
 	} else if d, ok := any(scaledValue).(float64); ok {
-		doubleValue = d
+		doubleValue = &d
 	}
 
 	remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
@@ -137,7 +137,7 @@ func addDiskMetric[T interface {
 			DataType:    pmetric.MetricTypeSum,
 			Name:        fmt.Sprintf(metricNetworkES, direction),
 			Timestamp:   timestamp,
-			IntValue:    &intValue,
-			DoubleValue: &doubleValue,
+			IntValue:    intValue,
+			DoubleValue: doubleValue,
 		})
 }
