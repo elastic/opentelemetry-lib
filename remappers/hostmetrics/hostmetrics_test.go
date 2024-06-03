@@ -41,6 +41,7 @@ var (
 	ProcPath  string = "/bin/run"
 	ProcName  string = "runner"
 	Device    string = "en0"
+	Disk      string = "nvme0n1p128"
 )
 
 func TestRemap(t *testing.T) {
@@ -66,6 +67,8 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["process.name"] = ProcName
 		case "network":
 			m["system.network.name"] = Device
+		case "disk":
+			m["system.diskio.name"] = Disk
 		}
 		return m
 	}
@@ -265,6 +268,30 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.network.out.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr("network")}},
 				{Type: Sum, Name: "system.network.in.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr("network")}},
 				{Type: Sum, Name: "system.network.out.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: outAttr("network")}},
+			},
+		},
+		{
+			name:    "disk",
+			scraper: "disk",
+			input: []testMetric{
+				{Type: Sum, Name: "system.disk.io", DP: testDP{Ts: now, Int: ptr(int64(1888256)), Attrs: map[string]any{"device": Disk, "direction": "read"}}},
+				{Type: Sum, Name: "system.disk.io", DP: testDP{Ts: now, Int: ptr(int64(512)), Attrs: map[string]any{"device": Disk, "direction": "write"}}},
+				{Type: Sum, Name: "system.disk.operations", DP: testDP{Ts: now, Int: ptr(int64(15390)), Attrs: map[string]any{"device": Disk, "direction": "read"}}},
+				{Type: Sum, Name: "system.disk.operations", DP: testDP{Ts: now, Int: ptr(int64(371687)), Attrs: map[string]any{"device": Disk, "direction": "write"}}},
+				//{Type: Sum, Name: "system.disk.operation_time", DP: testDP{Ts: now, Dbl: ptr(11.182), Attrs: map[string]any{"device": Disk, "direction": "read"}}},
+				//		{Type: Sum, Name: "system.disk.operation_time", DP: testDP{Ts: now, Dbl: ptr(617.289), Attrs: map[string]any{"device": Disk, "direction": "write"}}},
+				//{Type: Sum, Name: "system.disk.io_time", DP: testDP{Ts: now, Dbl: ptr(520.3), Attrs: map[string]any{"device": Disk}}},
+				{Type: Sum, Name: "system.disk.pending_operations", DP: testDP{Ts: now, Int: ptr(int64(102)), Attrs: map[string]any{"device": Disk}}},
+			},
+			expected: []testMetric{
+				{Type: Sum, Name: "system.diskio.read.bytes", DP: testDP{Ts: now, Int: ptr(int64(1888256)), Attrs: outAttr("disk")}},
+				{Type: Sum, Name: "system.diskio.write.bytes", DP: testDP{Ts: now, Int: ptr(int64(512)), Attrs: outAttr("disk")}},
+				{Type: Sum, Name: "system.diskio.read.count", DP: testDP{Ts: now, Int: ptr(int64(15390)), Attrs: outAttr("disk")}},
+				{Type: Sum, Name: "system.diskio.write.count", DP: testDP{Ts: now, Int: ptr(int64(371687)), Attrs: outAttr("disk")}},
+				//	{Type: Sum, Name: "system.diskio.read.time", DP: testDP{Ts: now, Dbl: ptr(11182.0), Attrs: outAttr("disk")}},
+				//{Type: Sum, Name: "system.diskio.write.time", DP: testDP{Ts: now, Dbl: ptr(617289.0), Attrs: outAttr("disk")}},
+				//{Type: Sum, Name: "system.diskio.io.time", DP: testDP{Ts: now, Dbl: ptr(520300.0), Attrs: outAttr("disk")}},
+				{Type: Sum, Name: "system.diskio.io.ops", DP: testDP{Ts: now, Int: ptr(int64(102)), Attrs: outAttr("disk")}},
 			},
 		},
 	} {

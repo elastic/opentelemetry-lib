@@ -20,6 +20,7 @@ package hostmetrics
 import (
 	"fmt"
 
+	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"golang.org/x/exp/constraints"
@@ -47,7 +48,7 @@ func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset 
 					addDiskMetric(out, dataset, name, device.Str(), direction.Str(), timestamp, value, multiplier)
 				}
 			}
-		case "system.disk.operation_time", "system.disk.io_time":
+		case "system.disk.operation_time":
 			var multiplier float64
 			dataPoints := metric.Sum().DataPoints()
 			for j := 0; j < dataPoints.Len(); j++ {
@@ -63,9 +64,22 @@ func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset 
 
 				if direction, ok := dp.Attributes().Get("direction"); ok {
 					addDiskMetric(out, dataset, metric.Name(), device.Str(), direction.Str(), timestamp, value, multiplier)
-				} else {
-					addDiskMetric(out, dataset, metric.Name(), device.Str(), "", timestamp, value, multiplier)
 				}
+			}
+		case "system.disk.io_time":
+			var multiplier float64
+			dataPoints := metric.Sum().DataPoints()
+			for j := 0; j < dataPoints.Len(); j++ {
+				dp := dataPoints.At(j)
+				timestamp := dp.Timestamp()
+				value := dp.DoubleValue()
+				multiplier = 1000 // Elastic saves this value in milliseconds
+
+				device, ok := dp.Attributes().Get("device")
+				if !ok {
+					continue
+				}
+				addDiskMetric(out, dataset, metric.Name(), device.Str(), "", timestamp, value, multiplier)
 			}
 		case "system.disk.pending_operations":
 			dataPoints := metric.Sum().DataPoints()
@@ -116,14 +130,14 @@ func addDiskMetric[T interface {
 		doubleValue = d
 	}
 
-	addMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+	remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
 		dp.Attributes().PutStr("system.diskio.name", device)
 	},
-		metric{
-			dataType:    pmetric.MetricTypeSum,
-			name:        fmt.Sprintf(metricNetworkES, direction),
-			timestamp:   timestamp,
-			intValue:    &intValue,
-			doubleValue: &doubleValue,
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeSum,
+			Name:        fmt.Sprintf(metricNetworkES, direction),
+			Timestamp:   timestamp,
+			IntValue:    &intValue,
+			DoubleValue: &doubleValue,
 		})
 }
