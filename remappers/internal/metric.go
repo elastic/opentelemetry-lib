@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package hostmetrics
+package internal
 
 import (
 	"github.com/elastic/opentelemetry-lib/remappers/common"
@@ -68,7 +68,7 @@ func AddMetrics(
 			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
-		dp.Attributes().PutStr("event.module", common.RemapperEventModule)
+		dp.Attributes().PutStr("event.provider", "hostmetrics")
 		if dataset != "" {
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}

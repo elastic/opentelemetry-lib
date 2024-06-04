@@ -15,9 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package common
+package kubernetesmetrics
 
-const (
-	// DatastreamDatasetLabel defines a dataset label for attributes.
-	DatastreamDatasetLabel = "data_stream.dataset"
-)
+type config struct {
+	KubernetesIntegrationDataset bool
+}
+
+// Option allows configuring the behavior of the kubernetes remapper.
+type Option func(config) config
+
+func newConfig(opts ...Option) (cfg config) {
+	for _, opt := range opts {
+		cfg = opt(cfg)
+	}
+	return cfg
+}
+
+// WithSystemIntegrationDataset sets the dataset of the remapped metrics as
+// as per the system integration. Example: kubernetes.pod
+func WithSystemIntegrationDataset(b bool) Option {
+	return func(c config) config {
+		c.KubernetesIntegrationDataset = b
+		return c
+	}
+}
