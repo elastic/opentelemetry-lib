@@ -26,6 +26,14 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+var metricsToAdd = map[string]string{
+	"system.disk.io":                 "system.diskio.%s.bytes",
+	"system.disk.operations":         "system.diskio.%s.count",
+	"system.disk.pending_operations": "system.diskio.io.%sops",
+	"system.disk.operation_time":     "system.diskio.%s.time",
+	"system.disk.io_time":            "system.diskio.io.%stime",
+}
+
 // remapDiskMetrics remaps disk-related metrics from the source to the output metric slice.
 func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset string) error {
 	for i := 0; i < src.Len(); i++ {
@@ -79,13 +87,6 @@ func addDiskMetric[T constraints.Integer | constraints.Float](
 	timestamp pcommon.Timestamp,
 	value T, multiplier T,
 ) {
-	metricsToAdd := map[string]string{
-		"system.disk.io":                 "system.diskio.%s.bytes",
-		"system.disk.operations":         "system.diskio.%s.count",
-		"system.disk.pending_operations": "system.diskio.io.%sops",
-		"system.disk.operation_time":     "system.diskio.%s.time",
-		"system.disk.io_time":            "system.diskio.io.%stime",
-	}
 
 	metricNetworkES, ok := metricsToAdd[name]
 	if !ok {
