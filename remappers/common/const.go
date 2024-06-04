@@ -20,4 +20,8 @@ package common
 const (
 	// DatastreamDatasetLabel defines a dataset label for attributes.
 	DatastreamDatasetLabel = "data_stream.dataset"
+
+	// RemapperEventModule defines the value of the ECS attribute
+	// `event.module` that will be added to all the remapped metrics.
+	RemapperEventModule = "elastic/opentelemetry-lib"
 )

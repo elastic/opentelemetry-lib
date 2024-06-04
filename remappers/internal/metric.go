@@ -68,7 +68,7 @@ func AddMetrics(
 			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
-		dp.Attributes().PutStr("event.provider", "hostmetrics")
+		dp.Attributes().PutStr("event.module", common.RemapperEventModule)
 		if dataset != "" {
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
