@@ -38,7 +38,7 @@ func Addk8sMetrics(ms pmetric.MetricSlice, mutator func(dp pmetric.NumberDataPoi
 		if dataset == "kubernetes.node" {
 			dataset = "kubernetes.pod"
 		}
-		dp.Attributes().PutStr("event.provider", "kubernetes")
+		dp.Attributes().PutStr("event.module", common.RemapperEventModule)
 		dp.Attributes().PutStr("service.type", "kubernetes")
 		dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 
