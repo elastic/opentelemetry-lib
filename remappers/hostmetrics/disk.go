@@ -18,12 +18,12 @@
 package hostmetrics
 
 import (
+	"errors"
 	"fmt"
 
 	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"golang.org/x/exp/constraints"
 )
 
 var metricsToAdd = map[string]string{
@@ -36,85 +36,51 @@ var metricsToAdd = map[string]string{
 
 // remapDiskMetrics remaps disk-related metrics from the source to the output metric slice.
 func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset string) error {
+	var errs []error
 	for i := 0; i < src.Len(); i++ {
+		var err error
 		metric := src.At(i)
 		switch metric.Name() {
 		case "system.disk.io", "system.disk.operations", "system.disk.pending_operations":
-			remapDiskIntMetrics(metric, out, dataset, 1)
+			err = addDiskMetric(metric, out, dataset, 1)
 		case "system.disk.operation_time", "system.disk.io_time":
-			remapDiskFloatMetrics(metric, out, dataset, 1000)
+			err = addDiskMetric(metric, out, dataset, 1000)
+		}
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
+}
+
+func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier int64) error {
+	metricNetworkES, ok := metricsToAdd[metric.Name()]
+	if !ok {
+		return fmt.Errorf("unexpected metric name: %s", metric.Name())
+	}
+
+	dps := metric.Sum().DataPoints()
+	for i := 0; i < dps.Len(); i++ {
+		dp := dps.At(i)
+		if device, ok := dp.Attributes().Get("device"); ok {
+			direction, _ := dp.Attributes().Get("direction")
+			remappedMetric := remappers.Metric{
+				DataType:  pmetric.MetricTypeSum,
+				Name:      fmt.Sprintf(metricNetworkES, direction.Str()),
+				Timestamp: dp.Timestamp(),
+			}
+			switch dp.ValueType() {
+			case pmetric.NumberDataPointValueTypeInt:
+				v := dp.IntValue() * multiplier
+				remappedMetric.IntValue = &v
+			case pmetric.NumberDataPointValueTypeDouble:
+				v := dp.DoubleValue() * float64(multiplier)
+				remappedMetric.DoubleValue = &v
+			}
+			remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+				dp.Attributes().PutStr("system.diskio.name", device.Str())
+			}, remappedMetric)
 		}
 	}
 	return nil
-}
-
-// remapDiskIntMetrics processes integer-based disk metrics.
-func remapDiskIntMetrics(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier int64) {
-	dataPoints := metric.Sum().DataPoints()
-	for j := 0; j < dataPoints.Len(); j++ {
-		dp := dataPoints.At(j)
-		if device, ok := dp.Attributes().Get("device"); ok {
-			timestamp := dp.Timestamp()
-			value := dp.IntValue()
-			direction, _ := dp.Attributes().Get("direction")
-			addDiskMetric(out, dataset, metric.Name(), device.Str(), direction.Str(), timestamp, value, multiplier)
-		} else {
-			fmt.Printf("Missing 'device' attribute for metric: %s\n", metric.Name())
-		}
-	}
-}
-
-// processFloatMetrics processes float-based disk metrics.
-func remapDiskFloatMetrics(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier float64) {
-	dataPoints := metric.Sum().DataPoints()
-	for j := 0; j < dataPoints.Len(); j++ {
-		dp := dataPoints.At(j)
-		if device, ok := dp.Attributes().Get("device"); ok {
-			timestamp := dp.Timestamp()
-			value := dp.DoubleValue()
-			direction, _ := dp.Attributes().Get("direction")
-			addDiskMetric(out, dataset, metric.Name(), device.Str(), direction.Str(), timestamp, value, multiplier)
-		} else {
-			fmt.Printf("Missing 'device' attribute for metric: %s\n", metric.Name())
-		}
-	}
-}
-
-// addDiskMetric adds a remapped disk metric to the output slice.
-func addDiskMetric[T constraints.Integer | constraints.Float](
-	out pmetric.MetricSlice,
-	dataset, name, device, direction string,
-	timestamp pcommon.Timestamp,
-	value T, multiplier T,
-) {
-
-	metricNetworkES, ok := metricsToAdd[name]
-	if !ok {
-		fmt.Printf("Unknown metric name: %s\n", name)
-		return
-	}
-
-	scaledValue := value * multiplier
-	var intValue *int64
-	var doubleValue *float64
-	switch v := any(scaledValue).(type) {
-	case int64:
-		intValue = &v
-	case float64:
-		doubleValue = &v
-	default:
-		fmt.Printf("Unsupported value type for metric: %s\n", name)
-		return
-	}
-
-	remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
-		dp.Attributes().PutStr("system.diskio.name", device)
-	},
-		remappers.Metric{
-			DataType:    pmetric.MetricTypeSum,
-			Name:        fmt.Sprintf(metricNetworkES, direction),
-			Timestamp:   timestamp,
-			IntValue:    intValue,
-			DoubleValue: doubleValue,
-		})
 }
