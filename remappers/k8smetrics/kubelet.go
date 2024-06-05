@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-func addClusterMetrics(
+func addkubeletMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
 ) error {
