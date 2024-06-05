@@ -54,7 +54,7 @@ func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset 
 }
 
 func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier int64) error {
-	metricNetworkES, ok := metricsToAdd[metric.Name()]
+	metricDiskES, ok := metricsToAdd[metric.Name()]
 	if !ok {
 		return fmt.Errorf("unexpected metric name: %s", metric.Name())
 	}
@@ -66,7 +66,7 @@ func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset strin
 			direction, _ := dp.Attributes().Get("direction")
 			remappedMetric := remappers.Metric{
 				DataType:  pmetric.MetricTypeSum,
-				Name:      fmt.Sprintf(metricNetworkES, direction.Str()),
+				Name:      fmt.Sprintf(metricDiskES, direction.Str()),
 				Timestamp: dp.Timestamp(),
 			}
 			switch dp.ValueType() {
