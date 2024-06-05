@@ -74,7 +74,7 @@ func addKubeletMetrics(
 		} else if metric.Name() == "k8s.node.filesystem.usage" {
 			dp := metric.Gauge().DataPoints().At(0)
 			if timestamp == 0 {
-				timestamp = dp.Timestamp() * 100
+				timestamp = dp.Timestamp()
 			}
 			filesystem_usage = dp.IntValue()
 			// container
