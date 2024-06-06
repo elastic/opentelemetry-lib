@@ -27,7 +27,7 @@ import (
 
 type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource) error
 
-// Remapper maps the OTel hostmetrics to Elastic system metrics. These remapped
+// Remapper maps the OTel Kubernetes to Elastic Kubernetes metrics. These remapped
 // metrics power the curated Kibana dashboards. Each datapoint translated using
 // the remapper has the `event.processor` attribute set to `kubernetes`.
 type Remapper struct {
@@ -44,7 +44,7 @@ func NewRemapper(logger *zap.Logger, opts ...Option) *Remapper {
 }
 
 var remapFuncs = map[string]remapFunc{
-	"kubeletstatsreceiver": addkubeletMetrics,
+	"kubeletstatsreceiver": addKubeletMetrics,
 	"k8sclusterreceiver":   addClusterMetrics,
 }
 
