@@ -49,6 +49,7 @@ var remapFuncs = map[string]remapFunc{
 	"process":   remapProcessMetrics,
 	"processes": remapProcessesMetrics,
 	"network":   remapNetworkMetrics,
+	"disk":      remapDiskMetrics,
 }
 
 // Remapper maps the OTel hostmetrics to Elastic system metrics. These remapped
