@@ -81,7 +81,9 @@ func addKubeletMetrics(
 
 	}
 
-	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+	remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+		dp.Attributes().PutStr("service.type", "kubernetes")
+	},
 		remappers.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.cpu.usage.limit.pct",

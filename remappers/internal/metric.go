@@ -70,9 +70,6 @@ func AddMetrics(
 
 		dp.Attributes().PutStr("event.module", common.RemapperEventModule)
 		if dataset != "" {
-			if dataset == "kubernetes.pod" {
-				dp.Attributes().PutStr("service.type", "kubernetes")
-			}
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
 
