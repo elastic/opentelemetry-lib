@@ -15,6 +15,7 @@ func addClusterMetrics(
 	var node_allocatable_memory, node_allocatable_cpu int64
 
 	// iterate all metrics in the current scope and generate the additional Elastic kubernetes integration metrics
+	dataset := "kubernetes.node"
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
 		if metric.Name() == "k8s.node.allocatable_cpu" {
@@ -32,7 +33,7 @@ func addClusterMetrics(
 		}
 	}
 
-	remappers.Addk8sMetrics(out, remappers.EmptyMutator,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.cpu.allocatable.cores",

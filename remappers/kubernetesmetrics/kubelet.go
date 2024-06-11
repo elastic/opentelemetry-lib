@@ -14,10 +14,10 @@ func addKubeletMetrics(
 ) error {
 	var timestamp pcommon.Timestamp
 	var total_transmited, total_received, node_memory_usage, filesystem_capacity, filesystem_usage int64
-	var cpu_limit_utilization, container_cpu_limit_utilization, memory_usage_limit_pct, memory_limit_utilization, node_cpu_usage, pod_cpu_usage_node, pod_memory_usage_node float64
+	var cpu_limit_utilization, memory_limit_utilization, node_cpu_usage, pod_cpu_usage_node, pod_memory_usage_node float64
 
 	// iterate all metrics in the current scope and generate the additional Elastic kubernetes integration metrics
-
+	dataset := "kubernetes.pod"
 	//pod
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
@@ -77,24 +77,11 @@ func addKubeletMetrics(
 				timestamp = dp.Timestamp()
 			}
 			filesystem_usage = dp.IntValue()
-			// container
-		} else if metric.Name() == "k8s.container.cpu_limit_utilization" {
-			dp := metric.Gauge().DataPoints().At(0)
-			if timestamp == 0 {
-				timestamp = dp.Timestamp()
-			}
-			container_cpu_limit_utilization = dp.DoubleValue()
-		} else if metric.Name() == "k8s.container.memory_limit_utilization" {
-			dp := metric.Gauge().DataPoints().At(0)
-			if timestamp == 0 {
-				timestamp = dp.Timestamp()
-			}
-			memory_usage_limit_pct = dp.DoubleValue()
 		}
 
 	}
 
-	remappers.Addk8sMetrics(out, remappers.EmptyMutator,
+	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
 		remappers.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.cpu.usage.limit.pct",
@@ -154,18 +141,6 @@ func addKubeletMetrics(
 			Name:      "kubernetes.node.fs.used.bytes",
 			Timestamp: timestamp,
 			IntValue:  &filesystem_usage,
-		},
-		remappers.Metric{
-			DataType:    pmetric.MetricTypeGauge,
-			Name:        "kubernetes.container.cpu.usage.limit.pct",
-			Timestamp:   timestamp,
-			DoubleValue: &container_cpu_limit_utilization,
-		},
-		remappers.Metric{
-			DataType:    pmetric.MetricTypeGauge,
-			Name:        "kubernetes.container.memory.usage.limit.pct",
-			Timestamp:   timestamp,
-			DoubleValue: &memory_usage_limit_pct,
 		},
 	)
 
