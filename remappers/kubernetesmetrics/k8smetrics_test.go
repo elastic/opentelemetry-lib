@@ -47,10 +47,13 @@ func TestRemap(t *testing.T) {
 func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 	t.Helper()
 
-	outAttr := func() map[string]any {
+	kubernetesIntegration := newConfig(remapOpts...).KubernetesIntegrationDataset
+	outAttr := func(scraper string) map[string]any {
 		m := map[string]any{"event.module": "elastic/opentelemetry-lib"}
 		m["service.type"] = "kubernetes"
-		m[common.DatastreamDatasetLabel] = "kubernetes.pod"
+		if kubernetesIntegration {
+			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
+		}
 		return m
 	}
 	now := pcommon.NewTimestampFromTime(time.Now())
@@ -77,16 +80,16 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
 			},
 			expected: []testMetric{
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.18), Attrs: outAttr()}},
-				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr()}},
-				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
 			},
 		},
 	} {
