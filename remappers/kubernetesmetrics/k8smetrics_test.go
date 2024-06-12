@@ -23,8 +23,6 @@ import (
 	"time"
 
 	"github.com/elastic/opentelemetry-lib/remappers/common"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -38,7 +36,7 @@ var (
 	// Test values to make assertion easier
 	POD              = "pod0"
 	NAMESPACE        = "kube-system"
-	Device    string = "eth0"
+	DEVICE    string = "eth0"
 )
 
 func TestRemap(t *testing.T) {
@@ -49,12 +47,10 @@ func TestRemap(t *testing.T) {
 func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 	t.Helper()
 
-	k8sIntegration := newConfig(remapOpts...).KubernetesIntegrationDataset
 	outAttr := func() map[string]any {
-		m := map[string]any{"event.module": "elastic/opentelemetry-lib", "service.type": "kubernetes"}
-		if k8sIntegration {
-			m[common.DatastreamDatasetLabel] = "kubernetes.pod"
-		}
+		m := map[string]any{"event.module": "elastic/opentelemetry-lib"}
+		m["service.type"] = "kubernetes"
+		m[common.DatastreamDatasetLabel] = "kubernetes.pod"
 		return m
 	}
 	now := pcommon.NewTimestampFromTime(time.Now())
@@ -67,90 +63,32 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 		expected      []testMetric
 	}{
 		{
-			name:    "k8s.pod.cpu_limit_utilization",
+			name:    "kubeletstats",
 			scraper: "kubeletstatsreceiver",
 			resourceAttrs: map[string]any{
 				"k8s.pod.name":       POD,
 				"k8s.namespace.name": NAMESPACE,
+				"k8s.device":         DEVICE,
 			},
 			input: []testMetric{
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.namespace.name": "default"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.1), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.44), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.32), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
+				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+				{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+				{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
+				{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
 			},
 			expected: []testMetric{
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.32), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.44), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.1), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: outAttr()}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: outAttr()}},
 				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				// {Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
-				// {Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
-				// {Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.18), Attrs: outAttr()}},
+				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr()}},
+				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: testDP{Ts: now, Dbl: ptr(0.0), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
+				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(0)), Attrs: outAttr()}},
 			},
 		},
-		// {
-		// 	name:    "memory",
-		// 	scraper: "kubeletstatsreceiver",
-		// 	input: []testMetric{
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.1), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": "default"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.44), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.32), Attrs: map[string]any{"k8s.pod.name": "pod1", "k8s.pod.namespace": "kube-system"}}},
-		// 		{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: map[string]any{"k8s.pod.name": "pod", "k8s.pod.namespace": "kube-system"}}},
-		// 	},
-		// 	expected: []testMetric{
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.1), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.44), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.32), Attrs: outAttr()}},
-		// 		{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: outAttr()}},
-		// 	},
-		// },
-		// {
-		// 	name:    "network",
-		// 	scraper: "kubeletstatsreceiver",
-		// 	input: []testMetric{
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-		// 		{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-		// 	},
-		// 	expected: []testMetric{
-		// 		{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: outAttr()}},
-		// 		{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: outAttr()}},
-		// 	},
-		// },
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.name, id), func(t *testing.T) {
 			sm := pmetric.NewScopeMetrics()
@@ -163,7 +101,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			actual := pmetric.NewMetricSlice()
 			r := NewRemapper(zaptest.NewLogger(t), remapOpts...)
 			r.Remap(sm, actual, resource)
-			assert.Empty(t, cmp.Diff(tc.expected, metricSliceToTestMetric(t, actual), cmpopts.EquateApprox(0, 0.001)))
+			assert.Equal(t, tc.expected, metricSliceToTestMetric(t, actual))
 		})
 	}
 }
@@ -171,59 +109,11 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 func BenchmarkRemap(b *testing.B) {
 	now := pcommon.NewTimestampFromTime(time.Now())
 	in := map[string][]testMetric{
-		"cpu": []testMetric{
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: map[string]any{"cpu": "cpu0", "state": "user"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: map[string]any{"cpu": "cpu0", "state": "system"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.5), Attrs: map[string]any{"cpu": "cpu0", "state": "idle"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.1), Attrs: map[string]any{"cpu": "cpu0", "state": "steal"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.24), Attrs: map[string]any{"cpu": "cpu1", "state": "user"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.44), Attrs: map[string]any{"cpu": "cpu1", "state": "system"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.32), Attrs: map[string]any{"cpu": "cpu1", "state": "idle"}}},
-			{Type: Gauge, Name: "system.cpu.utilization", DP: testDP{Ts: now, Dbl: ptr(0.05), Attrs: map[string]any{"cpu": "cpu1", "state": "steal"}}},
-			{Type: Sum, Name: "system.cpu.logical.count", DP: testDP{Ts: now, Int: ptr(int64(4))}},
-		},
-		"load": []testMetric{
-			{Type: Gauge, Name: "system.cpu.load_average.1m", DP: testDP{Ts: now, Dbl: ptr(0.14)}},
-			{Type: Gauge, Name: "system.cpu.load_average.5m", DP: testDP{Ts: now, Dbl: ptr(0.12)}},
-			{Type: Gauge, Name: "system.cpu.load_average.15m", DP: testDP{Ts: now, Dbl: ptr(0.05)}},
-		},
-		"memory": []testMetric{
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"state": "buffered"}}},
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(512)), Attrs: map[string]any{"state": "cached"}}},
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(256)), Attrs: map[string]any{"state": "inactive"}}},
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"state": "free"}}},
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(128)), Attrs: map[string]any{"state": "slab_reclaimable"}}},
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(64)), Attrs: map[string]any{"state": "slab_unreclaimable"}}},
-			{Type: Sum, Name: "system.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(4096)), Attrs: map[string]any{"state": "used"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.133), Attrs: map[string]any{"state": "buffered"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.066), Attrs: map[string]any{"state": "cached"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.033), Attrs: map[string]any{"state": "inactive"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.266), Attrs: map[string]any{"state": "free"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.016), Attrs: map[string]any{"state": "slab_reclaimable"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.008), Attrs: map[string]any{"state": "slab_unreclaimable"}}},
-			{Type: Gauge, Name: "system.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(0.533), Attrs: map[string]any{"state": "used"}}},
-		},
-		"process": []testMetric{
-			{Type: Sum, Name: "process.threads", DP: testDP{Ts: now, Int: ptr(int64(7))}},
-			{Type: Gauge, Name: "process.memory.utilization", DP: testDP{Ts: now, Dbl: ptr(15.0)}},
-			{Type: Sum, Name: "process.memory.usage", DP: testDP{Ts: now, Int: ptr(int64(2048))}},
-			{Type: Sum, Name: "process.memory.virtual", DP: testDP{Ts: now, Int: ptr(int64(128))}},
-			{Type: Sum, Name: "process.open_file_descriptors", DP: testDP{Ts: now, Int: ptr(int64(10))}},
-			{Type: Sum, Name: "process.cpu.time", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: map[string]any{"state": "system"}}},
-			{Type: Sum, Name: "process.cpu.time", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: map[string]any{"state": "user"}}},
-			{Type: Sum, Name: "process.cpu.time", DP: testDP{Ts: now, Int: ptr(int64(5)), Attrs: map[string]any{"state": "wait"}}},
-			{Type: Sum, Name: "process.disk.io", DP: testDP{Ts: now, Int: ptr(int64(1024))}},
-			{Type: Sum, Name: "process.disk.operations", DP: testDP{Ts: now, Int: ptr(int64(10))}},
-		},
-		"network": []testMetric{
-			{Type: Sum, Name: "system.network.io", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-			{Type: Sum, Name: "system.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-			{Type: Sum, Name: "system.network.packets", DP: testDP{Ts: now, Int: ptr(int64(11)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-			{Type: Sum, Name: "system.network.packets", DP: testDP{Ts: now, Int: ptr(int64(9)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-			{Type: Sum, Name: "system.network.dropped", DP: testDP{Ts: now, Int: ptr(int64(3)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-			{Type: Sum, Name: "system.network.dropped", DP: testDP{Ts: now, Int: ptr(int64(4)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
-			{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(1)), Attrs: map[string]any{"device": Device, "direction": "receive"}}},
-			{Type: Sum, Name: "system.network.errors", DP: testDP{Ts: now, Int: ptr(int64(2)), Attrs: map[string]any{"device": Device, "direction": "transmit"}}},
+		"kubeletstats": []testMetric{
+			{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+			{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testDP{Ts: now, Dbl: ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+			{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
+			{Type: Sum, Name: "k8s.pod.network.io", DP: testDP{Ts: now, Int: ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
 		},
 	}
 

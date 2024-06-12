@@ -32,7 +32,7 @@ func newConfig(opts ...Option) (cfg config) {
 }
 
 // WithKubernetesIntegrationDataset sets the dataset of the remapped metrics as
-// as per the system integration. Example: kubernetes.pod
+// as per the kubernetes integration. Example: kubernetes.pod
 func WithKubernetesIntegrationDataset(b bool) Option {
 	return func(c config) config {
 		c.KubernetesIntegrationDataset = b
