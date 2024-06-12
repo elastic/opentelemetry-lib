@@ -27,12 +27,12 @@ import (
 func addClusterMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
+	dataset string,
 ) error {
 	var timestamp pcommon.Timestamp
 	var node_allocatable_memory, node_allocatable_cpu int64
 
 	// iterate all metrics in the current scope and generate the additional Elastic kubernetes integration metrics
-	dataset := "kubernetes.node"
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
 		if metric.Name() == "k8s.node.allocatable_cpu" {

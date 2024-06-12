@@ -26,7 +26,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource) error
+var scraperToElasticDataset = map[string]string{
+	"kubeletstatsreceiver": "kubernetes.pod",
+	"k8sclusterreceiver":   "kubernetes.node",
+}
+
+type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource, dataset string) error
 
 // Remapper maps the OTel Kubernetes to Elastic Kubernetes metrics. These remapped
 // metrics power the curated Kibana dashboards. Each datapoint translated using
@@ -67,12 +72,22 @@ func (r *Remapper) Remap(
 	scope := src.Scope()
 	scraper := path.Base(scope.Name())
 
+	var dataset string // an empty dataset defers setting dataset to the caller
+	if r.cfg.KubernetesIntegrationDataset {
+		var ok bool
+		dataset, ok = scraperToElasticDataset[scraper]
+		if !ok {
+			r.logger.Warn("no dataset defined for scraper", zap.String("scraper", scraper))
+			return
+		}
+	}
+
 	remapFunc, ok := remapFuncs[scraper]
 	if !ok {
 		return
 	}
 
-	err := remapFunc(src.Metrics(), out, resource)
+	err := remapFunc(src.Metrics(), out, resource, dataset)
 	if err != nil {
 		r.logger.Warn(
 			"failed to remap OTel kubernetes",

@@ -28,13 +28,13 @@ import (
 func addKubeletMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
+	dataset string,
 ) error {
 	var timestamp pcommon.Timestamp
 	var total_transmited, total_received, node_memory_usage, filesystem_capacity, filesystem_usage int64
 	var cpu_limit_utilization, memory_limit_utilization, node_cpu_usage, pod_cpu_usage_node, pod_memory_usage_node float64
 
 	// iterate all metrics in the current scope and generate the additional Elastic kubernetes integration metrics
-	dataset := "kubernetes.pod"
 	//pod
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
