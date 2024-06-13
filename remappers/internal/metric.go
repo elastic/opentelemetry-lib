@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package hostmetrics
+package internal
 
 import (
 	"github.com/elastic/opentelemetry-lib/remappers/common"
