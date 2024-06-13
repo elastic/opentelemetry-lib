@@ -25,16 +25,16 @@ import (
 )
 
 type TestMetric struct {
+	DP   TestDP
 	Name string
 	Type pmetric.MetricType
-	DP   TestDP
 }
 
 type TestDP struct {
-	Ts    pcommon.Timestamp
 	Dbl   *float64
 	Int   *int64
 	Attrs map[string]any
+	Ts    pcommon.Timestamp
 }
 
 func MetricSliceToTestMetric(t *testing.T, ms pmetric.MetricSlice) []TestMetric {
