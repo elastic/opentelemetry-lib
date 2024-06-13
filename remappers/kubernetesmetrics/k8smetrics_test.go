@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/elastic/opentelemetry-lib/remappers/common"
+	"github.com/elastic/opentelemetry-lib/remappers/test"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -62,8 +63,8 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 		name          string
 		scraper       string
 		resourceAttrs map[string]any
-		input         []internal.TestMetric
-		expected      []internal.TestMetric
+		input         []test.TestMetric
+		expected      []test.TestMetric
 	}{
 		{
 			name:    "kubeletstats",
@@ -73,30 +74,30 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				"k8s.namespace.name": NAMESPACE,
 				"k8s.device":         DEVICE,
 			},
-			input: []internal.TestMetric{
-				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
-				{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
-				{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
-				{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
+			input: []test.TestMetric{
+				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+				{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+				{Type: Sum, Name: "k8s.pod.network.io", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
+				{Type: Sum, Name: "k8s.pod.network.io", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
 			},
-			expected: []internal.TestMetric{
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+			expected: []test.TestMetric{
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
 			},
 		},
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.name, id), func(t *testing.T) {
 			sm := pmetric.NewScopeMetrics()
 			sm.Scope().SetName(fmt.Sprintf("%s/%s", scopePrefix, tc.scraper))
-			internal.TestMetricToMetricSlice(t, tc.input, sm.Metrics())
+			test.TestMetricToMetricSlice(t, tc.input, sm.Metrics())
 
 			resource := pcommon.NewResource()
 			resource.Attributes().FromRaw(tc.resourceAttrs)
@@ -104,19 +105,19 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			actual := pmetric.NewMetricSlice()
 			r := NewRemapper(zaptest.NewLogger(t), remapOpts...)
 			r.Remap(sm, actual, resource)
-			assert.Equal(t, tc.expected, internal.MetricSliceToTestMetric(t, actual))
+			assert.Equal(t, tc.expected, test.MetricSliceToTestMetric(t, actual))
 		})
 	}
 }
 
 func BenchmarkRemap(b *testing.B) {
 	now := pcommon.NewTimestampFromTime(time.Now())
-	in := map[string][]internal.TestMetric{
-		"kubeletstats": []internal.TestMetric{
-			{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
-			{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
-			{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
-			{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
+	in := map[string][]test.TestMetric{
+		"kubeletstats": []test.TestMetric{
+			{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+			{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: test.TestDP{Ts: now, Dbl: test.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+			{Type: Sum, Name: "k8s.pod.network.io", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
+			{Type: Sum, Name: "k8s.pod.network.io", DP: test.TestDP{Ts: now, Int: test.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
 		},
 	}
 
@@ -124,7 +125,7 @@ func BenchmarkRemap(b *testing.B) {
 	for scraper, m := range in {
 		sm := pmetric.NewScopeMetrics()
 		sm.Scope().SetName(fmt.Sprintf("%s/%s", scopePrefix, scraper))
-		internal.TestMetricToMetricSlice(b, m, sm.Metrics())
+		test.TestMetricToMetricSlice(b, m, sm.Metrics())
 		scopeMetrics = append(scopeMetrics, sm)
 	}
 
