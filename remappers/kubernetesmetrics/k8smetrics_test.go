@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/elastic/opentelemetry-lib/remappers/common"
-	"github.com/elastic/opentelemetry-lib/remappers/internal"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
