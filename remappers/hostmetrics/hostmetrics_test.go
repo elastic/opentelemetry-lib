@@ -36,12 +36,15 @@ var (
 	Gauge = pmetric.MetricTypeGauge
 
 	// Test values to make assertion easier
-	PPID      int64  = 101
-	ProcOwner string = "root"
-	ProcPath  string = "/bin/run"
-	ProcName  string = "runner"
-	Device    string = "en0"
-	Disk      string = "nvme0n1p128"
+	PPID             int64  = 101
+	ProcOwner        string = "root"
+	ProcPath         string = "/bin/run"
+	ProcName         string = "runner"
+	Device           string = "en0"
+	Disk             string = "nvme0n1p128"
+	FilesystemDevice string = "dev/nvme0n1p1"
+	mpoint           string = "/boot/efi"
+	fstype           string = "vfat"
 )
 
 func TestRemap(t *testing.T) {
@@ -69,6 +72,10 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["system.network.name"] = Device
 		case "disk":
 			m["system.diskio.name"] = Disk
+		case "filesystem":
+			m["system.filesystem.device_name"] = FilesystemDevice
+			m["system.filesystem.mount_point"] = mpoint
+			m["system.filesystem.type"] = fstype
 		}
 		return m
 	}
@@ -294,6 +301,24 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.diskio.io.ops", DP: testDP{Ts: now, Int: ptr(int64(102)), Attrs: outAttr("disk")}},
 			},
 		},
+		/*		{
+				name:    "filesystem",
+				scraper: "filesystem",
+				input: []testMetric{
+					{Type: Sum, Name: "system.filesystem.usage", DP: testDP{Ts: now, Int: ptr(int64(9109504)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
+					{Type: Sum, Name: "system.filesystem.usage", DP: testDP{Ts: now, Int: ptr(int64(1337344)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
+					{Type: Sum, Name: "system.filesystem.inodes.usage", DP: testDP{Ts: now, Int: ptr(int64(3898597)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
+					{Type: Sum, Name: "system.filesystem.inodes.usage", DP: testDP{Ts: now, Int: ptr(int64(216763)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
+				},
+				expected: []testMetric{
+					{Type: Sum, Name: "system.filesystem.free", DP: testDP{Ts: now, Int: ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
+					{Type: Sum, Name: "system.filesystem.available", DP: testDP{Ts: now, Int: ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
+					{Type: Sum, Name: "system.filesystem.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(1337344)), Attrs: outAttr("filesystem")}},
+					{Type: Sum, Name: "system.filesystem.total", DP: testDP{Ts: now, Int: ptr(int64(10446848)), Attrs: outAttr("filesystem")}},
+					{Type: Sum, Name: "system.filesystem.free_files", DP: testDP{Ts: now, Int: ptr(int64(3898597)), Attrs: outAttr("filesystem")}},
+					{Type: Sum, Name: "system.filesystem.files", DP: testDP{Ts: now, Int: ptr(int64(4115360)), Attrs: outAttr("filesystem")}},
+				},
+			},*/
 	} {
 		t.Run(fmt.Sprintf("%s/%s", tc.name, id), func(t *testing.T) {
 			sm := pmetric.NewScopeMetrics()
