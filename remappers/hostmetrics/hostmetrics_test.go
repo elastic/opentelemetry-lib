@@ -316,6 +316,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.filesystem.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(1337344)), Attrs: outAttr("filesystem")}},
 				{Type: Sum, Name: "system.filesystem.free_files", DP: testDP{Ts: now, Int: ptr(int64(3898597)), Attrs: outAttr("filesystem")}},
 				{Type: Sum, Name: "system.filesystem.total", DP: testDP{Ts: now, Int: ptr(int64(10446848)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.used.pct", DP: testDP{Ts: now, Dbl: ptr(0.1280141149), Attrs: outAttr("filesystem")}},
 				{Type: Sum, Name: "system.filesystem.files", DP: testDP{Ts: now, Int: ptr(int64(4115360)), Attrs: outAttr("filesystem")}},
 			},
 		},
