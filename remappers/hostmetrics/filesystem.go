@@ -1,6 +1,8 @@
 package hostmetrics
 
 import (
+	"strings"
+
 	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -10,14 +12,15 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
 	dataset string,
 ) error {
-	var totalfsusage, totalinodeusage int64
 	var timestamp pcommon.Timestamp
-	var esfsname, device, mpoint, fstype string
+	var device, mpoint, fstype string
+	totalUsagePerDevice := make(map[string]int64)
+	totalInodeUsagePerDevice := make(map[string]int64)
 
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
 		switch metric.Name() {
-		case "system.filesystem.usage":
+		case "system.filesystem.usage", "system.filesystem.inodes.usage":
 			dataPoints := metric.Sum().DataPoints()
 			for j := 0; j < dataPoints.Len(); j++ {
 				dp := dataPoints.At(j)
@@ -28,50 +31,41 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 					continue
 				}
 				device, mpoint, fstype = deviceValue.Str(), mpointValue.Str(), fstypeValue.Str()
+				// Create a unique key for each device
+				deviceKey := device + "_" + mpoint + "_" + fstype
 				if state, ok := dp.Attributes().Get("state"); ok {
 					switch state.Str() {
 					case "used":
-						esfsname = "system.filesystem.used.bytes"
-						totalfsusage += value
-						addFileSystemMetrics(out, timestamp, dataset, esfsname, device, mpoint, fstype, value)
+						if metric.Name() == "system.filesystem.usage" {
+							totalUsagePerDevice[deviceKey] += value
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.used.bytes", device, mpoint, fstype, value)
+						} else {
+							totalInodeUsagePerDevice[deviceKey] += value
+						}
 					case "free":
-						totalfsusage += value
-						esfsname = "system.filesystem.free"
-						addFileSystemMetrics(out, timestamp, dataset, esfsname, device, mpoint, fstype, value)
-						esfsname = "system.filesystem.available"
-						addFileSystemMetrics(out, timestamp, dataset, esfsname, device, mpoint, fstype, value)
+						if metric.Name() == "system.filesystem.usage" {
+							totalUsagePerDevice[deviceKey] += value
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free", device, mpoint, fstype, value)
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.available", device, mpoint, fstype, value)
+						} else {
+							totalInodeUsagePerDevice[deviceKey] += value
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free_files", device, mpoint, fstype, value)
+						}
 					}
 				}
-			}
-			if totalfsusage > 0 {
-				esfsname = "system.filesystem.total"
-				addFileSystemMetrics(out, timestamp, dataset, esfsname, device, mpoint, fstype, totalfsusage)
 			}
 
-		case "system.filesystem.inodes.usage":
-			dataPoints := metric.Sum().DataPoints()
-			for j := 0; j < dataPoints.Len(); j++ {
-				dp := dataPoints.At(j)
-				value := dp.IntValue()
-				deviceValue, mpointValue, fstypeValue, ok := getAttributes(dp)
-				if !ok {
-					continue
-				}
-				device, mpoint, fstype = deviceValue.Str(), mpointValue.Str(), fstypeValue.Str()
-				if state, ok := dp.Attributes().Get("state"); ok {
-					switch state.Str() {
-					case "used":
-						totalinodeusage += value
-					case "free":
-						totalinodeusage += value
-						esfsname = "system.filesystem.free_files"
-						addFileSystemMetrics(out, dp.Timestamp(), dataset, esfsname, device, mpoint, fstype, value)
-					}
-				}
-			}
-			esfsname = "system.filesystem.files"
-			addFileSystemMetrics(out, timestamp, dataset, esfsname, device, mpoint, fstype, totalinodeusage)
 		}
+	}
+
+	for devicekey, totalfsusage := range totalUsagePerDevice {
+		device, mpoint, fstype = parseDeviceKey(devicekey)
+		addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.total", device, mpoint, fstype, totalfsusage)
+	}
+
+	for devicekey, totalinodeusage := range totalInodeUsagePerDevice {
+		device, mpoint, fstype = parseDeviceKey(devicekey)
+		addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.files", device, mpoint, fstype, totalinodeusage)
 	}
 	return nil
 }
@@ -110,4 +104,12 @@ func addFileSystemMetrics(out pmetric.MetricSlice,
 		},
 	)
 
+}
+
+func parseDeviceKey(devicekey string) (device, mpoint, fstype string) {
+	parts := strings.Split(devicekey, "_")
+	if len(parts) != 3 {
+		return "", "", ""
+	}
+	return parts[0], parts[1], parts[2]
 }
