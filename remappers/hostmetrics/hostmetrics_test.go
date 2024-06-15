@@ -305,20 +305,20 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 		{
 			name:    "filesystem",
 			scraper: "filesystem",
-			input: []testMetric{
-				{Type: Sum, Name: "system.filesystem.usage", DP: testDP{Ts: now, Int: ptr(int64(9109504)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
-				{Type: Sum, Name: "system.filesystem.usage", DP: testDP{Ts: now, Int: ptr(int64(1337344)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
-				{Type: Sum, Name: "system.filesystem.inodes.usage", DP: testDP{Ts: now, Int: ptr(int64(3898597)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
-				{Type: Sum, Name: "system.filesystem.inodes.usage", DP: testDP{Ts: now, Int: ptr(int64(216763)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
+			input: []internal.TestMetric{
+				{Type: Sum, Name: "system.filesystem.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(9109504)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
+				{Type: Sum, Name: "system.filesystem.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1337344)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
+				{Type: Sum, Name: "system.filesystem.inodes.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(3898597)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
+				{Type: Sum, Name: "system.filesystem.inodes.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(216763)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
 			},
-			expected: []testMetric{
-				{Type: Sum, Name: "system.filesystem.free", DP: testDP{Ts: now, Int: ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
-				{Type: Sum, Name: "system.filesystem.available", DP: testDP{Ts: now, Int: ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
-				{Type: Sum, Name: "system.filesystem.used.bytes", DP: testDP{Ts: now, Int: ptr(int64(1337344)), Attrs: outAttr("filesystem")}},
-				{Type: Sum, Name: "system.filesystem.free_files", DP: testDP{Ts: now, Int: ptr(int64(3898597)), Attrs: outAttr("filesystem")}},
-				{Type: Sum, Name: "system.filesystem.total", DP: testDP{Ts: now, Int: ptr(int64(10446848)), Attrs: outAttr("filesystem")}},
-				{Type: Sum, Name: "system.filesystem.used.pct", DP: testDP{Ts: now, Dbl: ptr(0.1280141149), Attrs: outAttr("filesystem")}},
-				{Type: Sum, Name: "system.filesystem.files", DP: testDP{Ts: now, Int: ptr(int64(4115360)), Attrs: outAttr("filesystem")}},
+			expected: []internal.TestMetric{
+				{Type: Sum, Name: "system.filesystem.free", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.available", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.used.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1337344)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.free_files", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(3898597)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.total", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(10446848)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.used.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.1280141149), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.files", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(4115360)), Attrs: outAttr("filesystem")}},
 			},
 		},
 	} {
