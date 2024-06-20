@@ -32,7 +32,7 @@ func addKubeletMetrics(
 ) error {
 	var timestamp pcommon.Timestamp
 	var total_transmited, total_received, node_memory_usage, filesystem_capacity, filesystem_usage int64
-	var cpu_limit_utilization, memory_limit_utilization, node_cpu_usage, pod_cpu_usage_node, pod_memory_usage_node float64
+	var cpu_limit_utilization, cpu_node_limit_utilization, memory_limit_utilization, node_cpu_usage, pod_cpu_usage_node, pod_memory_usage_node float64
 
 	// iterate all metrics in the current scope and generate the additional Elastic kubernetes integration metrics
 	//pod
@@ -45,6 +45,12 @@ func addKubeletMetrics(
 				timestamp = dp.Timestamp()
 			}
 			cpu_limit_utilization = dp.DoubleValue()
+		} else if metric.Name() == "k8s.pod.cpu.node.utilization" {
+			dp := metric.Gauge().DataPoints().At(0)
+			if timestamp == 0 {
+				timestamp = dp.Timestamp()
+			}
+			cpu_node_limit_utilization = dp.DoubleValue()
 		} else if metric.Name() == "k8s.pod.memory_limit_utilization" {
 			dp := metric.Gauge().DataPoints().At(0)
 			if timestamp == 0 {
@@ -106,6 +112,12 @@ func addKubeletMetrics(
 			Name:        "kubernetes.pod.cpu.usage.limit.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &cpu_limit_utilization,
+		},
+		remappers.Metric{
+			DataType:    pmetric.MetricTypeGauge,
+			Name:        "kubernetes.pod.cpu.usage.node.pct",
+			Timestamp:   timestamp,
+			DoubleValue: &cpu_node_limit_utilization,
 		},
 		remappers.Metric{
 			DataType:    pmetric.MetricTypeGauge,
