@@ -121,7 +121,7 @@ func remapCPUMetrics(
 		},
 		remappers.Metric{
 			DataType:    pmetric.MetricTypeGauge,
-			Name:        "system.cpu.wait.pct",
+			Name:        "system.cpu.iowait.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &iowaitPercent,
 		},
@@ -204,7 +204,7 @@ func remapCPUMetrics(
 		},
 		remappers.Metric{
 			DataType:    pmetric.MetricTypeGauge,
-			Name:        "system.cpu.wait.norm.pct",
+			Name:        "system.cpu.iowait.norm.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &iowaitNorm,
 		},

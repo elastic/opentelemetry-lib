@@ -41,6 +41,7 @@ var (
 	ProcOwner string = "root"
 	ProcPath  string = "/bin/run"
 	ProcName  string = "runner"
+	Cmdline   string = "./dist/otelcol-ishleen-custom --config collector.yml"
 	Device    string = "en0"
 	Disk      string = "nvme0n1p128"
 )
@@ -66,6 +67,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["user.name"] = ProcOwner
 			m["process.executable"] = ProcPath
 			m["process.name"] = ProcName
+			m["system.process.cmdline"] = Cmdline
 		case "network":
 			m["system.network.name"] = Device
 		case "disk":
@@ -102,7 +104,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "system.cpu.system.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.68), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.user.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.5), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.steal.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.15), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.wait.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
+				{Type: Gauge, Name: "system.cpu.iowait.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.nice.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.irq.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.softirq.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
@@ -113,7 +115,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "system.cpu.system.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.17), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.user.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.125), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.steal.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0375), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.wait.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
+				{Type: Gauge, Name: "system.cpu.iowait.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.nice.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.irq.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.softirq.norm.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
@@ -138,7 +140,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "system.cpu.system.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.68), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.user.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.5), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.steal.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.15), Attrs: outAttr("cpu")}},
-				{Type: Gauge, Name: "system.cpu.wait.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
+				{Type: Gauge, Name: "system.cpu.iowait.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.nice.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.irq.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
 				{Type: Gauge, Name: "system.cpu.softirq.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("cpu")}},
@@ -198,6 +200,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				"process.owner":           ProcOwner,
 				"process.executable.path": ProcPath,
 				"process.executable.name": ProcName,
+				"process.command_line":    Cmdline,
 			},
 			input: []internal.TestMetric{
 				{Type: Sum, Name: "process.threads", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(7))}},
@@ -238,13 +241,16 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.processes.count", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(3)), Attrs: map[string]any{"status": "sleeping"}}},
 				{Type: Sum, Name: "system.processes.count", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(5)), Attrs: map[string]any{"status": "stopped"}}},
 				{Type: Sum, Name: "system.processes.count", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1)), Attrs: map[string]any{"status": "zombies"}}},
+				{Type: Sum, Name: "system.processes.count", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2)), Attrs: map[string]any{"status": "running"}}},
+				{Type: Sum, Name: "system.processes.count", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2)), Attrs: map[string]any{"status": "paging"}}},
 			},
 			expected: []internal.TestMetric{
 				{Type: Sum, Name: "system.process.summary.idle", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(7)), Attrs: outAttr("processes")}},
 				{Type: Sum, Name: "system.process.summary.sleeping", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(3)), Attrs: outAttr("processes")}},
 				{Type: Sum, Name: "system.process.summary.stopped", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(5)), Attrs: outAttr("processes")}},
 				{Type: Sum, Name: "system.process.summary.zombie", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1)), Attrs: outAttr("processes")}},
-				{Type: Sum, Name: "system.process.summary.total", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(16)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.running", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2)), Attrs: outAttr("processes")}},
+				{Type: Sum, Name: "system.process.summary.total", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(20)), Attrs: outAttr("processes")}},
 			},
 		},
 		{
