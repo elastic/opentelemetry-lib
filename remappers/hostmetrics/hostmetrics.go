@@ -43,13 +43,14 @@ var scraperToElasticDataset = map[string]string{
 type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource, dataset string) error
 
 var remapFuncs = map[string]remapFunc{
-	"cpu":       remapCPUMetrics,
-	"memory":    remapMemoryMetrics,
-	"load":      remapLoadMetrics,
-	"process":   remapProcessMetrics,
-	"processes": remapProcessesMetrics,
-	"network":   remapNetworkMetrics,
-	"disk":      remapDiskMetrics,
+	"cpu":        remapCPUMetrics,
+	"memory":     remapMemoryMetrics,
+	"load":       remapLoadMetrics,
+	"process":    remapProcessMetrics,
+	"processes":  remapProcessesMetrics,
+	"network":    remapNetworkMetrics,
+	"disk":       remapDiskMetrics,
+	"filesystem": remapFilesystemMetrics,
 }
 
 // Remapper maps the OTel hostmetrics to Elastic system metrics. These remapped

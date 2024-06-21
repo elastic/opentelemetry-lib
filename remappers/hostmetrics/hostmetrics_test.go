@@ -37,13 +37,16 @@ var (
 	Gauge = pmetric.MetricTypeGauge
 
 	// Test values to make assertion easier
-	PPID      int64  = 101
-	ProcOwner string = "root"
-	ProcPath  string = "/bin/run"
-	ProcName  string = "runner"
-	Cmdline   string = "./dist/otelcol-ishleen-custom --config collector.yml"
-	Device    string = "en0"
-	Disk      string = "nvme0n1p128"
+	PPID             int64  = 101
+	ProcOwner        string = "root"
+	ProcPath         string = "/bin/run"
+	ProcName         string = "runner"
+	Cmdline          string = "./dist/otelcol-ishleen-custom --config collector.yml"
+	Device           string = "en0"
+	Disk             string = "nvme0n1p128"
+	FilesystemDevice string = "dev/nvme0n1p1"
+	mpoint           string = "/boot/efi"
+	fstype           string = "vfat"
 )
 
 func TestRemap(t *testing.T) {
@@ -72,6 +75,10 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["system.network.name"] = Device
 		case "disk":
 			m["system.diskio.name"] = Disk
+		case "filesystem":
+			m["system.filesystem.device_name"] = FilesystemDevice
+			m["system.filesystem.mount_point"] = mpoint
+			m["system.filesystem.type"] = fstype
 		}
 		return m
 	}
@@ -299,6 +306,25 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Sum, Name: "system.diskio.write.time", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(617289.0), Attrs: outAttr("disk")}},
 				{Type: Sum, Name: "system.diskio.io.time", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(520300.0), Attrs: outAttr("disk")}},
 				{Type: Sum, Name: "system.diskio.io.ops", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(102)), Attrs: outAttr("disk")}},
+			},
+		},
+		{
+			name:    "filesystem",
+			scraper: "filesystem",
+			input: []internal.TestMetric{
+				{Type: Sum, Name: "system.filesystem.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(9109504)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
+				{Type: Sum, Name: "system.filesystem.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1337344)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
+				{Type: Sum, Name: "system.filesystem.inodes.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(3898597)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "free"}}},
+				{Type: Sum, Name: "system.filesystem.inodes.usage", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(216763)), Attrs: map[string]any{"device": FilesystemDevice, "mountpoint": mpoint, "type": fstype, "state": "used"}}},
+			},
+			expected: []internal.TestMetric{
+				{Type: Sum, Name: "system.filesystem.free", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.available", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(9109504)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.used.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1337344)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.free_files", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(3898597)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.total", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(10446848)), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.used.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.1280141149), Attrs: outAttr("filesystem")}},
+				{Type: Sum, Name: "system.filesystem.files", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(4115360)), Attrs: outAttr("filesystem")}},
 			},
 		},
 	} {
