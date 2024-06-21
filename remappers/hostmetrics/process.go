@@ -277,5 +277,9 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 		if name.Str() != "" {
 			dp.Attributes().PutStr("process.name", name.Str())
 		}
+		cmdline, _ := resource.Attributes().Get("process.command_line")
+		if cmdline.Str() != "" {
+			dp.Attributes().PutStr("system.process.cmdline", cmdline.Str())
+		}
 	}
 }

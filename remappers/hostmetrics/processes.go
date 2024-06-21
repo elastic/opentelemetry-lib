@@ -30,7 +30,7 @@ func remapProcessesMetrics(
 	dataset string,
 ) error {
 	var timestamp pcommon.Timestamp
-	var idleProcesses, sleepingProcesses, stoppedProcesses, zombieProcesses, totalProcesses int64
+	var idleProcesses, sleepingProcesses, stoppedProcesses, zombieProcesses, runningProcesses, totalProcesses int64
 
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
@@ -55,6 +55,11 @@ func remapProcessesMetrics(
 						totalProcesses += value
 					case "zombies":
 						zombieProcesses = value
+						totalProcesses += value
+					case "running":
+						runningProcesses = value
+						totalProcesses += value
+					default:
 						totalProcesses += value
 					}
 				}
@@ -87,6 +92,12 @@ func remapProcessesMetrics(
 			Name:      "system.process.summary.zombie",
 			Timestamp: timestamp,
 			IntValue:  &zombieProcesses,
+		},
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.summary.running",
+			Timestamp: timestamp,
+			IntValue:  &runningProcesses,
 		},
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
