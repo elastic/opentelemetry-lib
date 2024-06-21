@@ -23,7 +23,6 @@ import (
 	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-	"golang.org/x/exp/constraints"
 )
 
 func remapFilesystemMetrics(src, out pmetric.MetricSlice,
@@ -94,9 +93,11 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 	return nil
 }
 
-func addFileSystemMetrics[T interface {
-	constraints.Integer | constraints.Float
-}](out pmetric.MetricSlice,
+type number interface {
+	~int64 | ~float64
+}
+
+func addFileSystemMetrics[T number](out pmetric.MetricSlice,
 	timestamp pcommon.Timestamp,
 	dataset, name, device, mpoint, fstype string,
 	value T,
