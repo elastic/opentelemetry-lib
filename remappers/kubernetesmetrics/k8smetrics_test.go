@@ -50,7 +50,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 
 	kubernetesIntegration := newConfig(remapOpts...).KubernetesIntegrationDataset
 	outAttr := func(scraper string) map[string]any {
-		m := map[string]any{"event.module": "elastic/opentelemetry-lib"}
+		m := map[string]any{"otel_remapped": true}
 		m["service.type"] = "kubernetes"
 		if kubernetesIntegration {
 			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
