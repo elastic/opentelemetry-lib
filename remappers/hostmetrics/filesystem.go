@@ -18,23 +18,34 @@
 package hostmetrics
 
 import (
-	"strings"
-
 	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
+
+// DeviceMetrics holds metrics data for a device
+type DeviceMetrics struct {
+	TotalUsage      int64
+	UsedBytes       int64
+	TotalInodeUsage int64
+}
+
+type deviceKey struct {
+	device string
+	mpoint string
+	fstype string
+}
+
+type number interface {
+	~int64 | ~float64
+}
 
 func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
 	dataset string,
 ) error {
 	var timestamp pcommon.Timestamp
-	var device, mpoint, fstype string
-	totalUsagePerDevice := make(map[string]int64)
-	totalInodeUsagePerDevice := make(map[string]int64)
-	usedBytesPerDevice := make(map[string]int64)
-
+	deviceMetrics := make(map[deviceKey]*DeviceMetrics)
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
 		switch metric.Name() {
@@ -44,31 +55,34 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 				dp := dataPoints.At(j)
 				value := dp.IntValue()
 				timestamp = dp.Timestamp()
-				deviceValue, mpointValue, fstypeValue, ok := getAttributes(dp)
+				device, mpoint, fstype, ok := getAttributes(dp)
 				if !ok {
 					continue
 				}
-				device, mpoint, fstype = deviceValue.Str(), mpointValue.Str(), fstypeValue.Str()
 				// Create a unique key for each device
-				deviceKey := device + "_" + mpoint + "_" + fstype
+				key := deviceKey{device: device.Str(), mpoint: mpoint.Str(), fstype: fstype.Str()}
+				if _, exists := deviceMetrics[key]; !exists {
+					deviceMetrics[key] = &DeviceMetrics{}
+				}
+				dmetrics := deviceMetrics[key]
 				if state, ok := dp.Attributes().Get("state"); ok {
 					switch state.Str() {
 					case "used":
 						if metric.Name() == "system.filesystem.usage" {
-							totalUsagePerDevice[deviceKey] += value
-							usedBytesPerDevice[deviceKey] += value
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.used.bytes", device, mpoint, fstype, value)
+							dmetrics.TotalUsage += value
+							dmetrics.UsedBytes += value
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.used.bytes", device.Str(), mpoint.Str(), fstype.Str(), value)
 						} else {
-							totalInodeUsagePerDevice[deviceKey] += value
+							dmetrics.TotalInodeUsage += value
 						}
 					case "free":
 						if metric.Name() == "system.filesystem.usage" {
-							totalUsagePerDevice[deviceKey] += value
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free", device, mpoint, fstype, value)
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.available", device, mpoint, fstype, value)
+							dmetrics.TotalUsage += value
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free", device.Str(), mpoint.Str(), fstype.Str(), value)
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.available", device.Str(), mpoint.Str(), fstype.Str(), value)
 						} else {
-							totalInodeUsagePerDevice[deviceKey] += value
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free_files", device, mpoint, fstype, value)
+							dmetrics.TotalInodeUsage += value
+							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free_files", device.Str(), mpoint.Str(), fstype.Str(), value)
 						}
 					}
 				}
@@ -77,24 +91,19 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 		}
 	}
 
-	for deviceKey, totalfsusage := range totalUsagePerDevice {
-		device, mpoint, fstype = parseDeviceKey(deviceKey)
-		addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.total", device, mpoint, fstype, totalfsusage)
-		if usedBytes, exists := usedBytesPerDevice[deviceKey]; exists {
-			usedPercentage := float64(usedBytes) / float64(totalfsusage)
+	for key, dmetrics := range deviceMetrics {
+		device, mpoint, fstype := key.device, key.mpoint, key.fstype
+		if dmetrics.TotalUsage > 0 {
+			addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.total", device, mpoint, fstype, dmetrics.TotalUsage)
+			usedPercentage := float64(dmetrics.UsedBytes) / float64(dmetrics.TotalUsage)
 			addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.used.pct", device, mpoint, fstype, usedPercentage)
 		}
-	}
+		if dmetrics.TotalInodeUsage > 0 {
+			addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.files", device, mpoint, fstype, dmetrics.TotalInodeUsage)
+		}
 
-	for deviceKey, totalinodeusage := range totalInodeUsagePerDevice {
-		device, mpoint, fstype = parseDeviceKey(deviceKey)
-		addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.files", device, mpoint, fstype, totalinodeusage)
 	}
 	return nil
-}
-
-type number interface {
-	~int64 | ~float64
 }
 
 func addFileSystemMetrics[T number](out pmetric.MetricSlice,
@@ -139,12 +148,4 @@ func getAttributes(dp pmetric.NumberDataPoint) (device, mpoint, fstype pcommon.V
 	fstype, ok = dp.Attributes().Get("type")
 
 	return
-}
-
-func parseDeviceKey(devicekey string) (device, mpoint, fstype string) {
-	parts := strings.Split(devicekey, "_")
-	if len(parts) != 3 {
-		return "", "", ""
-	}
-	return parts[0], parts[1], parts[2]
 }
