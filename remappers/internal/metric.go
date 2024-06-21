@@ -68,7 +68,7 @@ func AddMetrics(
 			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
-		dp.Attributes().PutBool("is_remapped", true)
+		dp.Attributes().PutBool("otel_remapped", true)
 		if dataset != "" {
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
