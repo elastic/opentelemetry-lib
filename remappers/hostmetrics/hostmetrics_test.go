@@ -55,7 +55,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 
 	systemIntegration := newConfig(remapOpts...).SystemIntegrationDataset
 	outAttr := func(scraper string) map[string]any {
-		m := map[string]any{"is_remapped": true}
+		m := map[string]any{"otel_remapped": true}
 		if systemIntegration {
 			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
 		}
