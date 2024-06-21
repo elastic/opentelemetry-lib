@@ -68,7 +68,7 @@ func AddMetrics(
 			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
-		dp.Attributes().PutStr("event.module", common.RemapperEventModule)
+		dp.Attributes().PutBool("otel_remapped", true)
 		if dataset != "" {
 			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
