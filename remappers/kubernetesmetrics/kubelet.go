@@ -38,13 +38,19 @@ func addKubeletMetrics(
 	//pod
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
-		// kubernetes.pod.cpu.usage.node.pct and kubernetes.pod.memory.usage.node.pct still needs to be implemented
+		// kubernetes.pod.memory.usage.node.pct still needs to be implemented
 		if metric.Name() == "k8s.pod.cpu_limit_utilization" {
 			dp := metric.Gauge().DataPoints().At(0)
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
 			cpu_limit_utilization = dp.DoubleValue()
+		} else if metric.Name() == "k8s.pod.cpu.node.utilization" {
+			dp := metric.Gauge().DataPoints().At(0)
+			if timestamp == 0 {
+				timestamp = dp.Timestamp()
+			}
+			pod_cpu_usage_node = dp.DoubleValue()
 		} else if metric.Name() == "k8s.pod.memory_limit_utilization" {
 			dp := metric.Gauge().DataPoints().At(0)
 			if timestamp == 0 {

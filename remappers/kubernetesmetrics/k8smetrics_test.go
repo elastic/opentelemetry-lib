@@ -77,12 +77,13 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			input: []internal.TestMetric{
 				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
 				{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+				{Type: Gauge, Name: "k8s.pod.cpu.node.utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.12), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
 				{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
 				{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
 			},
 			expected: []internal.TestMetric{
 				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.12), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
@@ -115,6 +116,7 @@ func BenchmarkRemap(b *testing.B) {
 	in := map[string][]internal.TestMetric{
 		"kubeletstats": []internal.TestMetric{
 			{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+			{Type: Gauge, Name: "k8s.pod.cpu.node.utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.12), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
 			{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
 			{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
 			{Type: Sum, Name: "k8s.pod.network.io", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
