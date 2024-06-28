@@ -269,10 +269,10 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 		if owner.Str() != "" {
 			dp.Attributes().PutStr("user.name", owner.Str())
 		}
-		exec, _ := resource.Attributes().Get("process.executable.path")
-		if exec.Str() != "" {
-			dp.Attributes().PutStr("process.executable", exec.Str())
-		}
+		/*		exec, _ := resource.Attributes().Get("process.executable.path")
+				if exec.Str() != "" {
+					dp.Attributes().PutStr("process.executable", exec.Str())
+				}*/
 		name, _ := resource.Attributes().Get("process.executable.name")
 		if name.Str() != "" {
 			dp.Attributes().PutStr("process.name", name.Str())

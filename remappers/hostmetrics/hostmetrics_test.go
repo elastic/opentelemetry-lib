@@ -68,7 +68,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 		case "process":
 			m["process.parent.pid"] = PPID
 			m["user.name"] = ProcOwner
-			m["process.executable"] = ProcPath
+			//	m["process.executable"] = ProcPath
 			m["process.name"] = ProcName
 			m["system.process.cmdline"] = Cmdline
 		case "network":
@@ -203,9 +203,9 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			name:    "process",
 			scraper: "process",
 			resourceAttrs: map[string]any{
-				"process.parent_pid":      PPID,
-				"process.owner":           ProcOwner,
-				"process.executable.path": ProcPath,
+				"process.parent_pid": PPID,
+				"process.owner":      ProcOwner,
+				//	"process.executable.path": ProcPath,
 				"process.executable.name": ProcName,
 				"process.command_line":    Cmdline,
 			},
