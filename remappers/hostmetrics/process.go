@@ -290,7 +290,7 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 			dp.Attributes().PutStr("system.process.cmdline", cmdline.Str())
 		}
 		//Adding dummy value to process.state as "Not Known", since this field is not
-		//available through Hostmetrics currently and Process tab in Curated UI's needs this field as a prerequisite to work
+		//available through Hostmetrics receiver currently and Process tab in Curated UI's need this field as a prerequisite.
 		dp.Attributes().PutStr("system.process.state", "Not Known")
 	}
 }
