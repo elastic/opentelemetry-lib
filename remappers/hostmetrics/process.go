@@ -157,9 +157,17 @@ func remapProcessMetrics(
 	cpuPct = cpuTimeValue / float64(processRuntime)
 
 	remappers.AddMetrics(out, dataset, addProcessResources(resource),
+		// The timestamp metrics gets converted from Int to Timestamp
+		// since the mapping for these fields in timestamp in the UI
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "process.cpu.start_time",
+			Timestamp: timestamp,
+			IntValue:  &startTime,
+		},
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.cpu.start_time",
 			Timestamp: timestamp,
 			IntValue:  &startTime,
 		},
@@ -269,10 +277,10 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 		if owner.Str() != "" {
 			dp.Attributes().PutStr("user.name", owner.Str())
 		}
-		/*		exec, _ := resource.Attributes().Get("process.executable.path")
-				if exec.Str() != "" {
-					dp.Attributes().PutStr("process.executable", exec.Str())
-				}*/
+		exec, _ := resource.Attributes().Get("process.executable.path")
+		if exec.Str() != "" {
+			dp.Attributes().PutStr("process.executable", exec.Str())
+		}
 		name, _ := resource.Attributes().Get("process.executable.name")
 		if name.Str() != "" {
 			dp.Attributes().PutStr("process.name", name.Str())
@@ -281,5 +289,8 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 		if cmdline.Str() != "" {
 			dp.Attributes().PutStr("system.process.cmdline", cmdline.Str())
 		}
+		//Adding dummy value to process.state as "Not Known", since this field is not
+		//available through Hostmetrics currently and Process tab in Curated UI's needs this field as a prerequisite to work
+		dp.Attributes().PutStr("system.process.state", "Not Known")
 	}
 }
