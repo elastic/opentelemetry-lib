@@ -157,9 +157,17 @@ func remapProcessMetrics(
 	cpuPct = cpuTimeValue / float64(processRuntime)
 
 	remappers.AddMetrics(out, dataset, addProcessResources(resource),
+		// The timestamp metrics get converted from Int to Timestamp in Kibana
+		// since these are mapped to timestamp datatype
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "process.cpu.start_time",
+			Timestamp: timestamp,
+			IntValue:  &startTime,
+		},
+		remappers.Metric{
+			DataType:  pmetric.MetricTypeSum,
+			Name:      "system.process.cpu.start_time",
 			Timestamp: timestamp,
 			IntValue:  &startTime,
 		},
@@ -281,5 +289,8 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 		if cmdline.Str() != "" {
 			dp.Attributes().PutStr("system.process.cmdline", cmdline.Str())
 		}
+		//Adding dummy value to process.state as "undefined", since this field is not
+		//available through Hostmetrics receiver currently and Process tab in Curated UI's need this field as a prerequisite.
+		dp.Attributes().PutStr("system.process.state", "undefined")
 	}
 }

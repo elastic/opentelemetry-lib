@@ -42,6 +42,7 @@ var (
 	ProcPath         string = "/bin/run"
 	ProcName         string = "runner"
 	Cmdline          string = "./dist/otelcol-ishleen-custom --config collector.yml"
+	Processstate     string = "undefined"
 	Device           string = "en0"
 	Disk             string = "nvme0n1p128"
 	FilesystemDevice string = "dev/nvme0n1p1"
@@ -71,6 +72,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["process.executable"] = ProcPath
 			m["process.name"] = ProcName
 			m["system.process.cmdline"] = Cmdline
+			m["system.process.state"] = Processstate
 		case "network":
 			m["system.network.name"] = Device
 		case "disk":
@@ -223,6 +225,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			},
 			expected: []internal.TestMetric{
 				{Type: Sum, Name: "process.cpu.start_time", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("process")}},
+				{Type: Sum, Name: "system.process.cpu.start_time", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("process")}},
 				{Type: Sum, Name: "system.process.num_threads", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(7)), Attrs: outAttr("process")}},
 				{Type: Gauge, Name: "system.process.memory.rss.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.15), Attrs: outAttr("process")}},
 				{Type: Sum, Name: "system.process.memory.rss.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: outAttr("process")}},
