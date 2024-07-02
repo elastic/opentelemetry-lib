@@ -157,8 +157,8 @@ func remapProcessMetrics(
 	cpuPct = cpuTimeValue / float64(processRuntime)
 
 	remappers.AddMetrics(out, dataset, addProcessResources(resource),
-		// The timestamp metrics gets converted from Int to Timestamp
-		// since the mapping for these fields in timestamp in the UI
+		// The timestamp metrics get converted from Int to Timestamp in Kibana
+		// since these are mapped to timestamp datatype
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "process.cpu.start_time",
