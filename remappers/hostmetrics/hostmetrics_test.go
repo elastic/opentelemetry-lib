@@ -42,7 +42,7 @@ var (
 	ProcPath         string = "/bin/run"
 	ProcName         string = "runner"
 	Cmdline          string = "./dist/otelcol-ishleen-custom --config collector.yml"
-	Processstate     string = "Not Known"
+	Processstate     string = "undefined"
 	Device           string = "en0"
 	Disk             string = "nvme0n1p128"
 	FilesystemDevice string = "dev/nvme0n1p1"
