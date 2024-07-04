@@ -68,7 +68,15 @@ func remapProcessesMetrics(
 
 	}
 
-	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
+	remappers.AddMetrics(out, dataset,
+		func(dp pmetric.NumberDataPoint) {
+			// Processes tab in the Kibana curated UI requires the event.dataset
+			// to work. This is a hard dependency.
+			// TODO (lahsivjar): Unlike datastrea.dataset, we may want to set the
+			// event.dataset for all cases, would require refactoring the private
+			// remap functions.
+			dp.Attributes().PutStr("event.dataset", "system.process.summary")
+		},
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.idle",

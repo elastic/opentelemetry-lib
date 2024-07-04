@@ -73,6 +73,9 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			m["process.name"] = ProcName
 			m["system.process.cmdline"] = Cmdline
 			m["system.process.state"] = Processstate
+			m["system.process.cpu.start_time"] = time.Unix(0, 0).UTC().Format(time.RFC3339)
+		case "processes":
+			m["event.dataset"] = "system.process.summary"
 		case "network":
 			m["system.network.name"] = Device
 		case "disk":
