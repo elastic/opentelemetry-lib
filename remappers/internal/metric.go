@@ -48,7 +48,7 @@ func AddMetrics(
 	for _, metric := range metrics {
 
 		//The translated metric should not be generated for a null or negative value
-		if (metric.IntValue != nil && *metric.IntValue <= 0) || (metric.DoubleValue != nil && *metric.DoubleValue <= 0) {
+		if (metric.IntValue != nil && *metric.IntValue <= 0) || (metric.DoubleValue != nil && *metric.DoubleValue <= 0 && math.IsInf(*metric.DoubleValue, 0) {
 			continue
 		}
 
