@@ -28,7 +28,7 @@ import (
 func remapNetworkMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
@@ -51,9 +51,9 @@ func remapNetworkMetrics(
 			}
 			switch direction.Str() {
 			case "receive":
-				addDeviceMetric(out, timestamp, dataset, name, device.Str(), "in", value)
+				addDeviceMetric(out, timestamp, mutator, name, device.Str(), "in", value)
 			case "transmit":
-				addDeviceMetric(out, timestamp, dataset, name, device.Str(), "out", value)
+				addDeviceMetric(out, timestamp, mutator, name, device.Str(), "out", value)
 			}
 		}
 	}
@@ -64,7 +64,8 @@ func remapNetworkMetrics(
 func addDeviceMetric(
 	out pmetric.MetricSlice,
 	timestamp pcommon.Timestamp,
-	dataset, name, device, direction string,
+	mutator func(pmetric.NumberDataPoint),
+	name, device, direction string,
 	value int64,
 ) {
 	metricsToAdd := map[string]string{
@@ -79,10 +80,13 @@ func addDeviceMetric(
 		return
 	}
 
-	remappedmetric.Add(out, dataset,
+	finalMutator := remappedmetric.ChainedMutator(
+		mutator,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.network.name", device)
 		},
+	)
+	remappedmetric.Add(out, finalMutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      fmt.Sprintf(metricNetworkES, direction),

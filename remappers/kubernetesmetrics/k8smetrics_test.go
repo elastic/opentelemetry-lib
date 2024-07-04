@@ -50,10 +50,14 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 
 	kubernetesIntegration := newConfig(remapOpts...).KubernetesIntegrationDataset
 	outAttr := func(scraper string) map[string]any {
-		m := map[string]any{"otel_remapped": true}
-		m["service.type"] = "kubernetes"
+		dataset := scraperToElasticDataset[scraper]
+		m := map[string]any{
+			common.OTelRemappedLabel: true,
+			common.EventDatasetLabel: dataset,
+			"service.type":           "kubernetes",
+		}
 		if kubernetesIntegration {
-			m[common.DatastreamDatasetLabel] = scraperToElasticDataset[scraper]
+			m[common.DatastreamDatasetLabel] = dataset
 		}
 		return m
 	}

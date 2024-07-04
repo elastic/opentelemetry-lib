@@ -21,6 +21,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -31,7 +32,7 @@ var scraperToElasticDataset = map[string]string{
 	"k8sclusterreceiver":   "kubernetes.node",
 }
 
-type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource, dataset string) error
+type remapFunc func(pmetric.MetricSlice, pmetric.MetricSlice, pcommon.Resource, func(pmetric.NumberDataPoint)) error
 
 // Remapper maps the OTel Kubernetes to Elastic Kubernetes metrics. These remapped
 // metrics power the curated Kibana dashboards. Each datapoint translated using
@@ -72,13 +73,15 @@ func (r *Remapper) Remap(
 	scope := src.Scope()
 	scraper := path.Base(scope.Name())
 
-	var dataset string // an empty dataset defers setting dataset to the caller
-	if r.cfg.KubernetesIntegrationDataset {
-		var ok bool
-		dataset, ok = scraperToElasticDataset[scraper]
-		if !ok {
-			r.logger.Warn("no dataset defined for scraper", zap.String("scraper", scraper))
-			return
+	dataset, ok := scraperToElasticDataset[scraper]
+	if !ok {
+		r.logger.Warn("no dataset defined for scraper", zap.String("scraper", scraper))
+		return
+	}
+	datasetMutator := func(m pmetric.NumberDataPoint) {
+		m.Attributes().PutStr(common.EventDatasetLabel, dataset)
+		if r.cfg.KubernetesIntegrationDataset {
+			m.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
 	}
 
@@ -87,7 +90,7 @@ func (r *Remapper) Remap(
 		return
 	}
 
-	err := remapFunc(src.Metrics(), out, resource, dataset)
+	err := remapFunc(src.Metrics(), out, resource, datasetMutator)
 	if err != nil {
 		r.logger.Warn(
 			"failed to remap OTel kubernetes",
@@ -100,5 +103,6 @@ func (r *Remapper) Remap(
 // Valid validates a ScopeMetric against the kubernetes metrics remapper requirements.
 // Kubernetes remapper only remaps metrics from kubeletstatsreceiver or k8sclusterreceiver.
 func (r *Remapper) Valid(sm pmetric.ScopeMetrics) bool {
-	return strings.HasPrefix(sm.Scope().Name(), "otelcol/kubeletstatsreceiver") || strings.HasPrefix(sm.Scope().Name(), "otelcol/k8sclusterreceiver")
+	return strings.HasPrefix(sm.Scope().Name(), "otelcol/kubeletstatsreceiver") ||
+		strings.HasPrefix(sm.Scope().Name(), "otelcol/k8sclusterreceiver")
 }

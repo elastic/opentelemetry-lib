@@ -21,6 +21,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
@@ -40,7 +41,7 @@ var scraperToElasticDataset = map[string]string{
 	"process":    "system.process",
 }
 
-type remapFunc func(metrics pmetric.MetricSlice, out pmetric.MetricSlice, resource pcommon.Resource, dataset string) error
+type remapFunc func(pmetric.MetricSlice, pmetric.MetricSlice, pcommon.Resource, func(pmetric.NumberDataPoint)) error
 
 var remapFuncs = map[string]remapFunc{
 	"cpu":        remapCPUMetrics,
@@ -87,13 +88,15 @@ func (r *Remapper) Remap(
 	scope := src.Scope()
 	scraper := path.Base(scope.Name())
 
-	var dataset string // an empty dataset defers setting dataset to the caller
-	if r.cfg.SystemIntegrationDataset {
-		var ok bool
-		dataset, ok = scraperToElasticDataset[scraper]
-		if !ok {
-			r.logger.Warn("no dataset defined for scraper", zap.String("scraper", scraper))
-			return
+	dataset, ok := scraperToElasticDataset[scraper]
+	if !ok {
+		r.logger.Warn("no dataset defined for scraper", zap.String("scraper", scraper))
+		return
+	}
+	datasetMutator := func(m pmetric.NumberDataPoint) {
+		m.Attributes().PutStr(common.EventDatasetLabel, dataset)
+		if r.cfg.SystemIntegrationDataset {
+			m.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
 	}
 
@@ -101,8 +104,7 @@ func (r *Remapper) Remap(
 	if !ok {
 		return
 	}
-
-	err := remapFunc(src.Metrics(), out, resource, dataset)
+	err := remapFunc(src.Metrics(), out, resource, datasetMutator)
 	if err != nil {
 		r.logger.Warn(
 			"failed to remap OTel hostmetrics",

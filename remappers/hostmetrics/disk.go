@@ -36,16 +36,20 @@ var metricsToAdd = map[string]string{
 }
 
 // remapDiskMetrics remaps disk-related metrics from the source to the output metric slice.
-func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset string) error {
+func remapDiskMetrics(
+	src, out pmetric.MetricSlice,
+	_ pcommon.Resource,
+	mutator func(pmetric.NumberDataPoint),
+) error {
 	var errs []error
 	for i := 0; i < src.Len(); i++ {
 		var err error
 		metric := src.At(i)
 		switch metric.Name() {
 		case "system.disk.io", "system.disk.operations", "system.disk.pending_operations":
-			err = addDiskMetric(metric, out, dataset, 1)
+			err = addDiskMetric(metric, out, mutator, 1)
 		case "system.disk.operation_time", "system.disk.io_time":
-			err = addDiskMetric(metric, out, dataset, 1000)
+			err = addDiskMetric(metric, out, mutator, 1000)
 		}
 		if err != nil {
 			errs = append(errs, err)
@@ -54,7 +58,12 @@ func remapDiskMetrics(src, out pmetric.MetricSlice, _ pcommon.Resource, dataset 
 	return errors.Join(errs...)
 }
 
-func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset string, multiplier int64) error {
+func addDiskMetric(
+	metric pmetric.Metric,
+	out pmetric.MetricSlice,
+	mutator func(pmetric.NumberDataPoint),
+	multiplier int64,
+) error {
 	metricDiskES, ok := metricsToAdd[metric.Name()]
 	if !ok {
 		return fmt.Errorf("unexpected metric name: %s", metric.Name())
@@ -78,9 +87,12 @@ func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset strin
 				v := dp.DoubleValue() * float64(multiplier)
 				newM.DoubleValue = &v
 			}
-			remappedmetric.Add(out, dataset, func(dp pmetric.NumberDataPoint) {
-				dp.Attributes().PutStr("system.diskio.name", device.Str())
-			}, newM)
+			remappedmetric.Add(out, remappedmetric.ChainedMutator(
+				mutator,
+				func(dp pmetric.NumberDataPoint) {
+					dp.Attributes().PutStr("system.diskio.name", device.Str())
+				},
+			), newM)
 		}
 	}
 	return nil

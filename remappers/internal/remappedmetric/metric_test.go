@@ -21,6 +21,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"github.com/elastic/opentelemetry-lib/remappers/internal/testutils"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -32,8 +33,8 @@ func TestAdd(t *testing.T) {
 	dataset := "test"
 	now := pcommon.NewTimestampFromTime(time.Now())
 	attrs := map[string]any{
-		"data_stream.dataset": dataset,
-		"otel_remapped":       true,
+		common.OTelRemappedLabel:      true,
+		common.DatastreamDatasetLabel: dataset,
 	}
 
 	for _, tc := range []struct {
@@ -129,12 +130,20 @@ func TestAdd(t *testing.T) {
 			}(),
 		},
 	} {
-		actual := pmetric.NewMetricSlice()
-		Add(actual, dataset, tc.mutator, tc.input...)
+		t.Run(tc.name, func(t *testing.T) {
+			actual := pmetric.NewMetricSlice()
+			mutator := ChainedMutator(
+				func(m pmetric.NumberDataPoint) {
+					m.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
+				},
+				tc.mutator,
+			)
+			Add(actual, mutator, tc.input...)
 
-		assert.Empty(t, cmp.Diff(
-			testutils.MetricSliceToTestMetric(t, tc.expected),
-			testutils.MetricSliceToTestMetric(t, actual),
-		))
+			assert.Empty(t, cmp.Diff(
+				testutils.MetricSliceToTestMetric(t, tc.expected),
+				testutils.MetricSliceToTestMetric(t, actual),
+			))
+		})
 	}
 }
