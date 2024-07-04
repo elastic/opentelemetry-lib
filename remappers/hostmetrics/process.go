@@ -18,6 +18,8 @@
 package hostmetrics
 
 import (
+	"time"
+
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
@@ -29,9 +31,9 @@ func remapProcessMetrics(
 	resource pcommon.Resource,
 	dataset string,
 ) error {
-	var timestamp pcommon.Timestamp
-	var startTime, processRuntime, threads, memUsage, memVirtual, fdOpen, ioReadBytes, ioWriteBytes, ioReadOperations, ioWriteOperations int64
-	var memUtil, memUtilPct, total, cpuTimeValue, systemCpuTime, userCpuTime, cpuPct float64
+	var timestamp, startTimestamp pcommon.Timestamp
+	var threads, memUsage, memVirtual, fdOpen, ioReadBytes, ioWriteBytes, ioReadOperations, ioWriteOperations int64
+	var memUtil, total, systemCpuTime, userCpuTime float64
 
 	for i := 0; i < src.Len(); i++ {
 		metric := src.At(i)
@@ -41,8 +43,8 @@ func remapProcessMetrics(
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
-			if startTime == 0 {
-				startTime = dp.StartTimestamp().AsTime().UnixMilli()
+			if startTimestamp == 0 {
+				startTimestamp = dp.StartTimestamp()
 			}
 			threads = dp.IntValue()
 		case "process.memory.utilization":
@@ -50,8 +52,8 @@ func remapProcessMetrics(
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
-			if startTime == 0 {
-				startTime = dp.StartTimestamp().AsTime().UnixMilli()
+			if startTimestamp == 0 {
+				startTimestamp = dp.StartTimestamp()
 			}
 			memUtil = dp.DoubleValue()
 		case "process.memory.usage":
@@ -59,8 +61,8 @@ func remapProcessMetrics(
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
-			if startTime == 0 {
-				startTime = dp.StartTimestamp().AsTime().UnixMilli()
+			if startTimestamp == 0 {
+				startTimestamp = dp.StartTimestamp()
 			}
 			memUsage = dp.IntValue()
 		case "process.memory.virtual":
@@ -68,8 +70,8 @@ func remapProcessMetrics(
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
-			if startTime == 0 {
-				startTime = dp.StartTimestamp().AsTime().UnixMilli()
+			if startTimestamp == 0 {
+				startTimestamp = dp.StartTimestamp()
 			}
 			memVirtual = dp.IntValue()
 		case "process.open_file_descriptors":
@@ -77,8 +79,8 @@ func remapProcessMetrics(
 			if timestamp == 0 {
 				timestamp = dp.Timestamp()
 			}
-			if startTime == 0 {
-				startTime = dp.StartTimestamp().AsTime().UnixMilli()
+			if startTimestamp == 0 {
+				startTimestamp = dp.StartTimestamp()
 			}
 			fdOpen = dp.IntValue()
 		case "process.cpu.time":
@@ -88,8 +90,8 @@ func remapProcessMetrics(
 				if timestamp == 0 {
 					timestamp = dp.Timestamp()
 				}
-				if startTime == 0 {
-					startTime = dp.StartTimestamp().AsTime().UnixMilli()
+				if startTimestamp == 0 {
+					startTimestamp = dp.StartTimestamp()
 				}
 				value := dp.DoubleValue()
 				if state, ok := dp.Attributes().Get("state"); ok {
@@ -113,8 +115,8 @@ func remapProcessMetrics(
 				if timestamp == 0 {
 					timestamp = dp.Timestamp()
 				}
-				if startTime == 0 {
-					startTime = dp.StartTimestamp().AsTime().UnixMilli()
+				if startTimestamp == 0 {
+					startTimestamp = dp.StartTimestamp()
 				}
 				value := dp.IntValue()
 				if direction, ok := dp.Attributes().Get("direction"); ok {
@@ -133,8 +135,8 @@ func remapProcessMetrics(
 				if timestamp == 0 {
 					timestamp = dp.Timestamp()
 				}
-				if startTime == 0 {
-					startTime = dp.StartTimestamp().AsTime().UnixMilli()
+				if startTimestamp == 0 {
+					startTimestamp = dp.StartTimestamp()
 				}
 				value := dp.IntValue()
 				if direction, ok := dp.Attributes().Get("direction"); ok {
@@ -149,27 +151,24 @@ func remapProcessMetrics(
 		}
 	}
 
-	memUtilPct = memUtil / 100
-	cpuTimeValue = total * 1000
 	systemCpuTime = systemCpuTime * 1000
 	userCpuTime = userCpuTime * 1000
-	processRuntime = timestamp.AsTime().UnixMilli() - startTime
-	cpuPct = cpuTimeValue / float64(processRuntime)
 
-	remappers.AddMetrics(out, dataset, addProcessResources(resource),
+	startTime := startTimestamp.AsTime()
+	startTimeMillis := startTime.UnixMilli()
+	memUtilPct := memUtil / 100
+	cpuTimeValue := total * 1000
+	processRuntime := timestamp.AsTime().UnixMilli() - startTimeMillis
+	cpuPct := cpuTimeValue / float64(processRuntime)
+
+	remappers.AddMetrics(out, dataset, addProcessResources(resource, startTime.UTC()),
 		// The timestamp metrics get converted from Int to Timestamp in Kibana
 		// since these are mapped to timestamp datatype
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "process.cpu.start_time",
 			Timestamp: timestamp,
-			IntValue:  &startTime,
-		},
-		remappers.Metric{
-			DataType:  pmetric.MetricTypeSum,
-			Name:      "system.process.cpu.start_time",
-			Timestamp: timestamp,
-			IntValue:  &startTime,
+			IntValue:  &startTimeMillis,
 		},
 		remappers.Metric{
 			DataType:  pmetric.MetricTypeSum,
@@ -267,7 +266,8 @@ func remapProcessMetrics(
 	return nil
 }
 
-func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint) {
+func addProcessResources(resource pcommon.Resource, startTime time.Time) func(pmetric.NumberDataPoint) {
+	startTimeStr := startTime.Format(time.RFC3339)
 	return func(dp pmetric.NumberDataPoint) {
 		ppid, _ := resource.Attributes().Get("process.parent_pid")
 		if ppid.Int() != 0 {
@@ -289,8 +289,10 @@ func addProcessResources(resource pcommon.Resource) func(pmetric.NumberDataPoint
 		if cmdline.Str() != "" {
 			dp.Attributes().PutStr("system.process.cmdline", cmdline.Str())
 		}
-		//Adding dummy value to process.state as "undefined", since this field is not
-		//available through Hostmetrics receiver currently and Process tab in Curated UI's need this field as a prerequisite.
+		dp.Attributes().PutStr("system.process.cpu.start_time", startTimeStr)
+		// Adding dummy value to process.state as "undefined", since this field is not
+		// available through hostmetrics receiver currently and Process tab in curated
+		// UI's need this field as a prerequisite.
 		dp.Attributes().PutStr("system.process.state", "undefined")
 	}
 }
