@@ -18,7 +18,7 @@
 package hostmetrics
 
 import (
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -117,13 +117,13 @@ func addFileSystemMetrics[T number](out pmetric.MetricSlice,
 		doubleValue = &d
 	}
 
-	remappers.AddMetrics(out, dataset,
+	remappedmetric.AddMetrics(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.filesystem.device_name", device)
 			dp.Attributes().PutStr("system.filesystem.mount_point", mpoint)
 			dp.Attributes().PutStr("system.filesystem.type", fstype)
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeSum,
 			Name:        name,
 			Timestamp:   timestamp,

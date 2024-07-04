@@ -18,10 +18,9 @@
 package hostmetrics
 
 import (
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapProcessesMetrics(
@@ -68,7 +67,7 @@ func remapProcessesMetrics(
 
 	}
 
-	remappers.AddMetrics(out, dataset,
+	remappedmetric.AddMetrics(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			// Processes tab in the Kibana curated UI requires the event.dataset
 			// to work. This is a hard dependency.
@@ -77,37 +76,37 @@ func remapProcessesMetrics(
 			// remap functions.
 			dp.Attributes().PutStr("event.dataset", "system.process.summary")
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.idle",
 			Timestamp: timestamp,
 			IntValue:  &idleProcesses,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.sleeping",
 			Timestamp: timestamp,
 			IntValue:  &sleepingProcesses,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.stopped",
 			Timestamp: timestamp,
 			IntValue:  &stoppedProcesses,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.zombie",
 			Timestamp: timestamp,
 			IntValue:  &zombieProcesses,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.running",
 			Timestamp: timestamp,
 			IntValue:  &runningProcesses,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.total",
 			Timestamp: timestamp,
