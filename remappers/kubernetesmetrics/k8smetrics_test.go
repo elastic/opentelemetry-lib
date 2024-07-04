@@ -84,9 +84,14 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			expected: []testutils.TestMetric{
 				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.12), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
 			},
 		},
 	} {

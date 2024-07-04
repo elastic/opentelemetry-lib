@@ -18,8 +18,6 @@
 package remappedmetric
 
 import (
-	"math"
-
 	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -38,6 +36,28 @@ type Metric struct {
 	DataType       pmetric.MetricType
 }
 
+// Valid returns true if the metric is valid and set properly. A
+// metric is properly set if the value as well as the timestamp are
+// set properly.
+func (m *Metric) Valid() bool {
+	if m == nil {
+		return false
+	}
+	if m.Name == "" {
+		return false
+	}
+	if m.DataType == pmetric.MetricTypeEmpty {
+		return false
+	}
+	if m.IntValue == nil && m.DoubleValue == nil {
+		return false
+	}
+	if m.Timestamp == 0 {
+		return false
+	}
+	return true
+}
+
 // Add adds a list of remapped OTel metric to the give MetricSlice.
 func Add(
 	ms pmetric.MetricSlice,
@@ -49,8 +69,7 @@ func Add(
 
 	for _, metric := range metrics {
 
-		//The translated metric should not be generated for a null or negative value
-		if (metric.IntValue != nil && *metric.IntValue <= 0) || (metric.DoubleValue != nil && (*metric.DoubleValue <= 0 || math.IsInf(*metric.DoubleValue, 0))) {
+		if !metric.Valid() {
 			continue
 		}
 
