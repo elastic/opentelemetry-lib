@@ -18,6 +18,8 @@
 package internal
 
 import (
+	"math"
+
 	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -46,6 +48,12 @@ func AddMetrics(
 	ms.EnsureCapacity(ms.Len() + len(metrics))
 
 	for _, metric := range metrics {
+
+		//The translated metric should not be generated for a null or negative value
+		if (metric.IntValue != nil && *metric.IntValue <= 0) || (metric.DoubleValue != nil && (*metric.DoubleValue <= 0 || math.IsInf(*metric.DoubleValue, 0))) {
+			continue
+		}
+
 		m := ms.AppendEmpty()
 		m.SetName(metric.Name)
 
