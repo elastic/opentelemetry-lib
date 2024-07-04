@@ -18,7 +18,7 @@
 package kubernetesmetrics
 
 import (
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -50,14 +50,14 @@ func addClusterMetrics(
 		}
 	}
 
-	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
-		remappers.Metric{
+	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.cpu.allocatable.cores",
 			Timestamp: timestamp,
 			IntValue:  &node_allocatable_cpu,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.memory.allocatable.bytes",
 			Timestamp: timestamp,

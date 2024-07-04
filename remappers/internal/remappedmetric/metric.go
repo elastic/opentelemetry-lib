@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package internal
+package remappedmetric
 
 import (
 	"math"
@@ -38,8 +38,8 @@ type Metric struct {
 	DataType       pmetric.MetricType
 }
 
-// AddMetrics adds a list of remapped OTel metric to the give MetricSlice.
-func AddMetrics(
+// Add adds a list of remapped OTel metric to the give MetricSlice.
+func Add(
 	ms pmetric.MetricSlice,
 	dataset string,
 	mutator func(dp pmetric.NumberDataPoint),

@@ -20,10 +20,9 @@ package hostmetrics
 import (
 	"fmt"
 
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapNetworkMetrics(
@@ -80,11 +79,11 @@ func addDeviceMetric(
 		return
 	}
 
-	remappers.AddMetrics(out, dataset,
+	remappedmetric.Add(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.network.name", device)
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      fmt.Sprintf(metricNetworkES, direction),
 			Timestamp: timestamp,

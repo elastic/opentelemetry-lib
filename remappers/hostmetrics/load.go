@@ -18,10 +18,9 @@
 package hostmetrics
 
 import (
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 // system.load.cores is calculated using the cpu remapper and if dataset
@@ -58,20 +57,20 @@ func remapLoadMetrics(
 		}
 	}
 
-	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
-		remappers.Metric{
+	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.load.1",
 			Timestamp:   timestamp,
 			DoubleValue: &l1,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.load.5",
 			Timestamp:   timestamp,
 			DoubleValue: &l5,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.load.15",
 			Timestamp:   timestamp,

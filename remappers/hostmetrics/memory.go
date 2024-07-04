@@ -18,10 +18,9 @@
 package hostmetrics
 
 import (
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
-
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 )
 
 func remapMemoryMetrics(
@@ -97,50 +96,50 @@ func remapMemoryMetrics(
 	usedBytes += total
 	actualFree = total - actualUsedBytes
 
-	remappers.AddMetrics(out, dataset, remappers.EmptyMutator,
-		remappers.Metric{
+	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.total",
 			Timestamp: timestamp,
 			IntValue:  &total,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.free",
 			Timestamp: timestamp,
 			IntValue:  &free,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.cached",
 			Timestamp: timestamp,
 			IntValue:  &cached,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.used.bytes",
 			Timestamp: timestamp,
 			IntValue:  &usedBytes,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.actual.used.bytes",
 			Timestamp: timestamp,
 			IntValue:  &actualUsedBytes,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.actual.free",
 			Timestamp: timestamp,
 			IntValue:  &actualFree,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.memory.used.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &usedPercent,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.memory.actual.used.pct",
 			Timestamp:   timestamp,

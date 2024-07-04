@@ -20,7 +20,7 @@ package kubernetesmetrics
 import (
 	"math"
 
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
@@ -104,64 +104,64 @@ func addKubeletMetrics(
 
 	}
 
-	remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+	remappedmetric.Add(out, dataset, func(dp pmetric.NumberDataPoint) {
 		dp.Attributes().PutStr("service.type", "kubernetes")
 	},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.cpu.usage.limit.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &cpu_limit_utilization,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.cpu.usage.node.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &pod_cpu_usage_node,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.memory.usage.node.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &pod_memory_usage_node,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.memory.usage.limit.pct",
 			Timestamp:   timestamp,
 			DoubleValue: &memory_limit_utilization,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "kubernetes.pod.network.tx.bytes",
 			Timestamp: timestamp,
 			IntValue:  &total_transmited,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "kubernetes.pod.network.rx.bytes",
 			Timestamp: timestamp,
 			IntValue:  &total_received,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.node.cpu.usage.nanocores",
 			Timestamp:   timestamp,
 			DoubleValue: &node_cpu_usage,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.memory.usage.bytes",
 			Timestamp: timestamp,
 			IntValue:  &node_memory_usage,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.fs.capacity.bytes",
 			Timestamp: timestamp,
 			IntValue:  &filesystem_capacity,
 		},
-		remappers.Metric{
+		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.fs.used.bytes",
 			Timestamp: timestamp,

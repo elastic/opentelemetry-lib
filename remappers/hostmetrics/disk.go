@@ -21,9 +21,10 @@ import (
 	"errors"
 	"fmt"
 
-	remappers "github.com/elastic/opentelemetry-lib/remappers/internal"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+
+	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 )
 
 var metricsToAdd = map[string]string{
@@ -64,7 +65,7 @@ func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset strin
 		dp := dps.At(i)
 		if device, ok := dp.Attributes().Get("device"); ok {
 			direction, _ := dp.Attributes().Get("direction")
-			remappedMetric := remappers.Metric{
+			newM := remappedmetric.Metric{
 				DataType:  pmetric.MetricTypeSum,
 				Name:      fmt.Sprintf(metricDiskES, direction.Str()),
 				Timestamp: dp.Timestamp(),
@@ -72,14 +73,14 @@ func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset strin
 			switch dp.ValueType() {
 			case pmetric.NumberDataPointValueTypeInt:
 				v := dp.IntValue() * multiplier
-				remappedMetric.IntValue = &v
+				newM.IntValue = &v
 			case pmetric.NumberDataPointValueTypeDouble:
 				v := dp.DoubleValue() * float64(multiplier)
-				remappedMetric.DoubleValue = &v
+				newM.DoubleValue = &v
 			}
-			remappers.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+			remappedmetric.Add(out, dataset, func(dp pmetric.NumberDataPoint) {
 				dp.Attributes().PutStr("system.diskio.name", device.Str())
-			}, remappedMetric)
+			}, newM)
 		}
 	}
 	return nil
