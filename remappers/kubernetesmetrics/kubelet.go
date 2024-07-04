@@ -104,7 +104,7 @@ func addKubeletMetrics(
 
 	}
 
-	remappedmetric.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+	remappedmetric.Add(out, dataset, func(dp pmetric.NumberDataPoint) {
 		dp.Attributes().PutStr("service.type", "kubernetes")
 	},
 		remappedmetric.Metric{

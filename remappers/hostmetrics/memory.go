@@ -96,7 +96,7 @@ func remapMemoryMetrics(
 	usedBytes += total
 	actualFree = total - actualUsedBytes
 
-	remappedmetric.AddMetrics(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.total",

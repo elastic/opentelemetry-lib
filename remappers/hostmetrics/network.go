@@ -79,7 +79,7 @@ func addDeviceMetric(
 		return
 	}
 
-	remappedmetric.AddMetrics(out, dataset,
+	remappedmetric.Add(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.network.name", device)
 		},

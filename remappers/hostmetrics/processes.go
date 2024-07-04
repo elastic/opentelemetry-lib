@@ -67,7 +67,7 @@ func remapProcessesMetrics(
 
 	}
 
-	remappedmetric.AddMetrics(out, dataset,
+	remappedmetric.Add(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			// Processes tab in the Kibana curated UI requires the event.dataset
 			// to work. This is a hard dependency.

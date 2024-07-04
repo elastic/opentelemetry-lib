@@ -57,7 +57,7 @@ func remapLoadMetrics(
 		}
 	}
 
-	remappedmetric.AddMetrics(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
 		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.load.1",

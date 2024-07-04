@@ -160,7 +160,7 @@ func remapProcessMetrics(
 	processRuntime := timestamp.AsTime().UnixMilli() - startTimeMillis
 	cpuPct := cpuTimeValue / float64(processRuntime)
 
-	remappedmetric.AddMetrics(out, dataset, addProcessResources(resource, startTime.UTC()),
+	remappedmetric.Add(out, dataset, addProcessResources(resource, startTime.UTC()),
 		// The timestamp metrics get converted from Int to Timestamp in Kibana
 		// since these are mapped to timestamp datatype
 		remappedmetric.Metric{

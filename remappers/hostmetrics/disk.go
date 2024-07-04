@@ -78,7 +78,7 @@ func addDiskMetric(metric pmetric.Metric, out pmetric.MetricSlice, dataset strin
 				v := dp.DoubleValue() * float64(multiplier)
 				newM.DoubleValue = &v
 			}
-			remappedmetric.AddMetrics(out, dataset, func(dp pmetric.NumberDataPoint) {
+			remappedmetric.Add(out, dataset, func(dp pmetric.NumberDataPoint) {
 				dp.Attributes().PutStr("system.diskio.name", device.Str())
 			}, newM)
 		}

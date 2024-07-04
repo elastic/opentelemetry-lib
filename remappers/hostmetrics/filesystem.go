@@ -117,7 +117,7 @@ func addFileSystemMetrics[T number](out pmetric.MetricSlice,
 		doubleValue = &d
 	}
 
-	remappedmetric.AddMetrics(out, dataset,
+	remappedmetric.Add(out, dataset,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.filesystem.device_name", device)
 			dp.Attributes().PutStr("system.filesystem.mount_point", mpoint)

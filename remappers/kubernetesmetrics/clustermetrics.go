@@ -50,7 +50,7 @@ func addClusterMetrics(
 		}
 	}
 
-	remappedmetric.AddMetrics(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.cpu.allocatable.cores",
