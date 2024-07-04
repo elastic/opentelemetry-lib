@@ -70,6 +70,24 @@ func TestAdd(t *testing.T) {
 					// timestamp and value not set
 					DataType: pmetric.MetricTypeSum,
 				},
+				{
+					Name:      "invalid_histo",
+					DataType:  pmetric.MetricTypeHistogram,
+					Timestamp: now,
+					IntValue:  testutils.Ptr(int64(10)),
+				},
+				{
+					Name:      "invalid_exp_histo",
+					DataType:  pmetric.MetricTypeExponentialHistogram,
+					Timestamp: now,
+					IntValue:  testutils.Ptr(int64(10)),
+				},
+				{
+					Name:      "invalid_summary",
+					DataType:  pmetric.MetricTypeSummary,
+					Timestamp: now,
+					IntValue:  testutils.Ptr(int64(10)),
+				},
 			},
 			mutator:  EmptyMutator,
 			expected: pmetric.NewMetricSlice(),

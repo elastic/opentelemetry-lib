@@ -37,16 +37,14 @@ type Metric struct {
 }
 
 // Valid returns true if the metric is valid and set properly. A
-// metric is properly set if the value as well as the timestamp are
-// set properly.
+// metric is properly set if the value and the timestamp are set.
+// In addition, only gauge and sum metric are considered valid
+// as these are the only two currently supported metric type.
 func (m *Metric) Valid() bool {
 	if m == nil {
 		return false
 	}
 	if m.Name == "" {
-		return false
-	}
-	if m.DataType == pmetric.MetricTypeEmpty {
 		return false
 	}
 	if m.IntValue == nil && m.DoubleValue == nil {
@@ -55,7 +53,11 @@ func (m *Metric) Valid() bool {
 	if m.Timestamp == 0 {
 		return false
 	}
-	return true
+	switch m.DataType {
+	case pmetric.MetricTypeGauge, pmetric.MetricTypeSum:
+		return true
+	}
+	return false
 }
 
 // Add adds a list of remapped OTel metric to the give MetricSlice.
