@@ -18,6 +18,8 @@
 package internal
 
 import (
+	"math"
+
 	"github.com/elastic/opentelemetry-lib/remappers/common"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
