@@ -40,9 +40,10 @@ type number interface {
 	~int64 | ~float64
 }
 
-func remapFilesystemMetrics(src, out pmetric.MetricSlice,
+func remapFilesystemMetrics(
+	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	deviceMetricsMap := make(map[deviceKey]*deviceMetrics)
@@ -69,18 +70,18 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 						if metric.Name() == "system.filesystem.usage" {
 							dmetrics.totalUsage += value
 							dmetrics.usedBytes += value
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.used.bytes", key.device, key.mpoint, key.fstype, value)
+							addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.used.bytes", key.device, key.mpoint, key.fstype, value)
 						} else {
 							dmetrics.totalInodeUsage += value
 						}
 					case "free":
 						if metric.Name() == "system.filesystem.usage" {
 							dmetrics.totalUsage += value
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free", key.device, key.mpoint, key.fstype, value)
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.available", key.device, key.mpoint, key.fstype, value)
+							addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.free", key.device, key.mpoint, key.fstype, value)
+							addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.available", key.device, key.mpoint, key.fstype, value)
 						} else {
 							dmetrics.totalInodeUsage += value
-							addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.free_files", key.device, key.mpoint, key.fstype, value)
+							addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.free_files", key.device, key.mpoint, key.fstype, value)
 						}
 					}
 				}
@@ -92,12 +93,12 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 	for key, dmetrics := range deviceMetricsMap {
 		device, mpoint, fstype := key.device, key.mpoint, key.fstype
 		if dmetrics.totalUsage > 0 {
-			addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.total", device, mpoint, fstype, dmetrics.totalUsage)
+			addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.total", device, mpoint, fstype, dmetrics.totalUsage)
 			usedPercentage := float64(dmetrics.usedBytes) / float64(dmetrics.totalUsage)
-			addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.used.pct", device, mpoint, fstype, usedPercentage)
+			addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.used.pct", device, mpoint, fstype, usedPercentage)
 		}
 		if dmetrics.totalInodeUsage > 0 {
-			addFileSystemMetrics(out, timestamp, dataset, "system.filesystem.files", device, mpoint, fstype, dmetrics.totalInodeUsage)
+			addFileSystemMetrics(out, timestamp, mutator, "system.filesystem.files", device, mpoint, fstype, dmetrics.totalInodeUsage)
 		}
 
 	}
@@ -106,7 +107,8 @@ func remapFilesystemMetrics(src, out pmetric.MetricSlice,
 
 func addFileSystemMetrics[T number](out pmetric.MetricSlice,
 	timestamp pcommon.Timestamp,
-	dataset, name, device, mpoint, fstype string,
+	mutator func(pmetric.NumberDataPoint),
+	name, device, mpoint, fstype string,
 	value T,
 ) {
 	var intValue *int64
@@ -117,12 +119,13 @@ func addFileSystemMetrics[T number](out pmetric.MetricSlice,
 		doubleValue = &d
 	}
 
-	remappedmetric.Add(out, dataset,
+	remappedmetric.Add(out, remappedmetric.ChainedMutator(
+		mutator,
 		func(dp pmetric.NumberDataPoint) {
 			dp.Attributes().PutStr("system.filesystem.device_name", device)
 			dp.Attributes().PutStr("system.filesystem.mount_point", mpoint)
 			dp.Attributes().PutStr("system.filesystem.type", fstype)
-		},
+		}),
 		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeSum,
 			Name:        name,

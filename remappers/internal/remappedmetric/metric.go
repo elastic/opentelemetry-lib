@@ -23,8 +23,11 @@ import (
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
-// EmptyMutator is a no-op mutator.
-var EmptyMutator = func(pmetric.NumberDataPoint) {}
+const (
+	// minAttributeCapacity is the capacity allocated to the datapoint
+	// attributes to prevent reallocation.
+	minAttributeCapacity = 10
+)
 
 // Metric is a simplified representation of a remapped OTel metric.
 type Metric struct {
@@ -63,7 +66,6 @@ func (m *Metric) Valid() bool {
 // Add adds a list of remapped OTel metric to the give MetricSlice.
 func Add(
 	ms pmetric.MetricSlice,
-	dataset string,
 	mutator func(dp pmetric.NumberDataPoint),
 	metrics ...Metric,
 ) {
@@ -97,11 +99,8 @@ func Add(
 			dp.SetStartTimestamp(metric.StartTimestamp)
 		}
 
-		dp.Attributes().PutBool("otel_remapped", true)
-		if dataset != "" {
-			dp.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
-		}
-
+		dp.Attributes().EnsureCapacity(minAttributeCapacity)
+		dp.Attributes().PutBool(common.OTelRemappedLabel, true)
 		mutator(dp)
 	}
 }

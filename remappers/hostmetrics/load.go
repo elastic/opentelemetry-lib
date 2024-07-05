@@ -29,7 +29,7 @@ import (
 func remapLoadMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	var l1, l5, l15 float64
@@ -57,7 +57,7 @@ func remapLoadMetrics(
 		}
 	}
 
-	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, mutator,
 		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.load.1",

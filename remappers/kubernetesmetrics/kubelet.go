@@ -28,7 +28,7 @@ import (
 func addKubeletMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	var total_transmited, total_received, node_memory_usage, filesystem_capacity, filesystem_usage int64
@@ -104,9 +104,13 @@ func addKubeletMetrics(
 
 	}
 
-	remappedmetric.Add(out, dataset, func(dp pmetric.NumberDataPoint) {
-		dp.Attributes().PutStr("service.type", "kubernetes")
-	},
+	finalMutator := remappedmetric.ChainedMutator(
+		mutator,
+		func(dp pmetric.NumberDataPoint) {
+			dp.Attributes().PutStr("service.type", "kubernetes")
+		},
+	)
+	remappedmetric.Add(out, finalMutator,
 		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "kubernetes.pod.cpu.usage.limit.pct",

@@ -26,7 +26,7 @@ import (
 func remapProcessesMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	var idleProcesses, sleepingProcesses, stoppedProcesses, zombieProcesses, runningProcesses, totalProcesses int64
@@ -67,7 +67,8 @@ func remapProcessesMetrics(
 
 	}
 
-	remappedmetric.Add(out, dataset,
+	finalMutator := remappedmetric.ChainedMutator(
+		mutator,
 		func(dp pmetric.NumberDataPoint) {
 			// Processes tab in the Kibana curated UI requires the event.dataset
 			// to work. This is a hard dependency.
@@ -76,6 +77,8 @@ func remapProcessesMetrics(
 			// remap functions.
 			dp.Attributes().PutStr("event.dataset", "system.process.summary")
 		},
+	)
+	remappedmetric.Add(out, finalMutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.process.summary.idle",

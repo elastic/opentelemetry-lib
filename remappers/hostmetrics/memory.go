@@ -26,7 +26,7 @@ import (
 func remapMemoryMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	var total, free, cached, usedBytes, actualFree, actualUsedBytes int64
@@ -96,7 +96,7 @@ func remapMemoryMetrics(
 	usedBytes += total
 	actualFree = total - actualUsedBytes
 
-	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, mutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.memory.total",

@@ -29,7 +29,7 @@ import (
 func remapCPUMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	var numCores int64
@@ -88,7 +88,7 @@ func remapCPUMetrics(
 	}
 
 	// Add all metrics that are independent of cpu logical count.
-	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, mutator,
 		remappedmetric.Metric{
 			DataType:    pmetric.MetricTypeGauge,
 			Name:        "system.cpu.total.pct",
@@ -159,7 +159,7 @@ func remapCPUMetrics(
 	irqNorm := irqPercent / float64(numCores)
 	softirqNorm := softirqPercent / float64(numCores)
 
-	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, mutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeSum,
 			Name:      "system.cpu.cores",

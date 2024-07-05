@@ -15,27 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package hostmetrics
+package remappedmetric
 
-type config struct {
-	SystemIntegrationDataset bool
-}
+import (
+	"go.opentelemetry.io/collector/pdata/pmetric"
+)
 
-// Option allows configuring the behavior of the hostmetrics remapper.
-type Option func(config) config
+// EmptyMutator is a no-op mutator.
+var EmptyMutator = func(pmetric.NumberDataPoint) {}
 
-func newConfig(opts ...Option) (cfg config) {
-	for _, opt := range opts {
-		cfg = opt(cfg)
-	}
-	return cfg
-}
-
-// WithSystemIntegrationDataset sets the datastream dataset of the remapped
-// metrics as as per the system integration. Example: system.cpu, system.memory, etc.
-func WithSystemIntegrationDataset(b bool) Option {
-	return func(c config) config {
-		c.SystemIntegrationDataset = b
-		return c
+// ChainedMutator combines multiple mutators into a single mutator.
+func ChainedMutator(fs ...func(pmetric.NumberDataPoint)) func(pmetric.NumberDataPoint) {
+	return func(m pmetric.NumberDataPoint) {
+		for _, f := range fs {
+			f(m)
+		}
 	}
 }

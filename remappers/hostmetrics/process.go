@@ -28,7 +28,7 @@ import (
 func remapProcessMetrics(
 	src, out pmetric.MetricSlice,
 	resource pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp, startTimestamp pcommon.Timestamp
 	var threads, memUsage, memVirtual, fdOpen, ioReadBytes, ioWriteBytes, ioReadOperations, ioWriteOperations int64
@@ -160,7 +160,11 @@ func remapProcessMetrics(
 	processRuntime := timestamp.AsTime().UnixMilli() - startTimeMillis
 	cpuPct := cpuTimeValue / float64(processRuntime)
 
-	remappedmetric.Add(out, dataset, addProcessResources(resource, startTime.UTC()),
+	finalMutator := remappedmetric.ChainedMutator(
+		mutator,
+		addProcessResources(resource, startTime.UTC()),
+	)
+	remappedmetric.Add(out, finalMutator,
 		// The timestamp metrics get converted from Int to Timestamp in Kibana
 		// since these are mapped to timestamp datatype
 		remappedmetric.Metric{

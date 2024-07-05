@@ -18,6 +18,12 @@
 package common
 
 const (
-	// DatastreamDatasetLabel defines a dataset label for attributes.
+	// DatastreamDatasetLabel defines the datastream dataset label key.
 	DatastreamDatasetLabel = "data_stream.dataset"
+
+	// EventDatasetLabel defines the event dataset label key.
+	EventDatasetLabel = "event.dataset"
+
+	// OTelRemappedLabel is used to identify remapped metrics.
+	OTelRemappedLabel = "otel_remapped"
 )

@@ -27,7 +27,7 @@ import (
 func addClusterMetrics(
 	src, out pmetric.MetricSlice,
 	_ pcommon.Resource,
-	dataset string,
+	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
 	var node_allocatable_memory, node_allocatable_cpu int64
@@ -50,7 +50,7 @@ func addClusterMetrics(
 		}
 	}
 
-	remappedmetric.Add(out, dataset, remappedmetric.EmptyMutator,
+	remappedmetric.Add(out, mutator,
 		remappedmetric.Metric{
 			DataType:  pmetric.MetricTypeGauge,
 			Name:      "kubernetes.node.cpu.allocatable.cores",
