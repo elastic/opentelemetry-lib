@@ -279,6 +279,8 @@ func addProcessResources(resource pcommon.Resource, startTime time.Time) func(pm
 		owner, _ := resource.Attributes().Get("process.owner")
 		if owner.Str() != "" {
 			dp.Attributes().PutStr("user.name", owner.Str())
+		} else {
+			dp.Attributes().PutStr("user.name", "undefined")
 		}
 		exec, _ := resource.Attributes().Get("process.executable.path")
 		if exec.Str() != "" {
@@ -291,6 +293,8 @@ func addProcessResources(resource pcommon.Resource, startTime time.Time) func(pm
 		cmdline, _ := resource.Attributes().Get("process.command_line")
 		if cmdline.Str() != "" {
 			dp.Attributes().PutStr("system.process.cmdline", cmdline.Str())
+		} else {
+			dp.Attributes().PutStr("system.process.cmdline", "undefined")
 		}
 		dp.Attributes().PutStr("system.process.cpu.start_time", startTimeStr)
 		// Adding dummy value to process.state as "undefined", since this field is not
