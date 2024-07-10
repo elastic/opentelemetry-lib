@@ -64,6 +64,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 		m := map[string]any{
 			common.OTelRemappedLabel: true,
 			common.EventDatasetLabel: dataset,
+			common.EventModuleLabel:  "system",
 		}
 		if systemIntegration {
 			m[common.DatastreamDatasetLabel] = dataset
