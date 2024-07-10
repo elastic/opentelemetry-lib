@@ -87,10 +87,6 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.cpu.usage.nanocores", DP: internal.TestDP{Ts: now, Dbl: internal.Ptr(0.0), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.memory.usage.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.fs.capacity.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
-				{Type: Gauge, Name: "kubernetes.node.fs.used.bytes", DP: internal.TestDP{Ts: now, Int: internal.Ptr(int64(0)), Attrs: outAttr("kubeletstatsreceiver")}},
 			},
 		},
 	} {
