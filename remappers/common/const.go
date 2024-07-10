@@ -24,6 +24,9 @@ const (
 	// EventDatasetLabel defines the event dataset label key.
 	EventDatasetLabel = "event.dataset"
 
+	// EventModuleLabel defines the event module label key.
+	EventModuleLabel = "event.module"
+
 	// OTelRemappedLabel is used to identify remapped metrics.
 	OTelRemappedLabel = "otel_remapped"
 )

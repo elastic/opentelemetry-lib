@@ -95,6 +95,7 @@ func (r *Remapper) Remap(
 	}
 	datasetMutator := func(m pmetric.NumberDataPoint) {
 		m.Attributes().PutStr(common.EventDatasetLabel, dataset)
+		m.Attributes().PutStr(common.EventModuleLabel, "system")
 		if r.cfg.SystemIntegrationDataset {
 			m.Attributes().PutStr(common.DatastreamDatasetLabel, dataset)
 		}
