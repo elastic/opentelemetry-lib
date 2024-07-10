@@ -18,8 +18,6 @@
 package kubernetesmetrics
 
 import (
-	"math"
-
 	"github.com/elastic/opentelemetry-lib/remappers/internal/remappedmetric"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
@@ -31,8 +29,8 @@ func addKubeletMetrics(
 	mutator func(pmetric.NumberDataPoint),
 ) error {
 	var timestamp pcommon.Timestamp
-	var total_transmited, total_received, node_memory_usage, filesystem_capacity, filesystem_usage int64
-	var cpu_limit_utilization, memory_limit_utilization, node_cpu_usage, pod_cpu_usage_node, pod_memory_usage_node float64
+	var total_transmited, total_received int64
+	var cpu_limit_utilization, memory_limit_utilization, pod_cpu_usage_node, pod_memory_usage_node float64
 
 	// iterate all metrics in the current scope and generate the additional Elastic kubernetes integration metrics
 	//pod
@@ -75,31 +73,6 @@ func addKubeletMetrics(
 					}
 				}
 			}
-			//node
-		} else if metric.Name() == "k8s.node.cpu.usage" {
-			dp := metric.Gauge().DataPoints().At(0)
-			if timestamp == 0 {
-				timestamp = dp.Timestamp()
-			}
-			node_cpu_usage = dp.DoubleValue() * math.Pow10(9)
-		} else if metric.Name() == "k8s.node.memory.usage" {
-			dp := metric.Gauge().DataPoints().At(0)
-			if timestamp == 0 {
-				timestamp = dp.Timestamp()
-			}
-			node_memory_usage = dp.IntValue()
-		} else if metric.Name() == "k8s.node.filesystem.capacity" {
-			dp := metric.Gauge().DataPoints().At(0)
-			if timestamp == 0 {
-				timestamp = dp.Timestamp()
-			}
-			filesystem_capacity = dp.IntValue()
-		} else if metric.Name() == "k8s.node.filesystem.usage" {
-			dp := metric.Gauge().DataPoints().At(0)
-			if timestamp == 0 {
-				timestamp = dp.Timestamp()
-			}
-			filesystem_usage = dp.IntValue()
 		}
 
 	}
@@ -146,30 +119,6 @@ func addKubeletMetrics(
 			Name:      "kubernetes.pod.network.rx.bytes",
 			Timestamp: timestamp,
 			IntValue:  &total_received,
-		},
-		remappedmetric.Metric{
-			DataType:    pmetric.MetricTypeGauge,
-			Name:        "kubernetes.node.cpu.usage.nanocores",
-			Timestamp:   timestamp,
-			DoubleValue: &node_cpu_usage,
-		},
-		remappedmetric.Metric{
-			DataType:  pmetric.MetricTypeGauge,
-			Name:      "kubernetes.node.memory.usage.bytes",
-			Timestamp: timestamp,
-			IntValue:  &node_memory_usage,
-		},
-		remappedmetric.Metric{
-			DataType:  pmetric.MetricTypeGauge,
-			Name:      "kubernetes.node.fs.capacity.bytes",
-			Timestamp: timestamp,
-			IntValue:  &filesystem_capacity,
-		},
-		remappedmetric.Metric{
-			DataType:  pmetric.MetricTypeGauge,
-			Name:      "kubernetes.node.fs.used.bytes",
-			Timestamp: timestamp,
-			IntValue:  &filesystem_usage,
 		},
 	)
 
