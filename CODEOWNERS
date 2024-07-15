@@ -1,3 +1,4 @@
 # These owners will be the default owners for everything in
 # the repo.
-*       @elastic/obs-infraobs-integrations
+remappers/       @elastic/obs-infraobs-integrations
+enrichments/     @elastic/obs-ds-intake-services
