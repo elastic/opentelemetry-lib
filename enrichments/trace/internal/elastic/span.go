@@ -100,7 +100,6 @@ func (s *Span) Enrich(span ptrace.Span) {
 			semconv.AttributeHTTPFlavor,
 			semconv.AttributeNetHostName:
 			s.isHTTP = true
-		// TODO (lahsivjar): Is url ONLY present for HTTP? This is what is done in apm-data.
 		case semconv.AttributeURLFull:
 			s.isHTTP = true
 			// ignoring error as if parse fails then we don't want the url anyway
@@ -172,7 +171,6 @@ func (s *Span) setTxnType(span ptrace.Span) {
 		span.Attributes().PutStr("transaction.type", "messaging")
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
-		// TODO (lahsivjar): DB type is not handled in apm-data
 	}
 	span.Attributes().PutStr(AttributeTransactionType, txnType)
 }
@@ -180,7 +178,7 @@ func (s *Span) setTxnType(span ptrace.Span) {
 func (s *Span) setTxnResult(span ptrace.Span) {
 	var result string
 
-	if s.isHTTP {
+	if s.isHTTP && s.httpStatusCode > 0 {
 		switch i := s.httpStatusCode / 100; i {
 		case 1, 2, 3, 4, 5:
 			result = standardStatusCodeResults[i-1]
@@ -226,19 +224,6 @@ func (s *Span) setServiceTarget(span ptrace.Span) {
 	}
 
 	switch {
-	case s.isHTTP:
-		targetType = "http"
-		if resource := getHostPort(s.urlFull, s.urlDomain, s.urlPort); resource != "" {
-			targetName = resource
-		}
-	case s.isRPC:
-		targetType = "external"
-		if s.rpcSystem != "" {
-			targetType = s.rpcSystem
-		}
-		if s.rpcService != "" {
-			targetName = s.rpcService
-		}
 	case s.isDB:
 		targetType = "db"
 		if s.dbType != "" {
@@ -254,6 +239,19 @@ func (s *Span) setServiceTarget(span ptrace.Span) {
 		}
 		if !s.messagingDestnTemp && s.messagingDestn != "" {
 			targetName = s.messagingDestn
+		}
+	case s.isRPC:
+		targetType = "external"
+		if s.rpcSystem != "" {
+			targetType = s.rpcSystem
+		}
+		if s.rpcService != "" {
+			targetName = s.rpcService
+		}
+	case s.isHTTP:
+		targetType = "http"
+		if resource := getHostPort(s.urlFull, s.urlDomain, s.urlPort); resource != "" {
+			targetName = resource
 		}
 	}
 

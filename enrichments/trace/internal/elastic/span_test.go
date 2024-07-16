@@ -375,6 +375,60 @@ func TestElasticSpanEnrich(t *testing.T) {
 				AttributeServiceTargetName: "testsvc",
 			},
 		},
+		{
+			name: "db_over_http",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				// peer-service should be ignored if more specific deductions
+				// can be made about the service target.
+				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(
+					semconv.AttributeURLFull,
+					"https://localhost:9200/index/_search?q=user.id:kimchy",
+				)
+				span.Attributes().PutStr(
+					semconv.AttributeDBSystem,
+					semconv.AttributeDBSystemElasticsearch,
+				)
+				return span
+			}(),
+			enrichedAttrs: map[string]any{
+				AttributeEventOutcome:      "success",
+				AttributeServiceTargetType: "elasticsearch",
+				AttributeServiceTargetName: "testsvc",
+			},
+		},
+		{
+			name: "db_over_rpc",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				// peer-service should be ignored if more specific deductions
+				// can be made about the service target.
+				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(
+					semconv.AttributeRPCSystem,
+					semconv.AttributeRPCSystemGRPC,
+				)
+				span.Attributes().PutStr(semconv.AttributeRPCService, "cassandra.API")
+				span.Attributes().PutStr(
+					semconv.AttributeRPCGRPCStatusCode,
+					semconv.AttributeRPCGRPCStatusCodeOk,
+				)
+				span.Attributes().PutStr(
+					semconv.AttributeDBSystem,
+					semconv.AttributeDBSystemCassandra,
+				)
+				return span
+			}(),
+			enrichedAttrs: map[string]any{
+				AttributeEventOutcome:      "success",
+				AttributeServiceTargetType: "cassandra",
+				// TODO (lahsivjar): Current apm-data would not fallback to using
+				// RPC/HTTP when a database span is detected but all fields are not
+				// populated. Should it?
+				AttributeServiceTargetName: "testsvc",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Merge existing input attrs with the attrs added
