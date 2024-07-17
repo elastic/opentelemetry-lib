@@ -258,7 +258,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "http_span_no_full_url",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
+				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutInt(
