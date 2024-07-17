@@ -61,7 +61,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			name: "http_status_1xx",
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
-				// attributes should be preferred over span status
+				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
 					semconv.AttributeHTTPResponseStatusCode,
@@ -79,12 +79,15 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			name: "http_status_5xx",
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
+				// span status code should take precedence over http status attributes
+				// for setting event.outcome
+				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
 					semconv.AttributeHTTPStatusCode, http.StatusInternalServerError)
 				return span
 			}(),
 			enrichedAttrs: map[string]any{
-				AttributeEventOutcome:      "failure",
+				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 5xx",
 				AttributeTransactionType:   "request",
 			},
@@ -93,7 +96,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			name: "grpc_status_ok",
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
-				// attributes should be preferred over span status
+				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
 					semconv.AttributeRPCGRPCStatusCode,
@@ -111,7 +114,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			name: "grpc_status_internal_error",
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
-				// attributes should be preferred over span status
+				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
 					semconv.AttributeRPCGRPCStatusCode,
@@ -173,8 +176,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			var span Span
-			span.Enrich(tc.input)
+			EnrichSpan(tc.input)
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})
@@ -216,8 +218,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "http_span_basic",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutInt(
 					semconv.AttributeHTTPResponseStatusCode,
@@ -235,7 +235,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "http_span_full_url",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
+				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutInt(
@@ -279,8 +279,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "rpc_span_grpc",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutInt(
 					semconv.AttributeRPCGRPCStatusCode,
@@ -298,8 +296,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "rpc_span_system",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutStr(semconv.AttributeRPCSystem, "xmlrpc")
 				return span
@@ -314,7 +310,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "rpc_span_service",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
+				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutStr(semconv.AttributeRPCService, "service.Test")
@@ -330,8 +326,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "messaging_basic",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutStr(semconv.AttributeMessagingSystem, "kafka")
 				return span
@@ -346,8 +340,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "messaging_destination",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutStr(semconv.AttributeMessagingDestinationName, "t1")
 				return span
@@ -362,8 +354,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "messaging_temp_destination",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutBool(semconv.AttributeMessagingDestinationTemporary, true)
 				span.Attributes().PutStr(semconv.AttributeMessagingDestinationName, "t1")
@@ -379,8 +369,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "db_over_http",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutStr(
 					semconv.AttributeURLFull,
@@ -402,8 +390,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "db_over_rpc",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
-				// peer-service should be ignored if more specific deductions
-				// can be made about the service target.
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				span.Attributes().PutStr(
 					semconv.AttributeRPCSystem,
@@ -423,9 +409,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "cassandra",
-				// TODO (lahsivjar): Current apm-data would not fallback to using
-				// RPC/HTTP when a database span is detected but all fields are not
-				// populated. Should it?
 				AttributeServiceTargetName: "testsvc",
 			},
 		},
@@ -438,8 +421,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			var span Span
-			span.Enrich(tc.input)
+			EnrichSpan(tc.input)
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})

@@ -30,45 +30,49 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-// Span is a representation of OTel `ptrace.Span`. The struct is used
-// to enrich a span with Elastic specific attributes. These attributes
-// are derived from the base attributes and appended to the span
-// attributes. The enrichment logic is performed by categorizing the
-// OTel spans into 2 different categories:
+// EnrichSpan adds Elastic specific attributes to the OTel span.
+// These attributes are derived from the base attributes and appended to
+// the span attributes. The enrichment logic is performed by categorizing
+// the OTel spans into 2 different categories:
 //   - Elastic transactions, defined as spans which measure the highest
 //     level of work being performed with a service.
 //   - Elastic spans, defined as all spans (including transactions).
 //     However, for the enrichment logic spans are treated as a separate
 //     entity i.e. all transactions are not enriched as spans and vice versa.
-type Span struct {
+func EnrichSpan(span ptrace.Span) {
+	var c spanEnrichmentContext
+	c.Enrich(span)
+}
+
+type spanEnrichmentContext struct {
 	urlFull *url.URL
 
-	peerService     string
-	urlScheme       string
-	urlDomain       string
-	urlPath         string
-	urlQuery        string
-	rpcSystem       string
-	rpcService      string
-	grpcStatus      string
-	dbName          string
-	dbType          string
-	messagingSystem string
-	messagingDestn  string
+	peerService              string
+	urlScheme                string
+	urlDomain                string
+	urlPath                  string
+	urlQuery                 string
+	rpcSystem                string
+	rpcService               string
+	grpcStatus               string
+	dbName                   string
+	dbType                   string
+	messagingSystem          string
+	messagingDestinationName string
 
 	urlPort        int64
 	httpStatusCode int64
 
 	spanStatusCode ptrace.StatusCode
 
-	isMessaging        bool
-	isRPC              bool
-	isHTTP             bool
-	isDB               bool
-	messagingDestnTemp bool
+	isMessaging              bool
+	isRPC                    bool
+	isHTTP                   bool
+	isDB                     bool
+	messagingDestinationTemp bool
 }
 
-func (s *Span) Enrich(span ptrace.Span) {
+func (s *spanEnrichmentContext) Enrich(span ptrace.Span) {
 	// Extract top level span information.
 	s.spanStatusCode = span.Status().Code()
 
@@ -79,7 +83,7 @@ func (s *Span) Enrich(span ptrace.Span) {
 			s.peerService = v.Str()
 		case semconv.AttributeMessagingDestinationName:
 			s.isMessaging = true
-			s.messagingDestn = v.Str()
+			s.messagingDestinationName = v.Str()
 		case semconv.AttributeMessagingOperation:
 			s.isMessaging = true
 		case semconv.AttributeMessagingSystem:
@@ -87,7 +91,7 @@ func (s *Span) Enrich(span ptrace.Span) {
 			s.messagingSystem = v.Str()
 		case semconv.AttributeMessagingDestinationTemporary:
 			s.isMessaging = true
-			s.messagingDestnTemp = true
+			s.messagingDestinationTemp = true
 		case semconv.AttributeHTTPStatusCode,
 			semconv.AttributeHTTPResponseStatusCode:
 			s.isHTTP = true
@@ -157,25 +161,24 @@ func (s *Span) Enrich(span ptrace.Span) {
 
 // normalizeAttributes sets any dependent attributes that
 // might not have been explicitly set as an attribute.
-func (s *Span) normalizeAttributes() {
+func (s *spanEnrichmentContext) normalizeAttributes() {
 	if s.rpcSystem == "" && s.grpcStatus != "" {
 		s.rpcSystem = "grpc"
 	}
 }
 
-func (s *Span) setTxnType(span ptrace.Span) {
+func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
 	txnType := "unknown"
 	switch {
 	case s.isMessaging:
 		txnType = "messaging"
-		span.Attributes().PutStr("transaction.type", "messaging")
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
 	}
 	span.Attributes().PutStr(AttributeTransactionType, txnType)
 }
 
-func (s *Span) setTxnResult(span ptrace.Span) {
+func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
 	var result string
 
 	if s.isHTTP && s.httpStatusCode > 0 {
@@ -202,12 +205,14 @@ func (s *Span) setTxnResult(span ptrace.Span) {
 	span.Attributes().PutStr(AttributeTransactionResult, result)
 }
 
-func (s *Span) setEventOutcome(span ptrace.Span) {
+func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	// default to success outcome
 	outcome := "success"
 	switch {
 	case s.spanStatusCode == ptrace.StatusCodeError:
 		outcome = "failure"
+	case s.spanStatusCode == ptrace.StatusCodeOk:
+		// keep the default success outcome
 	case s.httpStatusCode >= http.StatusInternalServerError:
 		// TODO (lahsivjar): Handle GRPC status code? - not handled in apm-data
 		// TODO (lahsivjar): Move to HTTPResponseStatusCode? Backward compatibility?
@@ -216,7 +221,7 @@ func (s *Span) setEventOutcome(span ptrace.Span) {
 	span.Attributes().PutStr(AttributeEventOutcome, outcome)
 }
 
-func (s *Span) setServiceTarget(span ptrace.Span) {
+func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	var targetType, targetName string
 
 	if s.peerService != "" {
@@ -237,8 +242,8 @@ func (s *Span) setServiceTarget(span ptrace.Span) {
 		if s.messagingSystem != "" {
 			targetType = s.messagingSystem
 		}
-		if !s.messagingDestnTemp && s.messagingDestn != "" {
-			targetName = s.messagingDestn
+		if !s.messagingDestinationTemp && s.messagingDestinationName != "" {
+			targetName = s.messagingDestinationName
 		}
 	case s.isRPC:
 		targetType = "external"

@@ -35,8 +35,7 @@ func Enrich(pt ptrace.Traces) {
 			scopeSpan := scopeSpans.At(j)
 			spans := scopeSpan.Spans()
 			for k := 0; k < spans.Len(); k++ {
-				var span elastic.Span
-				span.Enrich(spans.At(k))
+				elastic.EnrichSpan(spans.At(k))
 			}
 		}
 	}
