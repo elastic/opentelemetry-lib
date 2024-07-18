@@ -27,6 +27,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
 
@@ -269,9 +270,15 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 }
 
 func isElasticTransaction(span ptrace.Span) bool {
-	if span.ParentSpanID().IsEmpty() ||
-		span.Kind() == ptrace.SpanKindServer ||
-		span.Kind() == ptrace.SpanKindConsumer {
+	flags := tracepb.SpanFlags(span.Flags())
+	switch {
+	case span.ParentSpanID().IsEmpty():
+		return true
+	case (flags & tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK) == 0:
+		// span parent is unknown, fall back to span kind
+		return span.Kind() == ptrace.SpanKindServer || span.Kind() == ptrace.SpanKindConsumer
+	case (flags & tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK) != 0:
+		// span parent is remote
 		return true
 	}
 	return false
