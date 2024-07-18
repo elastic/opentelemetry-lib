@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
 
@@ -425,5 +426,102 @@ func TestElasticSpanEnrich(t *testing.T) {
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})
+	}
+}
+
+func TestIsElasticTransaction(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		input ptrace.Span
+		isTxn bool
+	}{
+		{
+			name:  "no_parent_span",
+			input: ptrace.NewSpan(),
+			isTxn: true,
+		},
+		{
+			name: "parent_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				return span
+			}(),
+			isTxn: false,
+		},
+		{
+			name: "remote_parent_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				flags := tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK
+				flags = flags | tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK
+				span.SetFlags(uint32(flags))
+				return span
+			}(),
+			isTxn: true,
+		},
+		{
+			name: "local_parent_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				flags := tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK
+				span.SetFlags(uint32(flags))
+				return span
+			}(),
+			isTxn: false,
+		},
+		{
+			name: "unknown_parent_span_kind_server",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				span.SetKind(ptrace.SpanKindServer)
+				return span
+			}(),
+			isTxn: true,
+		},
+		{
+			name: "unknown_parent_span_kind_consumer",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				span.SetKind(ptrace.SpanKindConsumer)
+				return span
+			}(),
+			isTxn: true,
+		},
+		{
+			name: "unknown_parent_span_kind_producer",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				span.SetKind(ptrace.SpanKindProducer)
+				return span
+			}(),
+			isTxn: false,
+		},
+		{
+			name: "unknown_parent_span_kind_unspecified",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				return span
+			}(),
+			isTxn: false,
+		},
+		{
+			name: "unknown_parent_span_kind_internal",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				span.SetKind(ptrace.SpanKindInternal)
+				return span
+			}(),
+			isTxn: false,
+		},
+	} {
+		assert.Equal(t, tc.isTxn, isElasticTransaction(tc.input))
 	}
 }
