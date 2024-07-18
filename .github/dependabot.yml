@@ -1,0 +1,14 @@
+version: 2
+updates:
+  # Go dependencies
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    groups:
+      otel:
+        patterns:
+        - "go.opentelemetry.io/*"
+      golang.org/x/:
+        patterns:
+        - "golang.org/x/*"
