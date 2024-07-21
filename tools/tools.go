@@ -25,7 +25,7 @@
 package main
 
 import (
-	_ "golang.org/x/tools/cmd/goimports" //go.mod/go.sum
+	_ "golang.org/x/tools/cmd/goimports"                                        //go.mod/go.sum
 	_ "golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment" //go.mod/go.sum
 
 	_ "github.com/elastic/go-licenser" // go.mod/go.sum
