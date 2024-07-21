@@ -1,6 +1,6 @@
 module github.com/elastic/opentelemetry-lib/tools
 
-go 1.22
+go 1.21
 
 require (
 	github.com/elastic/go-licenser v0.4.2
