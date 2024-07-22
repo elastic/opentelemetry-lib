@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -34,6 +35,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		input         ptrace.Span
+		config        config.ElasticTransactionConfig
 		enrichedAttrs map[string]any
 	}{
 		{
@@ -44,6 +46,16 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "unknown",
 			},
+		},
+		{
+			name:  "all_disabled",
+			input: ptrace.NewSpan(),
+			config: config.ElasticTransactionConfig{
+				Type:         config.AttributeConfig{Disabled: true},
+				Result:       config.AttributeConfig{Disabled: true},
+				EventOutcome: config.AttributeConfig{Disabled: true},
+			},
+			enrichedAttrs: map[string]any{},
 		},
 		{
 			name: "http_status_ok",
@@ -177,7 +189,9 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			EnrichSpan(tc.input)
+			EnrichSpan(tc.input, config.Config{
+				Transaction: tc.config,
+			})
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})
@@ -422,7 +436,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			EnrichSpan(tc.input)
+			EnrichSpan(tc.input, config.Config{})
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})

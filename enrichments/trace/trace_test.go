@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -31,11 +32,12 @@ func BenchmarkEnrich(b *testing.B) {
 	traceFile := filepath.Join("testdata", "trace.yaml")
 	traces, err := golden.ReadTraces(traceFile)
 	require.NoError(b, err)
+	enricher := NewEnricher(config.Config{})
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Enrich(traces)
+		enricher.Enrich(traces)
 	}
 }
 
