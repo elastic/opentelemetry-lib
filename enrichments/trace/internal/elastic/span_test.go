@@ -208,6 +208,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		input         ptrace.Span
+		config        config.ElasticSpanConfig
 		enrichedAttrs map[string]any
 	}{
 		{
@@ -216,6 +217,15 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome: "success",
 			},
+		},
+		{
+			name:  "all_disabled",
+			input: getElasticSpan(),
+			config: config.ElasticSpanConfig{
+				EventOutcome:  config.AttributeConfig{Disabled: true},
+				ServiceTarget: config.AttributeConfig{Disabled: true},
+			},
+			enrichedAttrs: map[string]any{},
 		},
 		{
 			name: "peer_service",
@@ -436,7 +446,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			EnrichSpan(tc.input, config.Config{})
+			EnrichSpan(tc.input, config.Config{
+				Span: tc.config,
+			})
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})
