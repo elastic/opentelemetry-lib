@@ -164,6 +164,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.Root.Enabled {
 		span.Attributes().PutBool(AttributeTransactionRoot, true)
 	}
+	if cfg.Name.Enabled {
+		span.Attributes().PutStr(AttributeTransactionName, span.Name())
+	}
 	if cfg.Type.Enabled {
 		s.setTxnType(span)
 	}
@@ -179,6 +182,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	span ptrace.Span,
 	cfg config.ElasticSpanConfig,
 ) {
+	if cfg.Name.Enabled {
+		span.Attributes().PutStr(AttributeSpanName, span.Name())
+	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
