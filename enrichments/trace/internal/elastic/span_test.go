@@ -39,8 +39,9 @@ func TestElasticTransactionEnrich(t *testing.T) {
 		enrichedAttrs map[string]any
 	}{
 		{
-			name:  "empty",
-			input: ptrace.NewSpan(),
+			name:   "empty",
+			input:  ptrace.NewSpan(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -48,13 +49,8 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			},
 		},
 		{
-			name:  "all_disabled",
-			input: ptrace.NewSpan(),
-			config: config.ElasticTransactionConfig{
-				Type:         config.AttributeConfig{Disabled: true},
-				Result:       config.AttributeConfig{Disabled: true},
-				EventOutcome: config.AttributeConfig{Disabled: true},
-			},
+			name:          "all_disabled",
+			input:         ptrace.NewSpan(),
 			enrichedAttrs: map[string]any{},
 		},
 		{
@@ -64,6 +60,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				span.Attributes().PutInt(semconv.AttributeHTTPStatusCode, http.StatusOK)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 2xx",
@@ -82,6 +79,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 1xx",
@@ -99,6 +97,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 					semconv.AttributeHTTPStatusCode, http.StatusInternalServerError)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 5xx",
@@ -117,6 +116,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "OK",
@@ -135,6 +135,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Internal",
@@ -148,6 +149,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -161,6 +163,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				span.Status().SetCode(ptrace.StatusCodeError)
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "failure",
 				AttributeTransactionResult: "Error",
@@ -174,6 +177,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributeMessagingSystem, "kafka")
 				return span
 			}(),
+			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -212,19 +216,16 @@ func TestElasticSpanEnrich(t *testing.T) {
 		enrichedAttrs map[string]any
 	}{
 		{
-			name:  "empty",
-			input: getElasticSpan(),
+			name:   "empty",
+			input:  getElasticSpan(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome: "success",
 			},
 		},
 		{
-			name:  "all_disabled",
-			input: getElasticSpan(),
-			config: config.ElasticSpanConfig{
-				EventOutcome:  config.AttributeConfig{Disabled: true},
-				ServiceTarget: config.AttributeConfig{Disabled: true},
-			},
+			name:          "all_disabled",
+			input:         getElasticSpan(),
 			enrichedAttrs: map[string]any{},
 		},
 		{
@@ -234,6 +235,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetName: "testsvc",
@@ -250,6 +252,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "http",
@@ -273,6 +276,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "http",
@@ -294,6 +298,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutInt(semconv.AttributeURLPort, 443)
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "http",
@@ -311,6 +316,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "grpc",
@@ -325,6 +331,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributeRPCSystem, "xmlrpc")
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "xmlrpc",
@@ -341,6 +348,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributeRPCService, "service.Test")
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "external",
@@ -355,6 +363,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributeMessagingSystem, "kafka")
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "kafka",
@@ -369,6 +378,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributeMessagingDestinationName, "t1")
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "messaging",
@@ -384,6 +394,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutStr(semconv.AttributeMessagingDestinationName, "t1")
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "messaging",
@@ -405,6 +416,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "elasticsearch",
@@ -431,6 +443,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				)
 				return span
 			}(),
+			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetType: "cassandra",

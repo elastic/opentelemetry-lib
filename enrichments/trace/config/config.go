@@ -40,5 +40,20 @@ type ElasticSpanConfig struct {
 
 // AttributeConfig is the configuration options for each attribute.
 type AttributeConfig struct {
-	Disabled bool `mapstructure:"disabled"`
+	Enabled bool `mapstructure:"enabled"`
+}
+
+// Enabled returns a config with all default enrichments enabled.
+func Enabled() Config {
+	return Config{
+		Transaction: ElasticTransactionConfig{
+			Type:         AttributeConfig{Enabled: true},
+			Result:       AttributeConfig{Enabled: true},
+			EventOutcome: AttributeConfig{Enabled: true},
+		},
+		Span: ElasticSpanConfig{
+			EventOutcome:  AttributeConfig{Enabled: true},
+			ServiceTarget: AttributeConfig{Enabled: true},
+		},
+	}
 }

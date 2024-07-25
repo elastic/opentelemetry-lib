@@ -161,13 +161,13 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	span ptrace.Span,
 	cfg config.ElasticTransactionConfig,
 ) {
-	if !cfg.Type.Disabled {
+	if cfg.Type.Enabled {
 		s.setTxnType(span)
 	}
-	if !cfg.Result.Disabled {
+	if cfg.Result.Enabled {
 		s.setTxnResult(span)
 	}
-	if !cfg.EventOutcome.Disabled {
+	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
 }
@@ -176,10 +176,10 @@ func (s *spanEnrichmentContext) enrichSpan(
 	span ptrace.Span,
 	cfg config.ElasticSpanConfig,
 ) {
-	if !cfg.EventOutcome.Disabled {
+	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
-	if !cfg.ServiceTarget.Disabled {
+	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
 	}
 }
