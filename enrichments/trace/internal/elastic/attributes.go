@@ -18,6 +18,7 @@
 package elastic
 
 const (
+	AttributeTransactionRoot   = "transaction.root"
 	AttributeTransactionType   = "transaction.type"
 	AttributeTransactionResult = "transaction.result"
 	AttributeEventOutcome      = "event.outcome"

@@ -26,6 +26,7 @@ type Config struct {
 // ElasticTransactionConfig configures the enrichment attributes for the
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
+	Root         AttributeConfig `mapstructure:"root"`
 	Type         AttributeConfig `mapstructure:"type"`
 	Result       AttributeConfig `mapstructure:"result"`
 	EventOutcome AttributeConfig `mapstructure:"event_outcome"`
@@ -47,6 +48,7 @@ type AttributeConfig struct {
 func Enabled() Config {
 	return Config{
 		Transaction: ElasticTransactionConfig{
+			Root:         AttributeConfig{Enabled: true},
 			Type:         AttributeConfig{Enabled: true},
 			Result:       AttributeConfig{Enabled: true},
 			EventOutcome: AttributeConfig{Enabled: true},

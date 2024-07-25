@@ -43,6 +43,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input:  ptrace.NewSpan(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "unknown",
@@ -62,6 +63,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 2xx",
 				AttributeTransactionType:   "request",
@@ -81,6 +83,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 1xx",
 				AttributeTransactionType:   "request",
@@ -99,6 +102,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 5xx",
 				AttributeTransactionType:   "request",
@@ -118,6 +122,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "OK",
 				AttributeTransactionType:   "request",
@@ -137,6 +142,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Internal",
 				AttributeTransactionType:   "request",
@@ -151,6 +157,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "unknown",
@@ -165,6 +172,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "failure",
 				AttributeTransactionResult: "Error",
 				AttributeTransactionType:   "unknown",
@@ -179,6 +187,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTransactionRoot:   true,
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "messaging",
