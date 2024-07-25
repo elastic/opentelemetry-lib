@@ -30,8 +30,8 @@ type Enricher struct {
 }
 
 // NewEnricher creates a new instance of Enricher.
-func NewEnricher(cfg config.Config) Enricher {
-	return Enricher{
+func NewEnricher(cfg config.Config) *Enricher {
+	return &Enricher{
 		Config: cfg,
 	}
 }
