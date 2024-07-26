@@ -5,13 +5,13 @@ test:
 	go test -v -race ./...
 
 fmt:
-	go run golang.org/x/tools/cmd/goimports@v0.21.0 -w .
+	go run -modfile=tools/go.mod golang.org/x/tools/cmd/goimports -w .
 
 gomodtidy:
 	go mod tidy -v
 
 fieldalignment:
-	go run golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@v0.21.0 -test=false $(shell go list ./... | grep -v test)
+	go run -modfile=tools/go.mod golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment -test=false $(shell go list ./... | grep -v test)
 
 update-licenses:
-	go run github.com/elastic/go-licenser@v0.4.1 -ext .go .
+	go run -modfile=tools/go.mod github.com/elastic/go-licenser -ext .go .
