@@ -18,15 +18,29 @@
 package trace
 
 import (
+	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/internal/elastic"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
+
+// Enricher enriches the OTel traces with attributes required to power
+// functionalities in the Elastic UI.
+type Enricher struct {
+	Config config.Config
+}
+
+// NewEnricher creates a new instance of Enricher.
+func NewEnricher(cfg config.Config) *Enricher {
+	return &Enricher{
+		Config: cfg,
+	}
+}
 
 // Enrich enriches the OTel traces with attributes required to power
 // functionalities in the Elastic UI. The traces are processed as per the
 // Elastic's definition of transactions and spans. The traces passed to
 // this function are mutated.
-func Enrich(pt ptrace.Traces) {
+func (e *Enricher) Enrich(pt ptrace.Traces) {
 	resSpans := pt.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
 		resSpan := resSpans.At(i)
@@ -35,7 +49,7 @@ func Enrich(pt ptrace.Traces) {
 			scopeSpan := scopeSpans.At(j)
 			spans := scopeSpan.Spans()
 			for k := 0; k < spans.Len(); k++ {
-				elastic.EnrichSpan(spans.At(k))
+				elastic.EnrichSpan(spans.At(k), e.Config)
 			}
 		}
 	}

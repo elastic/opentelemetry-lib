@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
@@ -40,9 +41,9 @@ import (
 //   - Elastic spans, defined as all spans (including transactions).
 //     However, for the enrichment logic spans are treated as a separate
 //     entity i.e. all transactions are not enriched as spans and vice versa.
-func EnrichSpan(span ptrace.Span) {
+func EnrichSpan(span ptrace.Span, cfg config.Config) {
 	var c spanEnrichmentContext
-	c.Enrich(span)
+	c.Enrich(span, cfg)
 }
 
 type spanEnrichmentContext struct {
@@ -73,7 +74,7 @@ type spanEnrichmentContext struct {
 	messagingDestinationTemp bool
 }
 
-func (s *spanEnrichmentContext) Enrich(span ptrace.Span) {
+func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 	// Extract top level span information.
 	s.spanStatusCode = span.Status().Code()
 
@@ -149,13 +150,36 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span) {
 	// Ensure all dependent attributes are handled.
 	s.normalizeAttributes()
 
-	// Enrich the span depending on the nature of the span.
 	if isElasticTransaction(span) {
-		s.setTxnType(span)
-		s.setTxnResult(span)
-		s.setEventOutcome(span)
+		s.enrichTransaction(span, cfg.Transaction)
 	} else {
+		s.enrichSpan(span, cfg.Span)
+	}
+}
+
+func (s *spanEnrichmentContext) enrichTransaction(
+	span ptrace.Span,
+	cfg config.ElasticTransactionConfig,
+) {
+	if cfg.Type.Enabled {
+		s.setTxnType(span)
+	}
+	if cfg.Result.Enabled {
+		s.setTxnResult(span)
+	}
+	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
+	}
+}
+
+func (s *spanEnrichmentContext) enrichSpan(
+	span ptrace.Span,
+	cfg config.ElasticSpanConfig,
+) {
+	if cfg.EventOutcome.Enabled {
+		s.setEventOutcome(span)
+	}
+	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
 	}
 }
