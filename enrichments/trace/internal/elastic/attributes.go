@@ -18,8 +18,11 @@
 package elastic
 
 const (
+	AttributeTransactionRoot   = "transaction.root"
+	AttributeTransactionName   = "transaction.name"
 	AttributeTransactionType   = "transaction.type"
 	AttributeTransactionResult = "transaction.result"
+	AttributeSpanName          = "span.name"
 	AttributeEventOutcome      = "event.outcome"
 	AttributeServiceTargetType = "service.target.type"
 	AttributeServiceTargetName = "service.target.name"
