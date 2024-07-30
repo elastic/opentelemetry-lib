@@ -294,10 +294,8 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 		}
 	}
 
-	if targetType != "" {
+	if targetType != "" || targetName != "" {
 		span.Attributes().PutStr(AttributeServiceTargetType, targetType)
-	}
-	if targetName != "" {
 		span.Attributes().PutStr(AttributeServiceTargetName, targetName)
 	}
 }

@@ -268,6 +268,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				AttributeSpanName:          "testspan",
 				AttributeEventOutcome:      "success",
 				AttributeServiceTargetName: "testsvc",
+				AttributeServiceTargetType: "",
 			},
 		},
 		{
