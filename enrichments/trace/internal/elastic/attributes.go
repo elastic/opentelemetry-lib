@@ -18,6 +18,10 @@
 package elastic
 
 const (
+	// resource attributes
+	AttributeAgentName = "agent.name"
+
+	// span attributes
 	AttributeTransactionRoot   = "transaction.root"
 	AttributeTransactionName   = "transaction.name"
 	AttributeTransactionType   = "transaction.type"

@@ -44,6 +44,7 @@ func (e *Enricher) Enrich(pt ptrace.Traces) {
 	resSpans := pt.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
 		resSpan := resSpans.At(i)
+		elastic.EnrichResource(resSpan.Resource(), e.Config)
 		scopeSpans := resSpan.ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
 			scopeSpan := scopeSpans.At(j)

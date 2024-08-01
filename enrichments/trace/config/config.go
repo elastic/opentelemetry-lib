@@ -19,8 +19,14 @@ package config
 
 // Config configures the enrichment attributes produced.
 type Config struct {
+	Resource    ResourceConfig           `mapstructure:"resource"`
 	Transaction ElasticTransactionConfig `mapstructure:"elastic_transaction"`
 	Span        ElasticSpanConfig        `mapstructure:"elastic_span"`
+}
+
+// ResourceConfig configures the enrichment of resource attributes.
+type ResourceConfig struct {
+	AgentName AttributeConfig `mapstructure:"agent_name"`
 }
 
 // ElasticTransactionConfig configures the enrichment attributes for the
@@ -49,6 +55,9 @@ type AttributeConfig struct {
 // Enabled returns a config with all default enrichments enabled.
 func Enabled() Config {
 	return Config{
+		Resource: ResourceConfig{
+			AgentName: AttributeConfig{Enabled: true},
+		},
 		Transaction: ElasticTransactionConfig{
 			Root:         AttributeConfig{Enabled: true},
 			Name:         AttributeConfig{Enabled: true},
