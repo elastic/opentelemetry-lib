@@ -26,6 +26,7 @@ import (
 
 func TestEnabled(t *testing.T) {
 	config := Enabled()
+	assertAllEnabled(t, reflect.ValueOf(config.Resource))
 	assertAllEnabled(t, reflect.ValueOf(config.Transaction))
 	assertAllEnabled(t, reflect.ValueOf(config.Span))
 }
