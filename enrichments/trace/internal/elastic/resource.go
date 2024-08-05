@@ -32,9 +32,11 @@ func EnrichResource(resource pcommon.Resource, cfg config.Config) {
 }
 
 type resourceEnrichmentContext struct {
-	telemetrySDKName     string
-	telemetrySDKLanguage string
-	telemetryDistroName  string
+	telemetrySDKName       string
+	telemetrySDKLanguage   string
+	telemetrySDKVersion    string
+	telemetryDistroName    string
+	telemetryDistroVersion string
 }
 
 func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
@@ -44,14 +46,21 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 			s.telemetrySDKName = v.Str()
 		case semconv.AttributeTelemetrySDKLanguage:
 			s.telemetrySDKLanguage = v.Str()
+		case semconv.AttributeTelemetrySDKVersion:
+			s.telemetrySDKVersion = v.Str()
 		case semconv.AttributeTelemetryDistroName:
 			s.telemetryDistroName = v.Str()
+		case semconv.AttributeTelemetryDistroVersion:
+			s.telemetryDistroVersion = v.Str()
 		}
 		return true
 	})
 
 	if cfg.AgentName.Enabled {
 		s.setAgentName(resource)
+	}
+	if cfg.AgentVersion.Enabled {
+		s.setAgentVersion(resource)
 	}
 }
 
@@ -80,4 +89,17 @@ func (s *resourceEnrichmentContext) setAgentName(resource pcommon.Resource) {
 		)
 	}
 	resource.Attributes().PutStr(AttributeAgentName, agentName)
+}
+
+func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
+	agentVersion := "unknown"
+	switch {
+	case s.telemetryDistroName != "" && s.telemetryDistroVersion != "":
+		// do not want to fallback to the Otel SDK version if we have a
+		// distro name available as this would only cause confusion
+		agentVersion = s.telemetryDistroVersion
+	case s.telemetrySDKVersion != "":
+		agentVersion = s.telemetrySDKVersion
+	}
+	resource.Attributes().PutStr(AttributeAgentVersion, agentVersion)
 }
