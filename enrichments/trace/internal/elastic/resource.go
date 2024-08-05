@@ -94,10 +94,12 @@ func (s *resourceEnrichmentContext) setAgentName(resource pcommon.Resource) {
 func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
 	agentVersion := "unknown"
 	switch {
-	case s.telemetryDistroName != "" && s.telemetryDistroVersion != "":
-		// do not want to fallback to the Otel SDK version if we have a
+	case s.telemetryDistroName != "":
+		// do not fallback to the Otel SDK version if we have a
 		// distro name available as this would only cause confusion
-		agentVersion = s.telemetryDistroVersion
+		if s.telemetryDistroVersion != "" {
+			agentVersion = s.telemetryDistroVersion
+		}
 	case s.telemetrySDKVersion != "":
 		agentVersion = s.telemetrySDKVersion
 	}

@@ -143,7 +143,7 @@ func TestResourceEnrich(t *testing.T) {
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				AttributeAgentName:    "customflavor/unknown/elastic",
-				AttributeAgentVersion: "9.999.9",
+				AttributeAgentVersion: "unknown",
 			},
 		},
 		{
