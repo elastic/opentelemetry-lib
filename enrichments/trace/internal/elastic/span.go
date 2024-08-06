@@ -161,8 +161,8 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	span ptrace.Span,
 	cfg config.ElasticTransactionConfig,
 ) {
-	if cfg.Root.Enabled {
-		span.Attributes().PutBool(AttributeTransactionRoot, true)
+	if cfg.TraceRoot.Enabled {
+		span.Attributes().PutBool(AttributeTransactionRoot, isTraceRoot(span))
 	}
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeTransactionName, span.Name())
@@ -300,10 +300,14 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	}
 }
 
+func isTraceRoot(span ptrace.Span) bool {
+	return span.ParentSpanID().IsEmpty()
+}
+
 func isElasticTransaction(span ptrace.Span) bool {
 	flags := tracepb.SpanFlags(span.Flags())
 	switch {
-	case span.ParentSpanID().IsEmpty():
+	case isTraceRoot(span):
 		return true
 	case (flags & tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK) == 0:
 		// span parent is unknown, fall back to span kind
