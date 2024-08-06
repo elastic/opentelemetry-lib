@@ -23,7 +23,7 @@ const (
 	AttributeAgentVersion = "agent.version"
 
 	// span attributes
-	AttributeTransactionRoot   = "transaction.root"
+	AttributeTraceRoot         = "trace.root"
 	AttributeTransactionName   = "transaction.name"
 	AttributeTransactionType   = "transaction.type"
 	AttributeTransactionResult = "transaction.result"
