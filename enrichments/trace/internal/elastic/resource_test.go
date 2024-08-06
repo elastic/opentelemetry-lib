@@ -44,11 +44,12 @@ func TestResourceEnrich(t *testing.T) {
 			input:  pcommon.NewResource(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName: "otlp",
+				AttributeAgentName:    "otlp",
+				AttributeAgentVersion: "unknown",
 			},
 		},
 		{
-			name: "sdk_name_set",
+			name: "sdkname_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
 				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
@@ -56,11 +57,12 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName: "customflavor",
+				AttributeAgentName:    "customflavor",
+				AttributeAgentVersion: "unknown",
 			},
 		},
 		{
-			name: "sdk_name_distro_set",
+			name: "sdkname_distro_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
 				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
@@ -69,11 +71,12 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName: "customflavor/unknown/elastic",
+				AttributeAgentName:    "customflavor/unknown/elastic",
+				AttributeAgentVersion: "unknown",
 			},
 		},
 		{
-			name: "sdk_name_distro_lang_set",
+			name: "sdkname_distro_lang_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
 				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
@@ -83,7 +86,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName: "customflavor/cpp/elastic",
+				AttributeAgentName:    "customflavor/cpp/elastic",
+				AttributeAgentVersion: "unknown",
 			},
 		},
 		{
@@ -95,11 +99,12 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName: "otlp/cpp",
+				AttributeAgentName:    "otlp/cpp",
+				AttributeAgentVersion: "unknown",
 			},
 		},
 		{
-			name: "sdk_name_lang_set",
+			name: "sdkname_lang_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
 				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
@@ -108,7 +113,53 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName: "customflavor/cpp",
+				AttributeAgentName:    "customflavor/cpp",
+				AttributeAgentVersion: "unknown",
+			},
+		},
+		{
+			name: "sdkname_sdkver_set",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
+				res.Attributes().PutStr(semconv.AttributeTelemetrySDKVersion, "9.999.9")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				AttributeAgentName:    "customflavor",
+				AttributeAgentVersion: "9.999.9",
+			},
+		},
+		{
+			name: "sdkname_sdkver_distroname_set",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
+				res.Attributes().PutStr(semconv.AttributeTelemetrySDKVersion, "9.999.9")
+				res.Attributes().PutStr(semconv.AttributeTelemetryDistroName, "elastic")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				AttributeAgentName:    "customflavor/unknown/elastic",
+				AttributeAgentVersion: "unknown",
+			},
+		},
+		{
+			name: "sdkname_sdkver_distroname_distrover_set",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
+				res.Attributes().PutStr(semconv.AttributeTelemetrySDKVersion, "9.999.9")
+				res.Attributes().PutStr(semconv.AttributeTelemetryDistroName, "elastic")
+				res.Attributes().PutStr(semconv.AttributeTelemetryDistroVersion, "1.2.3")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				AttributeAgentName:    "customflavor/unknown/elastic",
+				AttributeAgentVersion: "1.2.3",
 			},
 		},
 	} {

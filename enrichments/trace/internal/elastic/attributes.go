@@ -19,7 +19,8 @@ package elastic
 
 const (
 	// resource attributes
-	AttributeAgentName = "agent.name"
+	AttributeAgentName    = "agent.name"
+	AttributeAgentVersion = "agent.version"
 
 	// span attributes
 	AttributeTransactionRoot   = "transaction.root"
