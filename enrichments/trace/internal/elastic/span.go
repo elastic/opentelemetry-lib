@@ -161,8 +161,8 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	span ptrace.Span,
 	cfg config.ElasticTransactionConfig,
 ) {
-	if cfg.TraceRoot.Enabled {
-		span.Attributes().PutBool(AttributeTraceRoot, isTraceRoot(span))
+	if cfg.Root.Enabled {
+		span.Attributes().PutBool(AttributeTransactionRoot, isTraceRoot(span))
 	}
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeTransactionName, span.Name())

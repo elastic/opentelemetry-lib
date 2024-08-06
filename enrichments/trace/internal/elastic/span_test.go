@@ -43,7 +43,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input:  ptrace.NewSpan(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -65,7 +65,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 2xx",
@@ -87,7 +87,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 1xx",
@@ -108,7 +108,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 5xx",
@@ -130,7 +130,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "OK",
@@ -152,7 +152,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Internal",
@@ -169,7 +169,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -186,7 +186,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "failure",
 				AttributeTransactionResult: "Error",
@@ -203,7 +203,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTraceRoot:         true,
+				AttributeTransactionRoot:   true,
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",

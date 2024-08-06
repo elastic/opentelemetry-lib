@@ -33,7 +33,7 @@ type ResourceConfig struct {
 // ElasticTransactionConfig configures the enrichment attributes for the
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
-	TraceRoot    AttributeConfig `mapstructure:"trace_root"`
+	Root         AttributeConfig `mapstructure:"root"`
 	Name         AttributeConfig `mapstructure:"name"`
 	Type         AttributeConfig `mapstructure:"type"`
 	Result       AttributeConfig `mapstructure:"result"`
@@ -61,7 +61,7 @@ func Enabled() Config {
 			AgentVersion: AttributeConfig{Enabled: true},
 		},
 		Transaction: ElasticTransactionConfig{
-			TraceRoot:    AttributeConfig{Enabled: true},
+			Root:         AttributeConfig{Enabled: true},
 			Name:         AttributeConfig{Enabled: true},
 			Type:         AttributeConfig{Enabled: true},
 			Result:       AttributeConfig{Enabled: true},
