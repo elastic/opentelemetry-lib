@@ -43,9 +43,10 @@ type ElasticTransactionConfig struct {
 // ElasticSpanConfig configures the enrichment attributes for the spans
 // which are NOT identified as elastic transaction.
 type ElasticSpanConfig struct {
-	Name          AttributeConfig `mapstructure:"name"`
-	EventOutcome  AttributeConfig `mapstructure:"event_outcome"`
-	ServiceTarget AttributeConfig `mapstructure:"service_target"`
+	Name               AttributeConfig `mapstructure:"name"`
+	EventOutcome       AttributeConfig `mapstructure:"event_outcome"`
+	ServiceTarget      AttributeConfig `mapstructure:"service_target"`
+	DestinationService AttributeConfig `mapstructure:"destination_service"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -68,9 +69,10 @@ func Enabled() Config {
 			EventOutcome: AttributeConfig{Enabled: true},
 		},
 		Span: ElasticSpanConfig{
-			Name:          AttributeConfig{Enabled: true},
-			EventOutcome:  AttributeConfig{Enabled: true},
-			ServiceTarget: AttributeConfig{Enabled: true},
+			Name:               AttributeConfig{Enabled: true},
+			EventOutcome:       AttributeConfig{Enabled: true},
+			ServiceTarget:      AttributeConfig{Enabled: true},
+			DestinationService: AttributeConfig{Enabled: true},
 		},
 	}
 }
