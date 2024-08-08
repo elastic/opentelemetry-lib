@@ -17,23 +17,18 @@
 
 package elastic
 
-const (
-	// resource attributes
-	AttributeAgentName    = "agent.name"
-	AttributeAgentVersion = "agent.version"
-
-	// scope attributes
-	AttributeServiceFrameworkName    = "service.framework.name"
-	AttributeServiceFrameworkVersion = "service.framework.version"
-
-	// span attributes
-	AttributeTransactionRoot         = "transaction.root"
-	AttributeTransactionName         = "transaction.name"
-	AttributeTransactionType         = "transaction.type"
-	AttributeTransactionResult       = "transaction.result"
-	AttributeSpanName                = "span.name"
-	AttributeEventOutcome            = "event.outcome"
-	AttributeServiceTargetType       = "service.target.type"
-	AttributeServiceTargetName       = "service.target.name"
-	AttributeSpanDestinationResource = "span.destination.service.resource"
+import (
+	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 )
+
+// EnrichScope derives and adds Elastic specific scope attributes.
+func EnrichScope(scope pcommon.InstrumentationScope, cfg config.Config) {
+	attrs := scope.Attributes()
+	if cfg.Scope.ServiceFrameworkName.Enabled {
+		if name := scope.Name(); name != "" {
+			attrs.PutStr(AttributeServiceFrameworkName, name)
+			attrs.PutStr(AttributeServiceFrameworkVersion, scope.Version())
+		}
+	}
+}
