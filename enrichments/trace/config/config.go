@@ -20,6 +20,7 @@ package config
 // Config configures the enrichment attributes produced.
 type Config struct {
 	Resource    ResourceConfig           `mapstructure:"resource"`
+	Scope       ScopeConfig              `mapstructure:"scope"`
 	Transaction ElasticTransactionConfig `mapstructure:"elastic_transaction"`
 	Span        ElasticSpanConfig        `mapstructure:"elastic_span"`
 }
@@ -28,6 +29,12 @@ type Config struct {
 type ResourceConfig struct {
 	AgentName    AttributeConfig `mapstructure:"agent_name"`
 	AgentVersion AttributeConfig `mapstructure:"agent_version"`
+}
+
+// ScopeConfig configures the enrichment of scope attributes.
+type ScopeConfig struct {
+	ServiceFrameworkName    AttributeConfig `mapstructure:"service_framework_name"`
+	ServiceFrameworkVersion AttributeConfig `mapstructure:"service_framework_version"`
 }
 
 // ElasticTransactionConfig configures the enrichment attributes for the
@@ -59,6 +66,10 @@ func Enabled() Config {
 		Resource: ResourceConfig{
 			AgentName:    AttributeConfig{Enabled: true},
 			AgentVersion: AttributeConfig{Enabled: true},
+		},
+		Scope: ScopeConfig{
+			ServiceFrameworkName:    AttributeConfig{Enabled: true},
+			ServiceFrameworkVersion: AttributeConfig{Enabled: true},
 		},
 		Transaction: ElasticTransactionConfig{
 			Root:         AttributeConfig{Enabled: true},

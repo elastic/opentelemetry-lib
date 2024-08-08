@@ -22,6 +22,10 @@ const (
 	AttributeAgentName    = "agent.name"
 	AttributeAgentVersion = "agent.version"
 
+	// scope attributes
+	AttributeServiceFrameworkName    = "service.framework.name"
+	AttributeServiceFrameworkVersion = "service.framework.version"
+
 	// span attributes
 	AttributeTransactionRoot   = "transaction.root"
 	AttributeTransactionName   = "transaction.name"

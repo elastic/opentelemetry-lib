@@ -15,30 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package config
+package elastic
 
 import (
-	"reflect"
-	"testing"
-
-	"github.com/stretchr/testify/require"
+	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
-func TestEnabled(t *testing.T) {
-	config := Enabled()
-	assertAllEnabled(t, reflect.ValueOf(config.Resource))
-	assertAllEnabled(t, reflect.ValueOf(config.Scope))
-	assertAllEnabled(t, reflect.ValueOf(config.Transaction))
-	assertAllEnabled(t, reflect.ValueOf(config.Span))
-}
-
-func assertAllEnabled(t *testing.T, cfg reflect.Value) {
-	t.Helper()
-
-	for i := 0; i < cfg.NumField(); i++ {
-		rAttrCfg := cfg.Field(i).Interface()
-		attrCfg, ok := rAttrCfg.(AttributeConfig)
-		require.True(t, ok, "must be a type of AttributeConfig")
-		require.True(t, attrCfg.Enabled, "must be enabled")
+// EnrichScope derives and adds Elastic specific scope attributes.
+func EnrichScope(scope pcommon.InstrumentationScope, cfg config.Config) {
+	attrs := scope.Attributes()
+	if cfg.Scope.ServiceFrameworkName.Enabled {
+		if name := scope.Name(); name != "" {
+			attrs.PutStr(AttributeServiceFrameworkName, name)
+			attrs.PutStr(AttributeServiceFrameworkVersion, scope.Version())
+		}
 	}
 }
