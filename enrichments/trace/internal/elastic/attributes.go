@@ -27,13 +27,18 @@ const (
 	AttributeServiceFrameworkVersion = "service.framework.version"
 
 	// span attributes
+	AttributeProcessorEvent                 = "processor.event"
+	AttributeTransactionID                  = "transaction.id"
 	AttributeTransactionRoot                = "transaction.root"
 	AttributeTransactionName                = "transaction.name"
 	AttributeTransactionType                = "transaction.type"
+	AttributeTransactionDurationUs          = "transaction.duration.us"
 	AttributeTransactionResult              = "transaction.result"
 	AttributeSpanName                       = "span.name"
 	AttributeEventOutcome                   = "event.outcome"
+	AttributeSuccessCount                   = "event.success_count"
 	AttributeServiceTargetType              = "service.target.type"
 	AttributeServiceTargetName              = "service.target.name"
 	AttributeSpanDestinationServiceResource = "span.destination.service.resource"
+	AttributeSpanDurationUs                 = "span.duration.us"
 )

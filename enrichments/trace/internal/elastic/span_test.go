@@ -20,10 +20,12 @@ package elastic
 import (
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
@@ -32,6 +34,17 @@ import (
 
 // Tests the enrichment logic for elastic's transaction definition.
 func TestElasticTransactionEnrich(t *testing.T) {
+	now := time.Unix(3600, 0)
+	expectedDuration := time.Minute
+	endTs := pcommon.NewTimestampFromTime(now)
+	startTs := pcommon.NewTimestampFromTime(now.Add(-1 * expectedDuration))
+	getElasticTxn := func() ptrace.Span {
+		span := ptrace.NewSpan()
+		span.SetSpanID([8]byte{1})
+		span.SetStartTimestamp(startTs)
+		span.SetEndTimestamp(endTs)
+		return span
+	}
 	for _, tc := range []struct {
 		name          string
 		input         ptrace.Span
@@ -39,44 +52,54 @@ func TestElasticTransactionEnrich(t *testing.T) {
 		enrichedAttrs map[string]any
 	}{
 		{
+			// test case gives a summary of what is emitted by default
 			name:   "empty",
 			input:  ptrace.NewSpan(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "Success",
-				AttributeTransactionType:   "unknown",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "",
+				AttributeTransactionName:       "",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: int64(0),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "Success",
+				AttributeTransactionType:       "unknown",
 			},
 		},
 		{
 			name:          "all_disabled",
-			input:         ptrace.NewSpan(),
+			input:         getElasticTxn(),
 			enrichedAttrs: map[string]any{},
 		},
 		{
 			name: "http_status_ok",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
 				span.Attributes().PutInt(semconv.AttributeHTTPStatusCode, http.StatusOK)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "HTTP 2xx",
-				AttributeTransactionType:   "request",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "HTTP 2xx",
+				AttributeTransactionType:       "request",
 			},
 		},
 		{
 			name: "http_status_1xx",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
@@ -87,18 +110,23 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "HTTP 1xx",
-				AttributeTransactionType:   "request",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "HTTP 1xx",
+				AttributeTransactionType:       "request",
 			},
 		},
 		{
 			name: "http_status_5xx",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// span status code should take precedence over http status attributes
 				// for setting event.outcome
 				span.Status().SetCode(ptrace.StatusCodeOk)
@@ -108,18 +136,23 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "HTTP 5xx",
-				AttributeTransactionType:   "request",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "HTTP 5xx",
+				AttributeTransactionType:       "request",
 			},
 		},
 		{
 			name: "grpc_status_ok",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
@@ -130,18 +163,23 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "OK",
-				AttributeTransactionType:   "request",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "OK",
+				AttributeTransactionType:       "request",
 			},
 		},
 		{
 			name: "grpc_status_internal_error",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
@@ -152,62 +190,81 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "Internal",
-				AttributeTransactionType:   "request",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "Internal",
+				AttributeTransactionType:       "request",
 			},
 		},
 		{
 			name: "span_status_ok",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "Success",
-				AttributeTransactionType:   "unknown",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "Success",
+				AttributeTransactionType:       "unknown",
 			},
 		},
 		{
 			name: "span_status_error",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Status().SetCode(ptrace.StatusCodeError)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "failure",
-				AttributeTransactionResult: "Error",
-				AttributeTransactionType:   "unknown",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "failure",
+				AttributeSuccessCount:          int64(0),
+				AttributeTransactionResult:     "Error",
+				AttributeTransactionType:       "unknown",
 			},
 		},
 		{
 			name: "messaging_type_kafka",
 			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
+				span := getElasticTxn()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Attributes().PutStr(semconv.AttributeMessagingSystem, "kafka")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
-				AttributeTransactionRoot:   true,
-				AttributeTransactionName:   "testtxn",
-				AttributeEventOutcome:      "success",
-				AttributeTransactionResult: "Success",
-				AttributeTransactionType:   "messaging",
+				AttributeTransactionRoot:       true,
+				AttributeTransactionID:         "0100000000000000",
+				AttributeTransactionName:       "testtxn",
+				AttributeProcessorEvent:        "transaction",
+				AttributeTransactionDurationUs: expectedDuration.Microseconds(),
+				AttributeEventOutcome:          "success",
+				AttributeSuccessCount:          int64(1),
+				AttributeTransactionResult:     "Success",
+				AttributeTransactionType:       "messaging",
 			},
 		},
 	} {
@@ -230,9 +287,15 @@ func TestElasticTransactionEnrich(t *testing.T) {
 
 // Tests the enrichment logic for elastic's span definition.
 func TestElasticSpanEnrich(t *testing.T) {
+	now := time.Unix(3600, 0)
+	expectedDuration := time.Minute
+	endTs := pcommon.NewTimestampFromTime(now)
+	startTs := pcommon.NewTimestampFromTime(now.Add(-1 * expectedDuration))
 	getElasticSpan := func() ptrace.Span {
 		span := ptrace.NewSpan()
 		span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+		span.SetStartTimestamp(startTs)
+		span.SetEndTimestamp(endTs)
 		return span
 	}
 	for _, tc := range []struct {
@@ -242,12 +305,20 @@ func TestElasticSpanEnrich(t *testing.T) {
 		enrichedAttrs map[string]any
 	}{
 		{
-			name:   "empty",
-			input:  getElasticSpan(),
+			// test case gives a summary of what is emitted by default
+			name: "empty",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{1})
+				return span
+			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
-				AttributeSpanName:     "",
-				AttributeEventOutcome: "success",
+				AttributeSpanName:       "",
+				AttributeProcessorEvent: "span",
+				AttributeSpanDurationUs: int64(0),
+				AttributeEventOutcome:   "success",
+				AttributeSuccessCount:   int64(1),
 			},
 		},
 		{
@@ -266,7 +337,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetName:              "testsvc",
 				AttributeServiceTargetType:              "",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -287,7 +361,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "http",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -314,7 +391,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "http",
 				AttributeServiceTargetName:              "www.foo.bar:443",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -339,7 +419,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "http",
 				AttributeServiceTargetName:              "www.foo.bar:443",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -360,7 +443,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "grpc",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -378,7 +464,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "xmlrpc",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -398,7 +487,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "external",
 				AttributeServiceTargetName:              "service.Test",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -416,7 +508,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "kafka",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -434,7 +529,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "messaging",
 				AttributeServiceTargetName:              "t1",
 				AttributeSpanDestinationServiceResource: "testsvc/t1",
@@ -453,7 +551,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "messaging",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc/t1",
@@ -478,7 +579,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "elasticsearch",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
@@ -508,7 +612,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
 				AttributeServiceTargetType:              "cassandra",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
