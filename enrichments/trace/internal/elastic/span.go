@@ -333,7 +333,7 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 
 	if destnResource != "" {
-		span.Attributes().PutStr(AttributeSpanDestinationResource, destnResource)
+		span.Attributes().PutStr(AttributeSpanDestinationServiceResource, destnResource)
 	}
 }
 
@@ -358,7 +358,7 @@ func isElasticTransaction(span ptrace.Span) bool {
 
 // getHostPort derives the host:port value from url.* attributes. Unlike
 // apm-data, the current code does NOT fallback to net.* or http.*
-// attritubtes as most of these are now deprecated.
+// attributes as most of these are now deprecated.
 func getHostPort(urlFull *url.URL, urlDomain string, urlPort int64) string {
 	if urlFull != nil {
 		return urlFull.Host
