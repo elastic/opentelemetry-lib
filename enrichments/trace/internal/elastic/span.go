@@ -170,6 +170,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeTransactionName, span.Name())
 	}
+	if cfg.ProcessorEvent.Enabled {
+		span.Attributes().PutStr(AttributeProcessorEvent, "transaction")
+	}
 	if cfg.Type.Enabled {
 		s.setTxnType(span)
 	}
@@ -187,6 +190,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 ) {
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeSpanName, span.Name())
+	}
+	if cfg.ProcessorEvent.Enabled {
+		span.Attributes().PutStr(AttributeProcessorEvent, "span")
 	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)

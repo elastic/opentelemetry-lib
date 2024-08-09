@@ -30,6 +30,7 @@ const (
 	AttributeTransactionID                  = "transaction.id"
 	AttributeTransactionRoot                = "transaction.root"
 	AttributeTransactionName                = "transaction.name"
+	AttributeProcessorEvent                 = "processor.event"
 	AttributeTransactionType                = "transaction.type"
 	AttributeTransactionResult              = "transaction.result"
 	AttributeSpanName                       = "span.name"

@@ -46,6 +46,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "",
 				AttributeTransactionName:   "",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "unknown",
@@ -70,6 +71,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 2xx",
 				AttributeTransactionType:   "request",
@@ -94,6 +96,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 1xx",
 				AttributeTransactionType:   "request",
@@ -117,6 +120,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 5xx",
 				AttributeTransactionType:   "request",
@@ -141,6 +145,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "OK",
 				AttributeTransactionType:   "request",
@@ -165,6 +170,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Internal",
 				AttributeTransactionType:   "request",
@@ -184,6 +190,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "unknown",
@@ -203,6 +210,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "failure",
 				AttributeTransactionResult: "Error",
 				AttributeTransactionType:   "unknown",
@@ -222,6 +230,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRoot:   true,
 				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
+				AttributeProcessorEvent:    "transaction",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
 				AttributeTransactionType:   "messaging",
@@ -263,8 +272,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input:  getElasticSpan(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
-				AttributeSpanName:     "",
-				AttributeEventOutcome: "success",
+				AttributeSpanName:       "",
+				AttributeProcessorEvent: "span",
+				AttributeEventOutcome:   "success",
 			},
 		},
 		{
@@ -283,6 +293,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeServiceTargetType:              "",
@@ -304,6 +315,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "http",
 				AttributeServiceTargetName:              "testsvc",
@@ -331,6 +343,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "http",
 				AttributeServiceTargetName:              "www.foo.bar:443",
@@ -356,6 +369,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "http",
 				AttributeServiceTargetName:              "www.foo.bar:443",
@@ -377,6 +391,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "grpc",
 				AttributeServiceTargetName:              "testsvc",
@@ -395,6 +410,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "xmlrpc",
 				AttributeServiceTargetName:              "testsvc",
@@ -415,6 +431,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "external",
 				AttributeServiceTargetName:              "service.Test",
@@ -433,6 +450,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "kafka",
 				AttributeServiceTargetName:              "testsvc",
@@ -451,6 +469,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "messaging",
 				AttributeServiceTargetName:              "t1",
@@ -470,6 +489,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "messaging",
 				AttributeServiceTargetName:              "testsvc",
@@ -495,6 +515,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "elasticsearch",
 				AttributeServiceTargetName:              "testsvc",
@@ -525,6 +546,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
 				AttributeEventOutcome:                   "success",
 				AttributeServiceTargetType:              "cassandra",
 				AttributeServiceTargetName:              "testsvc",
