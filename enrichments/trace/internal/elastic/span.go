@@ -254,17 +254,21 @@ func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
 func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	// default to success outcome
 	outcome := "success"
+	successCount := 1
 	switch {
 	case s.spanStatusCode == ptrace.StatusCodeError:
 		outcome = "failure"
+		successCount = 0
 	case s.spanStatusCode == ptrace.StatusCodeOk:
 		// keep the default success outcome
 	case s.httpStatusCode >= http.StatusInternalServerError:
 		// TODO (lahsivjar): Handle GRPC status code? - not handled in apm-data
 		// TODO (lahsivjar): Move to HTTPResponseStatusCode? Backward compatibility?
 		outcome = "failure"
+		successCount = 0
 	}
 	span.Attributes().PutStr(AttributeEventOutcome, outcome)
+	span.Attributes().PutInt(AttributeSuccessCount, int64(successCount))
 }
 
 func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
