@@ -191,6 +191,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
 	}
+	if cfg.DestinationService.Enabled {
+		s.setDestinationService(span)
+	}
 }
 
 // normalizeAttributes sets any dependent attributes that
@@ -300,6 +303,40 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	}
 }
 
+func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
+	var destnResource string
+	if s.peerService != "" {
+		destnResource = s.peerService
+	}
+
+	switch {
+	case s.isDB:
+		if destnResource == "" && s.dbType != "" {
+			destnResource = s.dbType
+		}
+	case s.isMessaging:
+		if destnResource == "" && s.messagingSystem != "" {
+			destnResource = s.messagingSystem
+		}
+		// For parity with apm-data, destn resource does not handle
+		// temporary destination flag. However, it is handled by
+		// service.target fields and we might want to do the same here.
+		if destnResource != "" && s.messagingDestinationName != "" {
+			destnResource += "/" + s.messagingDestinationName
+		}
+	case s.isRPC, s.isHTTP:
+		if destnResource == "" {
+			if res := getHostPort(s.urlFull, s.urlDomain, s.urlPort); res != "" {
+				destnResource = res
+			}
+		}
+	}
+
+	if destnResource != "" {
+		span.Attributes().PutStr(AttributeSpanDestinationServiceResource, destnResource)
+	}
+}
+
 func isTraceRoot(span ptrace.Span) bool {
 	return span.ParentSpanID().IsEmpty()
 }
@@ -319,6 +356,9 @@ func isElasticTransaction(span ptrace.Span) bool {
 	return false
 }
 
+// getHostPort derives the host:port value from url.* attributes. Unlike
+// apm-data, the current code does NOT fallback to net.* or http.*
+// attributes as most of these are now deprecated.
 func getHostPort(urlFull *url.URL, urlDomain string, urlPort int64) string {
 	if urlFull != nil {
 		return urlFull.Host
