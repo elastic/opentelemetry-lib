@@ -173,6 +173,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.ProcessorEvent.Enabled {
 		span.Attributes().PutStr(AttributeProcessorEvent, "transaction")
 	}
+	if cfg.DurationUs.Enabled {
+		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
+	}
 	if cfg.Type.Enabled {
 		s.setTxnType(span)
 	}
@@ -196,6 +199,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
+	}
+	if cfg.DurationUs.Enabled {
+		span.Attributes().PutInt(AttributeSpanDurationUs, getDurationUs(span))
 	}
 	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
@@ -348,6 +354,10 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	if destnResource != "" {
 		span.Attributes().PutStr(AttributeSpanDestinationServiceResource, destnResource)
 	}
+}
+
+func getDurationUs(span ptrace.Span) int64 {
+	return int64(span.EndTimestamp()-span.StartTimestamp()) / 1000
 }
 
 func isTraceRoot(span ptrace.Span) bool {
