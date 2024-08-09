@@ -44,6 +44,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "",
 				AttributeTransactionName:   "",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -60,12 +61,14 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Attributes().PutInt(semconv.AttributeHTTPStatusCode, http.StatusOK)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 2xx",
@@ -77,6 +80,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
@@ -88,6 +92,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 1xx",
@@ -99,6 +104,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// span status code should take precedence over http status attributes
 				// for setting event.outcome
 				span.Status().SetCode(ptrace.StatusCodeOk)
@@ -109,6 +115,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "HTTP 5xx",
@@ -120,6 +127,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
@@ -131,6 +139,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "OK",
@@ -142,6 +151,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
@@ -153,6 +163,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Internal",
@@ -164,12 +175,14 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",
@@ -181,12 +194,14 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Status().SetCode(ptrace.StatusCodeError)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "failure",
 				AttributeTransactionResult: "Error",
@@ -198,12 +213,14 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
 				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
 				span.Attributes().PutStr(semconv.AttributeMessagingSystem, "kafka")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTransactionRoot:   true,
+				AttributeTransactionID:     "0100000000000000",
 				AttributeTransactionName:   "testtxn",
 				AttributeEventOutcome:      "success",
 				AttributeTransactionResult: "Success",

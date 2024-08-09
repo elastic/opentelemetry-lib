@@ -27,6 +27,7 @@ const (
 	AttributeServiceFrameworkVersion = "service.framework.version"
 
 	// span attributes
+	AttributeTransactionID                  = "transaction.id"
 	AttributeTransactionRoot                = "transaction.root"
 	AttributeTransactionName                = "transaction.name"
 	AttributeTransactionType                = "transaction.type"

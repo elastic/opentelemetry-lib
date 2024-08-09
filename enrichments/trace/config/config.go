@@ -40,6 +40,7 @@ type ScopeConfig struct {
 // ElasticTransactionConfig configures the enrichment attributes for the
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
+	ID           AttributeConfig `mapstructure:"id"`
 	Root         AttributeConfig `mapstructure:"root"`
 	Name         AttributeConfig `mapstructure:"name"`
 	Type         AttributeConfig `mapstructure:"type"`
@@ -73,6 +74,7 @@ func Enabled() Config {
 			ServiceFrameworkVersion: AttributeConfig{Enabled: true},
 		},
 		Transaction: ElasticTransactionConfig{
+			ID:           AttributeConfig{Enabled: true},
 			Root:         AttributeConfig{Enabled: true},
 			Name:         AttributeConfig{Enabled: true},
 			Type:         AttributeConfig{Enabled: true},
