@@ -34,6 +34,7 @@ const (
 	AttributeTransactionType                = "transaction.type"
 	AttributeTransactionDurationUs          = "transaction.duration.us"
 	AttributeTransactionResult              = "transaction.result"
+	AttributeTransactionRepresentativeCount = "transaction.representative_count"
 	AttributeSpanName                       = "span.name"
 	AttributeSpanType                       = "span.type"
 	AttributeSpanSubtype                    = "span.subtype"
@@ -43,4 +44,5 @@ const (
 	AttributeServiceTargetName              = "service.target.name"
 	AttributeSpanDestinationServiceResource = "span.destination.service.resource"
 	AttributeSpanDurationUs                 = "span.duration.us"
+	AttributeSpanRepresentativeCount        = "span.representative_count"
 )

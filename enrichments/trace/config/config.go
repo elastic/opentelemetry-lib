@@ -40,26 +40,28 @@ type ScopeConfig struct {
 // ElasticTransactionConfig configures the enrichment attributes for the
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
-	ID             AttributeConfig `mapstructure:"id"`
-	Root           AttributeConfig `mapstructure:"root"`
-	Name           AttributeConfig `mapstructure:"name"`
-	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
-	DurationUs     AttributeConfig `mapstructure:"duration_us"`
-	Type           AttributeConfig `mapstructure:"type"`
-	Result         AttributeConfig `mapstructure:"result"`
-	EventOutcome   AttributeConfig `mapstructure:"event_outcome"`
+	ID                  AttributeConfig `mapstructure:"id"`
+	Root                AttributeConfig `mapstructure:"root"`
+	Name                AttributeConfig `mapstructure:"name"`
+	ProcessorEvent      AttributeConfig `mapstructure:"processor_event"`
+	RepresentativeCount AttributeConfig `mapstructure:"representative_count"`
+	DurationUs          AttributeConfig `mapstructure:"duration_us"`
+	Type                AttributeConfig `mapstructure:"type"`
+	Result              AttributeConfig `mapstructure:"result"`
+	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
 }
 
 // ElasticSpanConfig configures the enrichment attributes for the spans
 // which are NOT identified as elastic transaction.
 type ElasticSpanConfig struct {
-	Name               AttributeConfig `mapstructure:"name"`
-	ProcessorEvent     AttributeConfig `mapstructure:"processor_event"`
-	TypeSubtype        AttributeConfig `mapstructure:"type_subtype"`
-	DurationUs         AttributeConfig `mapstructure:"duration_us"`
-	EventOutcome       AttributeConfig `mapstructure:"event_outcome"`
-	ServiceTarget      AttributeConfig `mapstructure:"service_target"`
-	DestinationService AttributeConfig `mapstructure:"destination_service"`
+	Name                AttributeConfig `mapstructure:"name"`
+	ProcessorEvent      AttributeConfig `mapstructure:"processor_event"`
+	RepresentativeCount AttributeConfig `mapstructure:"representative_count"`
+	TypeSubtype         AttributeConfig `mapstructure:"type_subtype"`
+	DurationUs          AttributeConfig `mapstructure:"duration_us"`
+	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
+	ServiceTarget       AttributeConfig `mapstructure:"service_target"`
+	DestinationService  AttributeConfig `mapstructure:"destination_service"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -79,23 +81,25 @@ func Enabled() Config {
 			ServiceFrameworkVersion: AttributeConfig{Enabled: true},
 		},
 		Transaction: ElasticTransactionConfig{
-			ID:             AttributeConfig{Enabled: true},
-			Root:           AttributeConfig{Enabled: true},
-			Name:           AttributeConfig{Enabled: true},
-			ProcessorEvent: AttributeConfig{Enabled: true},
-			DurationUs:     AttributeConfig{Enabled: true},
-			Type:           AttributeConfig{Enabled: true},
-			Result:         AttributeConfig{Enabled: true},
-			EventOutcome:   AttributeConfig{Enabled: true},
+			ID:                  AttributeConfig{Enabled: true},
+			Root:                AttributeConfig{Enabled: true},
+			Name:                AttributeConfig{Enabled: true},
+			ProcessorEvent:      AttributeConfig{Enabled: true},
+			DurationUs:          AttributeConfig{Enabled: true},
+			Type:                AttributeConfig{Enabled: true},
+			Result:              AttributeConfig{Enabled: true},
+			EventOutcome:        AttributeConfig{Enabled: true},
+			RepresentativeCount: AttributeConfig{Enabled: true},
 		},
 		Span: ElasticSpanConfig{
-			Name:               AttributeConfig{Enabled: true},
-			ProcessorEvent:     AttributeConfig{Enabled: true},
-			TypeSubtype:        AttributeConfig{Enabled: true},
-			DurationUs:         AttributeConfig{Enabled: true},
-			EventOutcome:       AttributeConfig{Enabled: true},
-			ServiceTarget:      AttributeConfig{Enabled: true},
-			DestinationService: AttributeConfig{Enabled: true},
+			Name:                AttributeConfig{Enabled: true},
+			ProcessorEvent:      AttributeConfig{Enabled: true},
+			TypeSubtype:         AttributeConfig{Enabled: true},
+			DurationUs:          AttributeConfig{Enabled: true},
+			EventOutcome:        AttributeConfig{Enabled: true},
+			ServiceTarget:       AttributeConfig{Enabled: true},
+			DestinationService:  AttributeConfig{Enabled: true},
+			RepresentativeCount: AttributeConfig{Enabled: true},
 		},
 	}
 }
