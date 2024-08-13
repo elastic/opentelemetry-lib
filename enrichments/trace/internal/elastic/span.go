@@ -402,7 +402,7 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 }
 
 // getRepresentativeCount returns the number of spans represented by an
-// individually sampled as per the passed tracestate header.
+// individually sampled span as per the passed tracestate header.
 //
 // Representative count is similar to the OTel adjusted count definition
 // with a difference that representative count can also include
