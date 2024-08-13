@@ -58,7 +58,7 @@ type spanEnrichmentContext struct {
 	rpcService               string
 	grpcStatus               string
 	dbName                   string
-	dbType                   string
+	dbSystem                 string
 	messagingSystem          string
 	messagingDestinationName string
 
@@ -142,7 +142,7 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 			s.dbName = v.Str()
 		case semconv.AttributeDBSystem:
 			s.isDB = true
-			s.dbType = v.Str()
+			s.dbSystem = v.Str()
 		}
 		return true
 	})
@@ -196,6 +196,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	}
 	if cfg.ProcessorEvent.Enabled {
 		span.Attributes().PutStr(AttributeProcessorEvent, "span")
+	}
+	if cfg.TypeSubtype.Enabled {
+		s.setSpanTypeSubtype(span)
 	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
@@ -277,6 +280,38 @@ func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	span.Attributes().PutInt(AttributeSuccessCount, int64(successCount))
 }
 
+func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
+	var spanType, spanSubtype string
+
+	switch {
+	case s.isDB:
+		spanType = "db"
+		spanSubtype = s.dbSystem
+	case s.isMessaging:
+		spanType = "messaging"
+		spanSubtype = s.messagingSystem
+	case s.isRPC:
+		spanType = "external"
+		spanSubtype = s.rpcSystem
+	case s.isHTTP:
+		spanType = "external"
+		spanSubtype = "http"
+	default:
+		switch span.Kind() {
+		case ptrace.SpanKindInternal:
+			spanType = "app"
+			spanSubtype = "internal"
+		default:
+			spanType = "unknown"
+		}
+	}
+
+	span.Attributes().PutStr(AttributeSpanType, spanType)
+	if spanSubtype != "" {
+		span.Attributes().PutStr(AttributeSpanSubtype, spanSubtype)
+	}
+}
+
 func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	var targetType, targetName string
 
@@ -287,8 +322,8 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	switch {
 	case s.isDB:
 		targetType = "db"
-		if s.dbType != "" {
-			targetType = s.dbType
+		if s.dbSystem != "" {
+			targetType = s.dbSystem
 		}
 		if s.dbName != "" {
 			targetName = s.dbName
@@ -330,8 +365,8 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 
 	switch {
 	case s.isDB:
-		if destnResource == "" && s.dbType != "" {
-			destnResource = s.dbType
+		if destnResource == "" && s.dbSystem != "" {
+			destnResource = s.dbSystem
 		}
 	case s.isMessaging:
 		if destnResource == "" && s.messagingSystem != "" {

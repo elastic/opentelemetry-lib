@@ -35,6 +35,8 @@ const (
 	AttributeTransactionDurationUs          = "transaction.duration.us"
 	AttributeTransactionResult              = "transaction.result"
 	AttributeSpanName                       = "span.name"
+	AttributeSpanType                       = "span.type"
+	AttributeSpanSubtype                    = "span.subtype"
 	AttributeEventOutcome                   = "event.outcome"
 	AttributeSuccessCount                   = "event.success_count"
 	AttributeServiceTargetType              = "service.target.type"
