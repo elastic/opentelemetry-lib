@@ -161,11 +161,20 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	span ptrace.Span,
 	cfg config.ElasticTransactionConfig,
 ) {
+	if cfg.ID.Enabled {
+		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
+	}
 	if cfg.Root.Enabled {
 		span.Attributes().PutBool(AttributeTransactionRoot, isTraceRoot(span))
 	}
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeTransactionName, span.Name())
+	}
+	if cfg.ProcessorEvent.Enabled {
+		span.Attributes().PutStr(AttributeProcessorEvent, "transaction")
+	}
+	if cfg.DurationUs.Enabled {
+		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
 	}
 	if cfg.Type.Enabled {
 		s.setTxnType(span)
@@ -185,8 +194,14 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeSpanName, span.Name())
 	}
+	if cfg.ProcessorEvent.Enabled {
+		span.Attributes().PutStr(AttributeProcessorEvent, "span")
+	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
+	}
+	if cfg.DurationUs.Enabled {
+		span.Attributes().PutInt(AttributeSpanDurationUs, getDurationUs(span))
 	}
 	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
@@ -245,17 +260,21 @@ func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
 func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	// default to success outcome
 	outcome := "success"
+	successCount := 1
 	switch {
 	case s.spanStatusCode == ptrace.StatusCodeError:
 		outcome = "failure"
+		successCount = 0
 	case s.spanStatusCode == ptrace.StatusCodeOk:
 		// keep the default success outcome
 	case s.httpStatusCode >= http.StatusInternalServerError:
 		// TODO (lahsivjar): Handle GRPC status code? - not handled in apm-data
 		// TODO (lahsivjar): Move to HTTPResponseStatusCode? Backward compatibility?
 		outcome = "failure"
+		successCount = 0
 	}
 	span.Attributes().PutStr(AttributeEventOutcome, outcome)
+	span.Attributes().PutInt(AttributeSuccessCount, int64(successCount))
 }
 
 func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
@@ -335,6 +354,10 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	if destnResource != "" {
 		span.Attributes().PutStr(AttributeSpanDestinationServiceResource, destnResource)
 	}
+}
+
+func getDurationUs(span ptrace.Span) int64 {
+	return int64(span.EndTimestamp()-span.StartTimestamp()) / 1000
 }
 
 func isTraceRoot(span ptrace.Span) bool {
