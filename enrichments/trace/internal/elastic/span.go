@@ -197,6 +197,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.ProcessorEvent.Enabled {
 		span.Attributes().PutStr(AttributeProcessorEvent, "span")
 	}
+	if cfg.TypeSubtype.Enabled {
+		s.setSpanTypeSubtype(span)
+	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
@@ -275,6 +278,38 @@ func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	}
 	span.Attributes().PutStr(AttributeEventOutcome, outcome)
 	span.Attributes().PutInt(AttributeSuccessCount, int64(successCount))
+}
+
+func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
+	var spanType, spanSubtype string
+
+	switch {
+	case s.isDB:
+		spanType = "db"
+		spanSubtype = s.dbType
+	case s.isMessaging:
+		spanType = "messaging"
+		spanSubtype = s.messagingSystem
+	case s.isRPC:
+		spanType = "external"
+		spanSubtype = s.rpcSystem
+	case s.isHTTP:
+		spanType = "external"
+		spanSubtype = "http"
+	default:
+		switch span.Kind() {
+		case ptrace.SpanKindInternal:
+			spanType = "app"
+			spanSubtype = "internal"
+		default:
+			spanType = "unknown"
+		}
+	}
+
+	span.Attributes().PutStr(AttributeSpanType, spanType)
+	if spanSubtype != "" {
+		span.Attributes().PutStr(AttributeSpanSubtype, spanSubtype)
+	}
 }
 
 func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {

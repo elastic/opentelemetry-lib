@@ -316,6 +316,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:       "",
 				AttributeProcessorEvent: "span",
+				AttributeSpanType:       "unknown",
 				AttributeSpanDurationUs: int64(0),
 				AttributeEventOutcome:   "success",
 				AttributeSuccessCount:   int64(1),
@@ -325,6 +326,25 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name:          "all_disabled",
 			input:         getElasticSpan(),
 			enrichedAttrs: map[string]any{},
+		},
+		{
+			name: "internal_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindInternal)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeSpanName:       "",
+				AttributeProcessorEvent: "span",
+				AttributeSpanType:       "app",
+				AttributeSpanSubtype:    "internal",
+				AttributeSpanDurationUs: int64(0),
+				AttributeEventOutcome:   "success",
+				AttributeSuccessCount:   int64(1),
+			},
 		},
 		{
 			name: "peer_service",
@@ -338,6 +358,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "unknown",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -362,6 +383,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "http",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -392,6 +415,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "http",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -420,6 +445,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "http",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -444,6 +471,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "grpc",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -465,6 +494,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "xmlrpc",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -488,6 +519,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "external",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -509,6 +541,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "messaging",
+				AttributeSpanSubtype:                    "kafka",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -530,6 +564,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "messaging",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -552,6 +587,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "messaging",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -580,6 +616,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "db",
+				AttributeSpanSubtype:                    "elasticsearch",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),
@@ -613,6 +651,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
+				AttributeSpanType:                       "db",
+				AttributeSpanSubtype:                    "cassandra",
 				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
 				AttributeEventOutcome:                   "success",
 				AttributeSuccessCount:                   int64(1),

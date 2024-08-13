@@ -55,6 +55,7 @@ type ElasticTransactionConfig struct {
 type ElasticSpanConfig struct {
 	Name               AttributeConfig `mapstructure:"name"`
 	ProcessorEvent     AttributeConfig `mapstructure:"processor_event"`
+	TypeSubtype        AttributeConfig `mapstructure:"type_subtype"`
 	DurationUs         AttributeConfig `mapstructure:"duration_us"`
 	EventOutcome       AttributeConfig `mapstructure:"event_outcome"`
 	ServiceTarget      AttributeConfig `mapstructure:"service_target"`
@@ -90,6 +91,7 @@ func Enabled() Config {
 		Span: ElasticSpanConfig{
 			Name:               AttributeConfig{Enabled: true},
 			ProcessorEvent:     AttributeConfig{Enabled: true},
+			TypeSubtype:        AttributeConfig{Enabled: true},
 			DurationUs:         AttributeConfig{Enabled: true},
 			EventOutcome:       AttributeConfig{Enabled: true},
 			ServiceTarget:      AttributeConfig{Enabled: true},
