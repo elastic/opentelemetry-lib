@@ -6,8 +6,8 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.106.1
 	github.com/stretchr/testify v1.9.0
-	go.opentelemetry.io/collector/pdata v1.12.0
-	go.opentelemetry.io/collector/semconv v0.106.1
+	go.opentelemetry.io/collector/pdata v1.13.0
+	go.opentelemetry.io/collector/semconv v0.107.0
 	go.opentelemetry.io/proto/otlp v1.3.1
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.65.0
