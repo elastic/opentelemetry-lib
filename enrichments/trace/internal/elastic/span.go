@@ -58,7 +58,7 @@ type spanEnrichmentContext struct {
 	rpcService               string
 	grpcStatus               string
 	dbName                   string
-	dbType                   string
+	dbSystem                 string
 	messagingSystem          string
 	messagingDestinationName string
 
@@ -142,7 +142,7 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 			s.dbName = v.Str()
 		case semconv.AttributeDBSystem:
 			s.isDB = true
-			s.dbType = v.Str()
+			s.dbSystem = v.Str()
 		}
 		return true
 	})
@@ -286,7 +286,7 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
 	switch {
 	case s.isDB:
 		spanType = "db"
-		spanSubtype = s.dbType
+		spanSubtype = s.dbSystem
 	case s.isMessaging:
 		spanType = "messaging"
 		spanSubtype = s.messagingSystem
@@ -322,8 +322,8 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	switch {
 	case s.isDB:
 		targetType = "db"
-		if s.dbType != "" {
-			targetType = s.dbType
+		if s.dbSystem != "" {
+			targetType = s.dbSystem
 		}
 		if s.dbName != "" {
 			targetName = s.dbName
@@ -365,8 +365,8 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 
 	switch {
 	case s.isDB:
-		if destnResource == "" && s.dbType != "" {
-			destnResource = s.dbType
+		if destnResource == "" && s.dbSystem != "" {
+			destnResource = s.dbSystem
 		}
 	case s.isMessaging:
 		if destnResource == "" && s.messagingSystem != "" {
