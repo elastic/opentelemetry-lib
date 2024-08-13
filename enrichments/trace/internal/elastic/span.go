@@ -19,10 +19,12 @@ package elastic
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -173,6 +175,10 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.ProcessorEvent.Enabled {
 		span.Attributes().PutStr(AttributeProcessorEvent, "transaction")
 	}
+	if cfg.RepresentativeCount.Enabled {
+		repCount := getRepresentativeCount(span.TraceState().AsRaw())
+		span.Attributes().PutDouble(AttributeTransactionRepresentativeCount, repCount)
+	}
 	if cfg.DurationUs.Enabled {
 		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
 	}
@@ -196,6 +202,10 @@ func (s *spanEnrichmentContext) enrichSpan(
 	}
 	if cfg.ProcessorEvent.Enabled {
 		span.Attributes().PutStr(AttributeProcessorEvent, "span")
+	}
+	if cfg.RepresentativeCount.Enabled {
+		repCount := getRepresentativeCount(span.TraceState().AsRaw())
+		span.Attributes().PutDouble(AttributeSpanRepresentativeCount, repCount)
 	}
 	if cfg.TypeSubtype.Enabled {
 		s.setSpanTypeSubtype(span)
@@ -391,6 +401,37 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 }
 
+// getRepresentativeCount returns the number of spans represented by an
+// individually sampled as per the passed tracestate header.
+//
+// Representative count is similar to the OTel adjusted count definition
+// with a difference that representative count can also include
+// dynamically calculated representivity for non-probabilistic sampling.
+// In addition, the representative count defaults to 1 if the adjusted
+// count is UNKNOWN or the p-value is invalid.
+//
+// Def: https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/#adjusted-count)
+//
+// The count is calculated by using p-value:
+// https://opentelemetry.io/docs/reference/specification/trace/tracestate-probability-sampling/#p-value
+func getRepresentativeCount(tracestate string) float64 {
+	var p uint64
+	otValue := getValueForKeyInString(tracestate, "ot", ',', '=')
+	if otValue != "" {
+		pValue := getValueForKeyInString(otValue, "p", ';', ':')
+
+		if pValue != "" {
+			p, _ = strconv.ParseUint(pValue, 10, 6)
+		}
+	}
+
+	if p == 63 {
+		// p-value == 63 represents zero adjusted count
+		return 0.0
+	}
+	return math.Pow(2, float64(p))
+}
+
 func getDurationUs(span ptrace.Span) int64 {
 	return int64(span.EndTimestamp()-span.StartTimestamp()) / 1000
 }
@@ -412,6 +453,29 @@ func isElasticTransaction(span ptrace.Span) bool {
 		return true
 	}
 	return false
+}
+
+// parses string format `<key>=val<seperator>`
+func getValueForKeyInString(str string, key string, separator rune, assignChar rune) string {
+	for {
+		str = strings.TrimSpace(str)
+		if str == "" {
+			break
+		}
+		kv := str
+		if sepIdx := strings.IndexRune(str, separator); sepIdx != -1 {
+			kv = strings.TrimSpace(str[:sepIdx])
+			str = str[sepIdx+1:]
+		} else {
+			str = ""
+		}
+		equal := strings.IndexRune(kv, assignChar)
+		if equal != -1 && kv[:equal] == key {
+			return kv[equal+1:]
+		}
+	}
+
+	return ""
 }
 
 // getHostPort derives the host:port value from url.* attributes. Unlike
