@@ -163,6 +163,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	span ptrace.Span,
 	cfg config.ElasticTransactionConfig,
 ) {
+	if cfg.TimestampUs.Enabled {
+		s.setTimestampUs(span)
+	}
 	if cfg.ID.Enabled {
 		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
 	}
@@ -197,6 +200,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	span ptrace.Span,
 	cfg config.ElasticSpanConfig,
 ) {
+	if cfg.TimestampUs.Enabled {
+		s.setTimestampUs(span)
+	}
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeSpanName, span.Name())
 	}
@@ -229,6 +235,26 @@ func (s *spanEnrichmentContext) enrichSpan(
 func (s *spanEnrichmentContext) normalizeAttributes() {
 	if s.rpcSystem == "" && s.grpcStatus != "" {
 		s.rpcSystem = "grpc"
+	}
+}
+
+// setTimestampUs sets the attribute timestamp.us for span and
+// span events. This is a temporary function to enable higher
+// resolution timestamps in Elasticsearch. For more details see:
+// https://github.com/elastic/opentelemetry-dev/issues/374.
+//
+// TODO (lahsivjar): If more enrichments need to be added
+// for span events then consider having a separate flow for span
+// events enrichment with its own configuration.
+func (s *spanEnrichmentContext) setTimestampUs(span ptrace.Span) {
+	startTsUs := int64(span.StartTimestamp()) / 1000
+	span.Attributes().PutInt(AttributeTimestampUs, startTsUs)
+
+	events := span.Events()
+	for i := 0; i < events.Len(); i++ {
+		event := events.At(i)
+		eventTsUs := int64(event.Timestamp()) / 1000
+		event.Attributes().PutInt(AttributeTimestampUs, eventTsUs)
 	}
 }
 

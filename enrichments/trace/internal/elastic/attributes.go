@@ -27,6 +27,7 @@ const (
 	AttributeServiceFrameworkVersion = "service.framework.version"
 
 	// span attributes
+	AttributeTimestampUs                    = "timestamp.us"
 	AttributeProcessorEvent                 = "processor.event"
 	AttributeTransactionID                  = "transaction.id"
 	AttributeTransactionRoot                = "transaction.root"

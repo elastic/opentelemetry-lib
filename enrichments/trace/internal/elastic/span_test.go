@@ -57,6 +57,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input:  ptrace.NewSpan(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    int64(0),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "",
 				AttributeTransactionName:                "",
@@ -83,6 +84,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    int64(0),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "",
 				AttributeTransactionName:                "",
@@ -105,6 +107,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -133,6 +136,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -160,6 +164,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -188,6 +193,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -216,6 +222,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -239,6 +246,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -262,6 +270,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -285,6 +294,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -344,6 +354,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:             int64(0),
 				AttributeSpanName:                "",
 				AttributeProcessorEvent:          "span",
 				AttributeSpanRepresentativeCount: float64(1),
@@ -368,6 +379,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:             int64(0),
 				AttributeSpanName:                "",
 				AttributeProcessorEvent:          "span",
 				AttributeSpanRepresentativeCount: float64(1),
@@ -388,6 +400,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -414,6 +427,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -447,6 +461,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -478,6 +493,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -505,6 +521,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -529,6 +546,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -555,6 +573,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -578,6 +597,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -602,6 +622,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -626,6 +647,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -656,6 +678,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
@@ -692,6 +715,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
 				AttributeSpanName:                       "testspan",
 				AttributeProcessorEvent:                 "span",
 				AttributeSpanRepresentativeCount:        float64(1),
