@@ -40,6 +40,7 @@ type ScopeConfig struct {
 // ElasticTransactionConfig configures the enrichment attributes for the
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
+	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
 	ID                  AttributeConfig `mapstructure:"id"`
 	Root                AttributeConfig `mapstructure:"root"`
 	Name                AttributeConfig `mapstructure:"name"`
@@ -54,6 +55,7 @@ type ElasticTransactionConfig struct {
 // ElasticSpanConfig configures the enrichment attributes for the spans
 // which are NOT identified as elastic transaction.
 type ElasticSpanConfig struct {
+	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
 	Name                AttributeConfig `mapstructure:"name"`
 	ProcessorEvent      AttributeConfig `mapstructure:"processor_event"`
 	RepresentativeCount AttributeConfig `mapstructure:"representative_count"`
@@ -81,6 +83,7 @@ func Enabled() Config {
 			ServiceFrameworkVersion: AttributeConfig{Enabled: true},
 		},
 		Transaction: ElasticTransactionConfig{
+			TimestampUs:         AttributeConfig{Enabled: true},
 			ID:                  AttributeConfig{Enabled: true},
 			Root:                AttributeConfig{Enabled: true},
 			Name:                AttributeConfig{Enabled: true},
@@ -92,6 +95,7 @@ func Enabled() Config {
 			RepresentativeCount: AttributeConfig{Enabled: true},
 		},
 		Span: ElasticSpanConfig{
+			TimestampUs:         AttributeConfig{Enabled: true},
 			Name:                AttributeConfig{Enabled: true},
 			ProcessorEvent:      AttributeConfig{Enabled: true},
 			TypeSubtype:         AttributeConfig{Enabled: true},
