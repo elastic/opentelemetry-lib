@@ -41,6 +41,7 @@ type ScopeConfig struct {
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
 	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
+	Sampled             AttributeConfig `mapstructure:"sampled"`
 	ID                  AttributeConfig `mapstructure:"id"`
 	Root                AttributeConfig `mapstructure:"root"`
 	Name                AttributeConfig `mapstructure:"name"`
@@ -84,6 +85,7 @@ func Enabled() Config {
 		},
 		Transaction: ElasticTransactionConfig{
 			TimestampUs:         AttributeConfig{Enabled: true},
+			Sampled:             AttributeConfig{Enabled: true},
 			ID:                  AttributeConfig{Enabled: true},
 			Root:                AttributeConfig{Enabled: true},
 			Name:                AttributeConfig{Enabled: true},

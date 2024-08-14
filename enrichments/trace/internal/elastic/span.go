@@ -166,6 +166,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.TimestampUs.Enabled {
 		s.setTimestampUs(span)
 	}
+	if cfg.Sampled.Enabled {
+		span.Attributes().PutBool(AttributeTransactionSampled, true)
+	}
 	if cfg.ID.Enabled {
 		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
 	}

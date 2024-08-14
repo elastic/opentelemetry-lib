@@ -58,6 +58,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    int64(0),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "",
 				AttributeTransactionName:                "",
@@ -85,6 +86,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    int64(0),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "",
 				AttributeTransactionName:                "",
@@ -108,6 +110,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -137,6 +140,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -165,6 +169,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -194,6 +199,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -223,6 +229,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -247,6 +254,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -271,6 +279,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",
@@ -295,6 +304,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			config: config.Enabled().Transaction,
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
 				AttributeTransactionRoot:                true,
 				AttributeTransactionID:                  "0100000000000000",
 				AttributeTransactionName:                "testtxn",

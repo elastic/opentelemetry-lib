@@ -29,6 +29,7 @@ const (
 	// span attributes
 	AttributeTimestampUs                    = "timestamp.us"
 	AttributeProcessorEvent                 = "processor.event"
+	AttributeTransactionSampled             = "transaction.sampled"
 	AttributeTransactionID                  = "transaction.id"
 	AttributeTransactionRoot                = "transaction.root"
 	AttributeTransactionName                = "transaction.name"
