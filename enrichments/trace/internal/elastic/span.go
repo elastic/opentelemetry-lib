@@ -157,6 +157,12 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 	} else {
 		s.enrichSpan(span, cfg.Span)
 	}
+
+	spanEvents := span.Events()
+	for i := 0; i < spanEvents.Len(); i++ {
+		var c spanEventEnrichmentContext
+		c.enrich(spanEvents.At(i), cfg.SpanEvent)
+	}
 }
 
 func (s *spanEnrichmentContext) enrichTransaction(
@@ -164,7 +170,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	cfg config.ElasticTransactionConfig,
 ) {
 	if cfg.TimestampUs.Enabled {
-		s.setTimestampUs(span)
+		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Sampled.Enabled {
 		span.Attributes().PutBool(AttributeTransactionSampled, true)
@@ -204,7 +210,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 	cfg config.ElasticSpanConfig,
 ) {
 	if cfg.TimestampUs.Enabled {
-		s.setTimestampUs(span)
+		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(AttributeSpanName, span.Name())
@@ -238,26 +244,6 @@ func (s *spanEnrichmentContext) enrichSpan(
 func (s *spanEnrichmentContext) normalizeAttributes() {
 	if s.rpcSystem == "" && s.grpcStatus != "" {
 		s.rpcSystem = "grpc"
-	}
-}
-
-// setTimestampUs sets the attribute timestamp.us for span and
-// span events. This is a temporary function to enable higher
-// resolution timestamps in Elasticsearch. For more details see:
-// https://github.com/elastic/opentelemetry-dev/issues/374.
-//
-// TODO (lahsivjar): If more enrichments need to be added
-// for span events then consider having a separate flow for span
-// events enrichment with its own configuration.
-func (s *spanEnrichmentContext) setTimestampUs(span ptrace.Span) {
-	startTsUs := int64(span.StartTimestamp()) / 1000
-	span.Attributes().PutInt(AttributeTimestampUs, startTsUs)
-
-	events := span.Events()
-	for i := 0; i < events.Len(); i++ {
-		event := events.At(i)
-		eventTsUs := int64(event.Timestamp()) / 1000
-		event.Attributes().PutInt(AttributeTimestampUs, eventTsUs)
 	}
 }
 
@@ -430,6 +416,26 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 }
 
+type spanEventEnrichmentContext struct {
+	exception bool
+}
+
+func (s *spanEventEnrichmentContext) enrich(
+	se ptrace.SpanEvent,
+	cfg config.SpanEventConfig,
+) {
+	// Extract top level span event information.
+	s.exception = se.Name() == "exception"
+
+	// Enrich span event attributes.
+	if cfg.TimestampUs.Enabled {
+		se.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(se.Timestamp()))
+	}
+	if cfg.ProcessorEvent.Enabled && s.exception {
+		se.Attributes().PutStr(AttributeProcessorEvent, "error")
+	}
+}
+
 // getRepresentativeCount returns the number of spans represented by an
 // individually sampled span as per the passed tracestate header.
 //
@@ -521,6 +527,10 @@ func getHostPort(urlFull *url.URL, urlDomain string, urlPort int64) string {
 		return net.JoinHostPort(urlDomain, strconv.FormatInt(urlPort, 10))
 	}
 	return ""
+}
+
+func getTimestampUs(ts pcommon.Timestamp) int64 {
+	return int64(ts) / 1000
 }
 
 var standardStatusCodeResults = [...]string{
