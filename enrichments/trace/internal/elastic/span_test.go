@@ -757,6 +757,61 @@ func TestElasticSpanEnrich(t *testing.T) {
 	}
 }
 
+func TestSpanEventEnrich(t *testing.T) {
+	now := time.Unix(3600, 0)
+	ts := pcommon.NewTimestampFromTime(now)
+	for _, tc := range []struct {
+		name          string
+		input         ptrace.SpanEvent
+		config        config.SpanEventConfig
+		enrichedAttrs map[string]any
+	}{
+		{
+			name: "not_exception",
+			input: func() ptrace.SpanEvent {
+				event := ptrace.NewSpanEvent()
+				event.SetTimestamp(ts)
+				return event
+			}(),
+			config: config.Enabled().SpanEvent,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs: ts.AsTime().UnixMicro(),
+			},
+		},
+		{
+			name: "exception",
+			input: func() ptrace.SpanEvent {
+				event := ptrace.NewSpanEvent()
+				event.SetName("exception")
+				event.SetTimestamp(ts)
+				return event
+			}(),
+			config: config.Enabled().SpanEvent,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:    ts.AsTime().UnixMicro(),
+				AttributeProcessorEvent: "error",
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// Merge existing input attrs with the attrs added
+			// by enrichment to get the expected attributes.
+			expectedAttrs := tc.input.Attributes().AsRaw()
+			for k, v := range tc.enrichedAttrs {
+				expectedAttrs[k] = v
+			}
+
+			span := ptrace.NewSpan()
+			tc.input.MoveTo(span.Events().AppendEmpty())
+			EnrichSpan(span, config.Config{
+				SpanEvent: tc.config,
+			})
+
+			assert.Empty(t, cmp.Diff(expectedAttrs, span.Events().At(0).Attributes().AsRaw()))
+		})
+	}
+}
+
 func TestIsElasticTransaction(t *testing.T) {
 	for _, tc := range []struct {
 		name  string

@@ -23,6 +23,7 @@ type Config struct {
 	Scope       ScopeConfig              `mapstructure:"scope"`
 	Transaction ElasticTransactionConfig `mapstructure:"elastic_transaction"`
 	Span        ElasticSpanConfig        `mapstructure:"elastic_span"`
+	SpanEvent   SpanEventConfig          `mapstructure:"span_event"`
 }
 
 // ResourceConfig configures the enrichment of resource attributes.
@@ -40,6 +41,9 @@ type ScopeConfig struct {
 // ElasticTransactionConfig configures the enrichment attributes for the
 // spans which are identified as elastic transaction.
 type ElasticTransactionConfig struct {
+	// TimestampUs is a temporary attribute to enable higher
+	// resolution timestamps in Elasticsearch. For more details see:
+	// https://github.com/elastic/opentelemetry-dev/issues/374.
 	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
 	Sampled             AttributeConfig `mapstructure:"sampled"`
 	ID                  AttributeConfig `mapstructure:"id"`
@@ -56,6 +60,9 @@ type ElasticTransactionConfig struct {
 // ElasticSpanConfig configures the enrichment attributes for the spans
 // which are NOT identified as elastic transaction.
 type ElasticSpanConfig struct {
+	// TimestampUs is a temporary attribute to enable higher
+	// resolution timestamps in Elasticsearch. For more details see:
+	// https://github.com/elastic/opentelemetry-dev/issues/374.
 	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
 	Name                AttributeConfig `mapstructure:"name"`
 	ProcessorEvent      AttributeConfig `mapstructure:"processor_event"`
@@ -65,6 +72,15 @@ type ElasticSpanConfig struct {
 	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
 	ServiceTarget       AttributeConfig `mapstructure:"service_target"`
 	DestinationService  AttributeConfig `mapstructure:"destination_service"`
+}
+
+// SpanEventConfig configures enrichment attributes for the span events.
+type SpanEventConfig struct {
+	// TimestampUs is a temporary attribute to enable higher
+	// resolution timestamps in Elasticsearch. For more details see:
+	// https://github.com/elastic/opentelemetry-dev/issues/374.
+	TimestampUs    AttributeConfig `mapstructure:"timestamp_us"`
+	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -106,6 +122,10 @@ func Enabled() Config {
 			ServiceTarget:       AttributeConfig{Enabled: true},
 			DestinationService:  AttributeConfig{Enabled: true},
 			RepresentativeCount: AttributeConfig{Enabled: true},
+		},
+		SpanEvent: SpanEventConfig{
+			TimestampUs:    AttributeConfig{Enabled: true},
+			ProcessorEvent: AttributeConfig{Enabled: true},
 		},
 	}
 }
