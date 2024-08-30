@@ -27,7 +27,7 @@ import (
 	"go.uber.org/zap"
 )
 
-const scopePrefix = "otelcol/hostmetricsreceiver"
+const scopePrefix = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 
 var scraperToElasticDataset = map[string]string{
 	"cpuscraper":        "system.cpu",
