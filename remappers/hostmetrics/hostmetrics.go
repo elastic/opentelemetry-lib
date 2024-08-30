@@ -82,6 +82,7 @@ func (r *Remapper) Remap(
 	resource pcommon.Resource,
 ) {
 	if !r.Valid(src) {
+		r.logger.Error("scope name did not match", zap.String("metrics", src.Scope().Name()), zap.String("actual", scopePrefix))
 		return
 	}
 
