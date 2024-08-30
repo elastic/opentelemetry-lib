@@ -27,6 +27,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	kubeletScopePrefix = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
+	clusterScopePrefix = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/k8sclusterreceiver"
+)
+
 var scraperToElasticDataset = map[string]string{
 	"kubeletstatsreceiver": "kubernetes.pod",
 	"k8sclusterreceiver":   "kubernetes.node",
@@ -103,6 +108,6 @@ func (r *Remapper) Remap(
 // Valid validates a ScopeMetric against the kubernetes metrics remapper requirements.
 // Kubernetes remapper only remaps metrics from kubeletstatsreceiver or k8sclusterreceiver.
 func (r *Remapper) Valid(sm pmetric.ScopeMetrics) bool {
-	return strings.HasPrefix(sm.Scope().Name(), "otelcol/kubeletstatsreceiver") ||
-		strings.HasPrefix(sm.Scope().Name(), "otelcol/k8sclusterreceiver")
+	return strings.HasPrefix(sm.Scope().Name(), kubeletScopePrefix) ||
+		strings.HasPrefix(sm.Scope().Name(), clusterScopePrefix)
 }
