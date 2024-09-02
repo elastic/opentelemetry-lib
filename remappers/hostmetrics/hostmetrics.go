@@ -27,31 +27,31 @@ import (
 	"go.uber.org/zap"
 )
 
-const scopePrefix = "otelcol/hostmetricsreceiver"
+const scopePrefix = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver"
 
 var scraperToElasticDataset = map[string]string{
-	"cpu":        "system.cpu",
-	"disk":       "system.diskio",
-	"filesystem": "system.filesystem",
-	"load":       "system.load",
-	"memory":     "system.memory",
-	"network":    "system.network",
-	"paging":     "system.memory",
-	"processes":  "system.process.summary",
-	"process":    "system.process",
+	"cpuscraper":        "system.cpu",
+	"diskscraper":       "system.diskio",
+	"filesystemscraper": "system.filesystem",
+	"loadscraper":       "system.load",
+	"memoryscraper":     "system.memory",
+	"networkscraper":    "system.network",
+	"pagingscraper":     "system.memory",
+	"processesscraper":  "system.process.summary",
+	"processscraper":    "system.process",
 }
 
 type remapFunc func(pmetric.MetricSlice, pmetric.MetricSlice, pcommon.Resource, func(pmetric.NumberDataPoint)) error
 
 var remapFuncs = map[string]remapFunc{
-	"cpu":        remapCPUMetrics,
-	"memory":     remapMemoryMetrics,
-	"load":       remapLoadMetrics,
-	"process":    remapProcessMetrics,
-	"processes":  remapProcessesMetrics,
-	"network":    remapNetworkMetrics,
-	"disk":       remapDiskMetrics,
-	"filesystem": remapFilesystemMetrics,
+	"cpuscraper":        remapCPUMetrics,
+	"memoryscraper":     remapMemoryMetrics,
+	"loadscraper":       remapLoadMetrics,
+	"processscraper":    remapProcessMetrics,
+	"processesscraper":  remapProcessesMetrics,
+	"networkscraper":    remapNetworkMetrics,
+	"diskscraper":       remapDiskMetrics,
+	"filesystemscraper": remapFilesystemMetrics,
 }
 
 // Remapper maps the OTel hostmetrics to Elastic system metrics. These remapped

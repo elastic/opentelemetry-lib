@@ -33,7 +33,7 @@ import (
 var (
 	Sum         = pmetric.MetricTypeSum
 	Gauge       = pmetric.MetricTypeGauge
-	scopePrefix = "otelcol/kubeletstatsreceiver"
+	scopePrefix = "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/kubeletstatsreceiver"
 	// Test values to make assertion easier
 	POD              = "pod0"
 	NAMESPACE        = "kube-system"
@@ -115,7 +115,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 func BenchmarkRemap(b *testing.B) {
 	now := pcommon.NewTimestampFromTime(time.Now())
 	in := map[string][]testutils.TestMetric{
-		"kubeletstatsreceiver": []testutils.TestMetric{
+		"kubeletstatsreceiver": {
 			{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
 			{Type: Gauge, Name: "k8s.pod.cpu.node.utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.12), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
 			{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
