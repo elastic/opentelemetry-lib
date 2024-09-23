@@ -18,7 +18,11 @@
 package elastic
 
 import (
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"net/http"
@@ -152,7 +156,8 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 	// Ensure all dependent attributes are handled.
 	s.normalizeAttributes()
 
-	if isElasticTransaction(span) {
+	isElasticTxn := isElasticTransaction(span)
+	if isElasticTxn {
 		s.enrichTransaction(span, cfg.Transaction)
 	} else {
 		s.enrichSpan(span, cfg.Span)
@@ -417,15 +422,38 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 }
 
 type spanEventEnrichmentContext struct {
-	exception bool
+	exception        bool
+	exceptionEscaped bool
+
+	exceptionType       string
+	exceptionMessage    string
+	exceptionStacktrace string
 }
 
 func (s *spanEventEnrichmentContext) enrich(
 	se ptrace.SpanEvent,
 	cfg config.SpanEventConfig,
 ) {
+	// TODO(lahsivjar): Is error/log context handling be done in es-exporter?
+	// Ref: https://github.com/elastic/apm-data/blob/59d33b8113d629f43dc82f9b3931ceda63a19a7a/input/otlp/traces.go#L1243-L1260
+
 	// Extract top level span event information.
 	s.exception = se.Name() == "exception"
+	if s.exception {
+		se.Attributes().Range(func(k string, v pcommon.Value) bool {
+			switch k {
+			case semconv.AttributeExceptionEscaped:
+				s.exceptionEscaped = v.Bool()
+			case semconv.AttributeExceptionType:
+				s.exceptionType = v.Str()
+			case semconv.AttributeExceptionMessage:
+				s.exceptionMessage = v.Str()
+			case semconv.AttributeExceptionStacktrace:
+				s.exceptionStacktrace = v.Str()
+			}
+			return true
+		})
+	}
 
 	// Enrich span event attributes.
 	if cfg.TimestampUs.Enabled {
@@ -433,6 +461,43 @@ func (s *spanEventEnrichmentContext) enrich(
 	}
 	if cfg.ProcessorEvent.Enabled && s.exception {
 		se.Attributes().PutStr(AttributeProcessorEvent, "error")
+	}
+	if s.exceptionType == "" && s.exceptionMessage == "" {
+		// Span event does not represent an exception
+		se.Attributes().PutStr(AttributeEventKind, "event")
+		se.Attributes().PutStr(AttributeMessage, se.Name())
+		return
+	}
+
+	// Span event represents exception
+	if cfg.ErrorID.Enabled {
+		if id, err := newUniqueID(); err == nil {
+			se.Attributes().PutStr(AttributeErrorID, id)
+		}
+	}
+	if cfg.ErrorExceptionType.Enabled && s.exceptionType != "" {
+		se.Attributes().PutStr(AttributeErrorExceptionType, s.exceptionType)
+	}
+	if cfg.ErrorExceptionMessage.Enabled {
+		se.Attributes().PutStr(AttributeErrorExceptionMessage, s.exceptionMessage)
+	}
+	if cfg.ErrorExceptionHandled.Enabled {
+		se.Attributes().PutBool(AttributeErrorExceptionHandled, !s.exceptionEscaped)
+	}
+	if cfg.ErrorStacktrace.Enabled {
+		// TODO (lahsivjar): Where to parse stacktraces?
+		se.Attributes().PutStr(AttributeErrorStacktrace, s.exceptionStacktrace)
+	}
+	if cfg.ErrorGroupingKey.Enabled {
+		// See https://github.com/elastic/apm-data/issues/299
+		hash := md5.New()
+		// ignoring errors in hashing
+		if s.exceptionType != "" {
+			io.WriteString(hash, s.exceptionType)
+		} else if s.exceptionMessage != "" {
+			io.WriteString(hash, s.exceptionMessage)
+		}
+		se.Attributes().PutStr(AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
 	}
 }
 
@@ -539,4 +604,17 @@ var standardStatusCodeResults = [...]string{
 	"HTTP 3xx",
 	"HTTP 4xx",
 	"HTTP 5xx",
+}
+
+func newUniqueID() (string, error) {
+	var u [16]byte
+	if _, err := io.ReadFull(rand.Reader, u[:]); err != nil {
+		return "", err
+	}
+
+	// convert to string
+	buf := make([]byte, 32)
+	hex.Encode(buf, u[:])
+
+	return string(buf), nil
 }

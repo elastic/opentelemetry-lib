@@ -18,6 +18,8 @@
 package elastic
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/http"
 	"testing"
 	"time"
@@ -764,18 +766,23 @@ func TestSpanEventEnrich(t *testing.T) {
 		name          string
 		input         ptrace.SpanEvent
 		config        config.SpanEventConfig
+		errorID       bool // indicates if the error ID should be present in the result
 		enrichedAttrs map[string]any
 	}{
 		{
 			name: "not_exception",
 			input: func() ptrace.SpanEvent {
 				event := ptrace.NewSpanEvent()
+				event.SetName("not_exception")
 				event.SetTimestamp(ts)
 				return event
 			}(),
-			config: config.Enabled().SpanEvent,
+			config:  config.Enabled().SpanEvent,
+			errorID: false, // error ID is only present for exceptions
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs: ts.AsTime().UnixMicro(),
+				AttributeEventKind:   "event",
+				AttributeMessage:     "not_exception",
 			},
 		},
 		{
@@ -784,12 +791,25 @@ func TestSpanEventEnrich(t *testing.T) {
 				event := ptrace.NewSpanEvent()
 				event.SetName("exception")
 				event.SetTimestamp(ts)
+				event.Attributes().PutStr(semconv.AttributeExceptionType, "java.net.ConnectionError")
+				event.Attributes().PutStr(semconv.AttributeExceptionMessage, "something is wrong")
+				event.Attributes().PutStr(semconv.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
 				return event
 			}(),
-			config: config.Enabled().SpanEvent,
+			config:  config.Enabled().SpanEvent,
+			errorID: true,
 			enrichedAttrs: map[string]any{
-				AttributeTimestampUs:    ts.AsTime().UnixMicro(),
-				AttributeProcessorEvent: "error",
+				AttributeTimestampUs:           ts.AsTime().UnixMicro(),
+				AttributeProcessorEvent:        "error",
+				AttributeErrorExceptionHandled: true,
+				AttributeErrorExceptionType:    "java.net.ConnectionError",
+				AttributeErrorExceptionMessage: "something is wrong",
+				AttributeErrorStacktrace:       `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`,
+				AttributeErrorGroupingKey: func() string {
+					hash := md5.New()
+					hash.Write([]byte("java.net.ConnectionError"))
+					return hex.EncodeToString(hash.Sum(nil))
+				}(),
 			},
 		},
 	} {
@@ -807,7 +827,15 @@ func TestSpanEventEnrich(t *testing.T) {
 				SpanEvent: tc.config,
 			})
 
-			assert.Empty(t, cmp.Diff(expectedAttrs, span.Events().At(0).Attributes().AsRaw()))
+			actual := span.Events().At(0).Attributes()
+			errorID, ok := actual.Get(AttributeErrorID)
+			assert.Equal(t, tc.errorID, ok, "error_id must be present for exception and must not be present for non-exception")
+			if tc.errorID {
+				assert.NotEmpty(t, errorID, "error_id must not be empty")
+			}
+			// Ignore error in actual diff since it is randomly generated
+			actual.Remove(AttributeErrorID)
+			assert.Empty(t, cmp.Diff(expectedAttrs, actual.AsRaw()))
 		})
 	}
 }

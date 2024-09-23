@@ -81,6 +81,18 @@ type SpanEventConfig struct {
 	// https://github.com/elastic/opentelemetry-dev/issues/374.
 	TimestampUs    AttributeConfig `mapstructure:"timestamp_us"`
 	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
+
+	// For exceptions/errors
+	ErrorID               AttributeConfig `mapstructure:"error_id"`
+	ErrorExceptionType    AttributeConfig `mapstructure:"error_exception_type"`
+	ErrorExceptionMessage AttributeConfig `mapstructure:"error_exception_message"`
+	ErrorExceptionHandled AttributeConfig `mapstructure:"error_exception_handled"`
+	ErrorStacktrace       AttributeConfig `mapstructure:"error_exception_stacktrace"`
+	ErrorGroupingKey      AttributeConfig `mapstructure:"error_grouping_key"`
+
+	// For no exceptions/errors
+	Message   AttributeConfig `mapstructure:"message"`
+	EventKind AttributeConfig `mapstructure:"event_kind"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -124,8 +136,16 @@ func Enabled() Config {
 			RepresentativeCount: AttributeConfig{Enabled: true},
 		},
 		SpanEvent: SpanEventConfig{
-			TimestampUs:    AttributeConfig{Enabled: true},
-			ProcessorEvent: AttributeConfig{Enabled: true},
+			TimestampUs:           AttributeConfig{Enabled: true},
+			ProcessorEvent:        AttributeConfig{Enabled: true},
+			ErrorID:               AttributeConfig{Enabled: true},
+			ErrorExceptionType:    AttributeConfig{Enabled: true},
+			ErrorExceptionMessage: AttributeConfig{Enabled: true},
+			ErrorExceptionHandled: AttributeConfig{Enabled: true},
+			ErrorStacktrace:       AttributeConfig{Enabled: true},
+			ErrorGroupingKey:      AttributeConfig{Enabled: true},
+			Message:               AttributeConfig{Enabled: true},
+			EventKind:             AttributeConfig{Enabled: true},
 		},
 	}
 }
