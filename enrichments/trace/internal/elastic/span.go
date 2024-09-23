@@ -422,12 +422,12 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 }
 
 type spanEventEnrichmentContext struct {
-	exception        bool
-	exceptionEscaped bool
-
 	exceptionType       string
 	exceptionMessage    string
 	exceptionStacktrace string
+
+	exception        bool
+	exceptionEscaped bool
 }
 
 func (s *spanEventEnrichmentContext) enrich(
