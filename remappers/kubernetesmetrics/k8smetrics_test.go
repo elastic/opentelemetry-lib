@@ -41,8 +41,8 @@ var (
 )
 
 func TestRemap(t *testing.T) {
-	doTestRemap(t, "without_k8s_integration", WithKubernetesIntegrationDataset(false))
-	doTestRemap(t, "with_k8s_integration", WithKubernetesIntegrationDataset(true))
+	doTestRemap(t, "without_k8s_integration", WithKubernetesIntegrationDataset(false, false))
+	doTestRemap(t, "with_k8s_integration", WithKubernetesIntegrationDataset(true, false))
 }
 
 func doTestRemap(t *testing.T, id string, remapOpts ...Option) {

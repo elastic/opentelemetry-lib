@@ -94,7 +94,9 @@ func (r *Remapper) Remap(
 	if !ok {
 		return
 	}
-
+	if r.cfg.Override {
+		src = pmetric.NewScopeMetrics()
+	}
 	err := remapFunc(src.Metrics(), out, resource, datasetMutator)
 	if err != nil {
 		r.logger.Warn(

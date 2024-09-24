@@ -19,6 +19,7 @@ package kubernetesmetrics
 
 type config struct {
 	KubernetesIntegrationDataset bool
+	Override                     bool
 }
 
 // Option allows configuring the behavior of the kubernetes remapper.
@@ -33,9 +34,10 @@ func newConfig(opts ...Option) (cfg config) {
 
 // WithKubernetesIntegrationDataset sets the dataset of the remapped metrics as
 // as per the kubernetes integration. Example: kubernetes.pod
-func WithKubernetesIntegrationDataset(b bool) Option {
+func WithKubernetesIntegrationDataset(b bool, override bool) Option {
 	return func(c config) config {
 		c.KubernetesIntegrationDataset = b
+		c.Override = override
 		return c
 	}
 }

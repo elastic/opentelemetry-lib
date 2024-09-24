@@ -34,13 +34,15 @@ func TestConfig(t *testing.T) {
 			opts: nil,
 			expected: config{
 				KubernetesIntegrationDataset: false,
+				Override:                     false,
 			},
 		},
 		{
 			name: "k8s_integration_dataset",
-			opts: []Option{WithKubernetesIntegrationDataset(true)},
+			opts: []Option{WithKubernetesIntegrationDataset(true, true)},
 			expected: config{
 				KubernetesIntegrationDataset: true,
+				Override:                     true,
 			},
 		},
 	} {
