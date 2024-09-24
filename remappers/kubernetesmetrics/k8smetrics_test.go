@@ -43,6 +43,7 @@ var (
 func TestRemap(t *testing.T) {
 	doTestRemap(t, "without_k8s_integration", WithKubernetesIntegrationDataset(false, false))
 	doTestRemap(t, "with_k8s_integration", WithKubernetesIntegrationDataset(true, false))
+	//doTestRemapwithOverride(t, "with_k8s_integration", WithKubernetesIntegrationDataset(true, true))
 }
 
 func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
@@ -85,6 +86,7 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "k8s.pod.memory.node.utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.025), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
 				{Type: Sum, Name: "k8s.pod.network.io", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
 				{Type: Sum, Name: "k8s.pod.network.io", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
+				{Type: Gauge, Name: "k8s.pod.test", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.025), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
 			},
 			expected: []testutils.TestMetric{
 				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
@@ -93,6 +95,75 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
 				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
+			},
+		},
+	} {
+		t.Run(fmt.Sprintf("%s/%s", tc.name, id), func(t *testing.T) {
+			sm := pmetric.NewScopeMetrics()
+			sm.Scope().SetName(fmt.Sprintf("%s/%s", scopePrefix, tc.scraper))
+			testutils.TestMetricToMetricSlice(t, tc.input, sm.Metrics())
+
+			resource := pcommon.NewResource()
+			resource.Attributes().FromRaw(tc.resourceAttrs)
+
+			actual := pmetric.NewMetricSlice()
+			r := NewRemapper(zaptest.NewLogger(t), remapOpts...)
+			r.Remap(sm, actual, resource)
+			assert.Equal(t, tc.expected, testutils.MetricSliceToTestMetric(t, actual))
+		})
+	}
+}
+
+func doTestRemapwithOverride(t *testing.T, id string, remapOpts ...Option) {
+	t.Helper()
+
+	kubernetesIntegration := newConfig(remapOpts...).KubernetesIntegrationDataset
+	outAttr := func(scraper string) map[string]any {
+		dataset := scraperToElasticDataset[scraper]
+		m := map[string]any{
+			common.OTelRemappedLabel: true,
+			common.EventDatasetLabel: dataset,
+			"service.type":           "kubernetes",
+		}
+		if kubernetesIntegration {
+			m[common.DatastreamDatasetLabel] = dataset
+		}
+		return m
+	}
+	now := pcommon.NewTimestampFromTime(time.Now())
+
+	for _, tc := range []struct {
+		name          string
+		scraper       string
+		resourceAttrs map[string]any
+		input         []testutils.TestMetric
+		expected      []testutils.TestMetric
+	}{
+		{
+			name:    "kubeletstats",
+			scraper: "kubeletstatsreceiver",
+			resourceAttrs: map[string]any{
+				"k8s.pod.name":       POD,
+				"k8s.namespace.name": NAMESPACE,
+				"k8s.device":         DEVICE,
+			},
+			input: []testutils.TestMetric{
+				{Type: Gauge, Name: "k8s.pod.cpu_limit_utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.26), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+				{Type: Gauge, Name: "k8s.pod.memory_limit_utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.18), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+				{Type: Gauge, Name: "k8s.pod.cpu.node.utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.12), Attrs: map[string]any{"k8s.pod.name": POD, "k8s.namespace.name": NAMESPACE}}},
+				{Type: Gauge, Name: "k8s.pod.memory.node.utilization", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.025), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+				{Type: Sum, Name: "k8s.pod.network.io", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(1024)), Attrs: map[string]any{"device": DEVICE, "direction": "receive"}}},
+				{Type: Sum, Name: "k8s.pod.network.io", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(2048)), Attrs: map[string]any{"device": DEVICE, "direction": "transmit"}}},
+				{Type: Gauge, Name: "k8s.pod.test", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.025), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
+			},
+			expected: []testutils.TestMetric{
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.limit.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.26), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.cpu.usage.node.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.12), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.node.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.025), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "kubernetes.pod.memory.usage.limit.pct", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.18), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Sum, Name: "kubernetes.pod.network.tx.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(2048)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Sum, Name: "kubernetes.pod.network.rx.bytes", DP: testutils.TestDP{Ts: now, Int: testutils.Ptr(int64(1024)), Attrs: outAttr("kubeletstatsreceiver")}},
+				{Type: Gauge, Name: "k8s.pod.test", DP: testutils.TestDP{Ts: now, Dbl: testutils.Ptr(0.025), Attrs: map[string]any{"k8s.pod.name": "pod0", "k8s.pod.namespace": NAMESPACE}}},
 			},
 		},
 	} {
