@@ -53,5 +53,4 @@ const (
 	AttributeErrorID               = "error.id"
 	AttributeErrorExceptionHandled = "error.exception.handled"
 	AttributeErrorGroupingKey      = "error.grouping_key"
-	AttributeEventKind             = "event.kind"
 )

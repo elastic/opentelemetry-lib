@@ -422,9 +422,8 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 }
 
 type spanEventEnrichmentContext struct {
-	exceptionType       string
-	exceptionMessage    string
-	exceptionStacktrace string
+	exceptionType    string
+	exceptionMessage string
 
 	exception        bool
 	exceptionEscaped bool
@@ -445,8 +444,6 @@ func (s *spanEventEnrichmentContext) enrich(
 				s.exceptionType = v.Str()
 			case semconv.AttributeExceptionMessage:
 				s.exceptionMessage = v.Str()
-			case semconv.AttributeExceptionStacktrace:
-				s.exceptionStacktrace = v.Str()
 			}
 			return true
 		})
@@ -461,7 +458,6 @@ func (s *spanEventEnrichmentContext) enrich(
 	}
 	if s.exceptionType == "" && s.exceptionMessage == "" {
 		// Span event does not represent an exception
-		se.Attributes().PutStr(AttributeEventKind, "event")
 		return
 	}
 

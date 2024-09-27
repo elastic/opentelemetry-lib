@@ -780,7 +780,6 @@ func TestSpanEventEnrich(t *testing.T) {
 			errorID: false, // error ID is only present for exceptions
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs: ts.AsTime().UnixMicro(),
-				AttributeEventKind:   "event",
 			},
 		},
 		{
