@@ -51,11 +51,7 @@ const (
 	// span event attributes
 	AttributeParentID              = "parent.id"
 	AttributeErrorID               = "error.id"
-	AttributeErrorExceptionType    = "error.exception.type"
-	AttributeErrorExceptionMessage = "error.exception.message"
 	AttributeErrorExceptionHandled = "error.exception.handled"
-	AttributeErrorStacktrace       = "error.stack_trace"
 	AttributeErrorGroupingKey      = "error.grouping_key"
 	AttributeEventKind             = "event.kind"
-	AttributeMessage               = "message"
 )

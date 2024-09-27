@@ -773,7 +773,6 @@ func TestSpanEventEnrich(t *testing.T) {
 			name: "not_exception",
 			input: func() ptrace.SpanEvent {
 				event := ptrace.NewSpanEvent()
-				event.SetName("not_exception")
 				event.SetTimestamp(ts)
 				return event
 			}(),
@@ -782,7 +781,6 @@ func TestSpanEventEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs: ts.AsTime().UnixMicro(),
 				AttributeEventKind:   "event",
-				AttributeMessage:     "not_exception",
 			},
 		},
 		{
@@ -802,9 +800,6 @@ func TestSpanEventEnrich(t *testing.T) {
 				AttributeTimestampUs:           ts.AsTime().UnixMicro(),
 				AttributeProcessorEvent:        "error",
 				AttributeErrorExceptionHandled: true,
-				AttributeErrorExceptionType:    "java.net.ConnectionError",
-				AttributeErrorExceptionMessage: "something is wrong",
-				AttributeErrorStacktrace:       `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`,
 				AttributeErrorGroupingKey: func() string {
 					hash := md5.New()
 					hash.Write([]byte("java.net.ConnectionError"))

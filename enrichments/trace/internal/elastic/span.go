@@ -465,7 +465,6 @@ func (s *spanEventEnrichmentContext) enrich(
 	if s.exceptionType == "" && s.exceptionMessage == "" {
 		// Span event does not represent an exception
 		se.Attributes().PutStr(AttributeEventKind, "event")
-		se.Attributes().PutStr(AttributeMessage, se.Name())
 		return
 	}
 
@@ -475,18 +474,8 @@ func (s *spanEventEnrichmentContext) enrich(
 			se.Attributes().PutStr(AttributeErrorID, id)
 		}
 	}
-	if cfg.ErrorExceptionType.Enabled && s.exceptionType != "" {
-		se.Attributes().PutStr(AttributeErrorExceptionType, s.exceptionType)
-	}
-	if cfg.ErrorExceptionMessage.Enabled {
-		se.Attributes().PutStr(AttributeErrorExceptionMessage, s.exceptionMessage)
-	}
 	if cfg.ErrorExceptionHandled.Enabled {
 		se.Attributes().PutBool(AttributeErrorExceptionHandled, !s.exceptionEscaped)
-	}
-	if cfg.ErrorStacktrace.Enabled {
-		// TODO (lahsivjar): Where to parse stacktraces?
-		se.Attributes().PutStr(AttributeErrorStacktrace, s.exceptionStacktrace)
 	}
 	if cfg.ErrorGroupingKey.Enabled {
 		// See https://github.com/elastic/apm-data/issues/299
