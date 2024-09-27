@@ -434,9 +434,6 @@ func (s *spanEventEnrichmentContext) enrich(
 	se ptrace.SpanEvent,
 	cfg config.SpanEventConfig,
 ) {
-	// TODO(lahsivjar): Is error/log context handling be done in es-exporter?
-	// Ref: https://github.com/elastic/apm-data/blob/59d33b8113d629f43dc82f9b3931ceda63a19a7a/input/otlp/traces.go#L1243-L1260
-
 	// Extract top level span event information.
 	s.exception = se.Name() == "exception"
 	if s.exception {
