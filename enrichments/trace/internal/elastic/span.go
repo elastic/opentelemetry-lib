@@ -73,6 +73,8 @@ type spanEnrichmentContext struct {
 
 	spanStatusCode ptrace.StatusCode
 
+	// TODO (lahsivjar): Refactor span enrichment to better utilize isTransaction
+	isTransaction            bool
 	isMessaging              bool
 	isRPC                    bool
 	isHTTP                   bool
@@ -153,20 +155,22 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		return true
 	})
 
-	// Ensure all dependent attributes are handled.
 	s.normalizeAttributes()
-
-	isElasticTxn := isElasticTransaction(span)
-	if isElasticTxn {
-		s.enrichTransaction(span, cfg.Transaction)
-	} else {
-		s.enrichSpan(span, cfg.Span)
-	}
+	s.isTransaction = isElasticTransaction(span)
+	s.enrich(span, cfg)
 
 	spanEvents := span.Events()
 	for i := 0; i < spanEvents.Len(); i++ {
 		var c spanEventEnrichmentContext
-		c.enrich(spanEvents.At(i), cfg.SpanEvent)
+		c.enrich(s, spanEvents.At(i), cfg.SpanEvent)
+	}
+}
+
+func (s *spanEnrichmentContext) enrich(span ptrace.Span, cfg config.Config) {
+	if s.isTransaction {
+		s.enrichTransaction(span, cfg.Transaction)
+	} else {
+		s.enrichSpan(span, cfg.Span)
 	}
 }
 
@@ -178,7 +182,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Sampled.Enabled {
-		span.Attributes().PutBool(AttributeTransactionSampled, true)
+		span.Attributes().PutBool(AttributeTransactionSampled, s.getSampled())
 	}
 	if cfg.ID.Enabled {
 		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
@@ -200,7 +204,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
 	}
 	if cfg.Type.Enabled {
-		s.setTxnType(span)
+		span.Attributes().PutStr(AttributeTransactionType, s.getTxnType())
 	}
 	if cfg.Result.Enabled {
 		s.setTxnResult(span)
@@ -252,7 +256,12 @@ func (s *spanEnrichmentContext) normalizeAttributes() {
 	}
 }
 
-func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
+func (s *spanEnrichmentContext) getSampled() bool {
+	// Assumes that the method is called only for transaction
+	return true
+}
+
+func (s *spanEnrichmentContext) getTxnType() string {
 	txnType := "unknown"
 	switch {
 	case s.isMessaging:
@@ -260,7 +269,7 @@ func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
 	}
-	span.Attributes().PutStr(AttributeTransactionType, txnType)
+	return txnType
 }
 
 func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
@@ -430,6 +439,7 @@ type spanEventEnrichmentContext struct {
 }
 
 func (s *spanEventEnrichmentContext) enrich(
+	parentCtx *spanEnrichmentContext,
 	se ptrace.SpanEvent,
 	cfg config.SpanEventConfig,
 ) {
@@ -480,6 +490,16 @@ func (s *spanEventEnrichmentContext) enrich(
 			io.WriteString(hash, s.exceptionMessage)
 		}
 		se.Attributes().PutStr(AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
+	}
+
+	// Transaction type and sampled are added as span event enrichment only for errors
+	if parentCtx.isTransaction && s.exception {
+		if cfg.TransactionSampled.Enabled {
+			se.Attributes().PutBool(AttributeTransactionSampled, parentCtx.getSampled())
+		}
+		if cfg.TransactionType.Enabled {
+			se.Attributes().PutStr(AttributeTransactionType, parentCtx.getTxnType())
+		}
 	}
 }
 
