@@ -18,7 +18,11 @@
 package elastic
 
 import (
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"net/http"
@@ -69,6 +73,8 @@ type spanEnrichmentContext struct {
 
 	spanStatusCode ptrace.StatusCode
 
+	// TODO (lahsivjar): Refactor span enrichment to better utilize isTransaction
+	isTransaction            bool
 	isMessaging              bool
 	isRPC                    bool
 	isHTTP                   bool
@@ -149,19 +155,22 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		return true
 	})
 
-	// Ensure all dependent attributes are handled.
 	s.normalizeAttributes()
-
-	if isElasticTransaction(span) {
-		s.enrichTransaction(span, cfg.Transaction)
-	} else {
-		s.enrichSpan(span, cfg.Span)
-	}
+	s.isTransaction = isElasticTransaction(span)
+	s.enrich(span, cfg)
 
 	spanEvents := span.Events()
 	for i := 0; i < spanEvents.Len(); i++ {
 		var c spanEventEnrichmentContext
-		c.enrich(spanEvents.At(i), cfg.SpanEvent)
+		c.enrich(s, spanEvents.At(i), cfg.SpanEvent)
+	}
+}
+
+func (s *spanEnrichmentContext) enrich(span ptrace.Span, cfg config.Config) {
+	if s.isTransaction {
+		s.enrichTransaction(span, cfg.Transaction)
+	} else {
+		s.enrichSpan(span, cfg.Span)
 	}
 }
 
@@ -173,7 +182,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Sampled.Enabled {
-		span.Attributes().PutBool(AttributeTransactionSampled, true)
+		span.Attributes().PutBool(AttributeTransactionSampled, s.getSampled())
 	}
 	if cfg.ID.Enabled {
 		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
@@ -195,7 +204,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
 	}
 	if cfg.Type.Enabled {
-		s.setTxnType(span)
+		span.Attributes().PutStr(AttributeTransactionType, s.getTxnType())
 	}
 	if cfg.Result.Enabled {
 		s.setTxnResult(span)
@@ -247,7 +256,12 @@ func (s *spanEnrichmentContext) normalizeAttributes() {
 	}
 }
 
-func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
+func (s *spanEnrichmentContext) getSampled() bool {
+	// Assumes that the method is called only for transaction
+	return true
+}
+
+func (s *spanEnrichmentContext) getTxnType() string {
 	txnType := "unknown"
 	switch {
 	case s.isMessaging:
@@ -255,7 +269,7 @@ func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
 	}
-	span.Attributes().PutStr(AttributeTransactionType, txnType)
+	return txnType
 }
 
 func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
@@ -417,15 +431,33 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 }
 
 type spanEventEnrichmentContext struct {
-	exception bool
+	exceptionType    string
+	exceptionMessage string
+
+	exception        bool
+	exceptionEscaped bool
 }
 
 func (s *spanEventEnrichmentContext) enrich(
+	parentCtx *spanEnrichmentContext,
 	se ptrace.SpanEvent,
 	cfg config.SpanEventConfig,
 ) {
 	// Extract top level span event information.
 	s.exception = se.Name() == "exception"
+	if s.exception {
+		se.Attributes().Range(func(k string, v pcommon.Value) bool {
+			switch k {
+			case semconv.AttributeExceptionEscaped:
+				s.exceptionEscaped = v.Bool()
+			case semconv.AttributeExceptionType:
+				s.exceptionType = v.Str()
+			case semconv.AttributeExceptionMessage:
+				s.exceptionMessage = v.Str()
+			}
+			return true
+		})
+	}
 
 	// Enrich span event attributes.
 	if cfg.TimestampUs.Enabled {
@@ -433,6 +465,41 @@ func (s *spanEventEnrichmentContext) enrich(
 	}
 	if cfg.ProcessorEvent.Enabled && s.exception {
 		se.Attributes().PutStr(AttributeProcessorEvent, "error")
+	}
+	if s.exceptionType == "" && s.exceptionMessage == "" {
+		// Span event does not represent an exception
+		return
+	}
+
+	// Span event represents exception
+	if cfg.ErrorID.Enabled {
+		if id, err := newUniqueID(); err == nil {
+			se.Attributes().PutStr(AttributeErrorID, id)
+		}
+	}
+	if cfg.ErrorExceptionHandled.Enabled {
+		se.Attributes().PutBool(AttributeErrorExceptionHandled, !s.exceptionEscaped)
+	}
+	if cfg.ErrorGroupingKey.Enabled {
+		// See https://github.com/elastic/apm-data/issues/299
+		hash := md5.New()
+		// ignoring errors in hashing
+		if s.exceptionType != "" {
+			io.WriteString(hash, s.exceptionType)
+		} else if s.exceptionMessage != "" {
+			io.WriteString(hash, s.exceptionMessage)
+		}
+		se.Attributes().PutStr(AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
+	}
+
+	// Transaction type and sampled are added as span event enrichment only for errors
+	if parentCtx.isTransaction && s.exception {
+		if cfg.TransactionSampled.Enabled {
+			se.Attributes().PutBool(AttributeTransactionSampled, parentCtx.getSampled())
+		}
+		if cfg.TransactionType.Enabled {
+			se.Attributes().PutStr(AttributeTransactionType, parentCtx.getTxnType())
+		}
 	}
 }
 
@@ -539,4 +606,17 @@ var standardStatusCodeResults = [...]string{
 	"HTTP 3xx",
 	"HTTP 4xx",
 	"HTTP 5xx",
+}
+
+func newUniqueID() (string, error) {
+	var u [16]byte
+	if _, err := io.ReadFull(rand.Reader, u[:]); err != nil {
+		return "", err
+	}
+
+	// convert to string
+	buf := make([]byte, 32)
+	hex.Encode(buf, u[:])
+
+	return string(buf), nil
 }

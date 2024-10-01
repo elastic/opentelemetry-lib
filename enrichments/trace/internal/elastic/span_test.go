@@ -18,6 +18,8 @@
 package elastic
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/http"
 	"testing"
 	"time"
@@ -762,34 +764,85 @@ func TestSpanEventEnrich(t *testing.T) {
 	ts := pcommon.NewTimestampFromTime(now)
 	for _, tc := range []struct {
 		name          string
+		parent        ptrace.Span
 		input         ptrace.SpanEvent
 		config        config.SpanEventConfig
+		errorID       bool // indicates if the error ID should be present in the result
 		enrichedAttrs map[string]any
 	}{
 		{
-			name: "not_exception",
+			name:   "not_exception",
+			parent: ptrace.NewSpan(),
 			input: func() ptrace.SpanEvent {
 				event := ptrace.NewSpanEvent()
 				event.SetTimestamp(ts)
 				return event
 			}(),
-			config: config.Enabled().SpanEvent,
+			config:  config.Enabled().SpanEvent,
+			errorID: false, // error ID is only present for exceptions
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs: ts.AsTime().UnixMicro(),
 			},
 		},
 		{
-			name: "exception",
+			name: "exception_with_elastic_txn",
+			parent: func() ptrace.Span {
+				// No parent, elastic txn
+				span := ptrace.NewSpan()
+				return span
+			}(),
 			input: func() ptrace.SpanEvent {
 				event := ptrace.NewSpanEvent()
 				event.SetName("exception")
 				event.SetTimestamp(ts)
+				event.Attributes().PutStr(semconv.AttributeExceptionType, "java.net.ConnectionError")
+				event.Attributes().PutStr(semconv.AttributeExceptionMessage, "something is wrong")
+				event.Attributes().PutStr(semconv.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
 				return event
 			}(),
-			config: config.Enabled().SpanEvent,
+			config:  config.Enabled().SpanEvent,
+			errorID: true,
 			enrichedAttrs: map[string]any{
-				AttributeTimestampUs:    ts.AsTime().UnixMicro(),
-				AttributeProcessorEvent: "error",
+				AttributeTimestampUs:           ts.AsTime().UnixMicro(),
+				AttributeProcessorEvent:        "error",
+				AttributeErrorExceptionHandled: true,
+				AttributeErrorGroupingKey: func() string {
+					hash := md5.New()
+					hash.Write([]byte("java.net.ConnectionError"))
+					return hex.EncodeToString(hash.Sum(nil))
+				}(),
+				AttributeTransactionSampled: true,
+				AttributeTransactionType:    "unknown",
+			},
+		},
+		{
+			name: "exception_with_elastic_span",
+			parent: func() ptrace.Span {
+				// Parent, elastic span
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				return span
+			}(),
+			input: func() ptrace.SpanEvent {
+				event := ptrace.NewSpanEvent()
+				event.SetName("exception")
+				event.SetTimestamp(ts)
+				event.Attributes().PutStr(semconv.AttributeExceptionType, "java.net.ConnectionError")
+				event.Attributes().PutStr(semconv.AttributeExceptionMessage, "something is wrong")
+				event.Attributes().PutStr(semconv.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
+				return event
+			}(),
+			config:  config.Enabled().SpanEvent,
+			errorID: true,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:           ts.AsTime().UnixMicro(),
+				AttributeProcessorEvent:        "error",
+				AttributeErrorExceptionHandled: true,
+				AttributeErrorGroupingKey: func() string {
+					hash := md5.New()
+					hash.Write([]byte("java.net.ConnectionError"))
+					return hex.EncodeToString(hash.Sum(nil))
+				}(),
 			},
 		},
 	} {
@@ -801,13 +854,20 @@ func TestSpanEventEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			span := ptrace.NewSpan()
-			tc.input.MoveTo(span.Events().AppendEmpty())
-			EnrichSpan(span, config.Config{
+			tc.input.MoveTo(tc.parent.Events().AppendEmpty())
+			EnrichSpan(tc.parent, config.Config{
 				SpanEvent: tc.config,
 			})
 
-			assert.Empty(t, cmp.Diff(expectedAttrs, span.Events().At(0).Attributes().AsRaw()))
+			actual := tc.parent.Events().At(0).Attributes()
+			errorID, ok := actual.Get(AttributeErrorID)
+			assert.Equal(t, tc.errorID, ok, "error_id must be present for exception and must not be present for non-exception")
+			if tc.errorID {
+				assert.NotEmpty(t, errorID, "error_id must not be empty")
+			}
+			// Ignore error in actual diff since it is randomly generated
+			actual.Remove(AttributeErrorID)
+			assert.Empty(t, cmp.Diff(expectedAttrs, actual.AsRaw()))
 		})
 	}
 }

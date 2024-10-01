@@ -79,8 +79,18 @@ type SpanEventConfig struct {
 	// TimestampUs is a temporary attribute to enable higher
 	// resolution timestamps in Elasticsearch. For more details see:
 	// https://github.com/elastic/opentelemetry-dev/issues/374.
-	TimestampUs    AttributeConfig `mapstructure:"timestamp_us"`
-	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
+	TimestampUs        AttributeConfig `mapstructure:"timestamp_us"`
+	TransactionSampled AttributeConfig `mapstructure:"transaction_sampled"`
+	TransactionType    AttributeConfig `mapstructure:"transaction_type"`
+	ProcessorEvent     AttributeConfig `mapstructure:"processor_event"`
+
+	// For exceptions/errors
+	ErrorID               AttributeConfig `mapstructure:"error_id"`
+	ErrorExceptionHandled AttributeConfig `mapstructure:"error_exception_handled"`
+	ErrorGroupingKey      AttributeConfig `mapstructure:"error_grouping_key"`
+
+	// For no exceptions/errors
+	EventKind AttributeConfig `mapstructure:"event_kind"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -124,8 +134,14 @@ func Enabled() Config {
 			RepresentativeCount: AttributeConfig{Enabled: true},
 		},
 		SpanEvent: SpanEventConfig{
-			TimestampUs:    AttributeConfig{Enabled: true},
-			ProcessorEvent: AttributeConfig{Enabled: true},
+			TimestampUs:           AttributeConfig{Enabled: true},
+			TransactionSampled:    AttributeConfig{Enabled: true},
+			TransactionType:       AttributeConfig{Enabled: true},
+			ProcessorEvent:        AttributeConfig{Enabled: true},
+			ErrorID:               AttributeConfig{Enabled: true},
+			ErrorExceptionHandled: AttributeConfig{Enabled: true},
+			ErrorGroupingKey:      AttributeConfig{Enabled: true},
+			EventKind:             AttributeConfig{Enabled: true},
 		},
 	}
 }

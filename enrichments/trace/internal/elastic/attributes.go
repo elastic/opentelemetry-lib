@@ -47,4 +47,10 @@ const (
 	AttributeSpanDestinationServiceResource = "span.destination.service.resource"
 	AttributeSpanDurationUs                 = "span.duration.us"
 	AttributeSpanRepresentativeCount        = "span.representative_count"
+
+	// span event attributes
+	AttributeParentID              = "parent.id"
+	AttributeErrorID               = "error.id"
+	AttributeErrorExceptionHandled = "error.exception.handled"
+	AttributeErrorGroupingKey      = "error.grouping_key"
 )
