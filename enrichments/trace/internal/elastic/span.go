@@ -491,6 +491,11 @@ func (s *spanEventEnrichmentContext) enrich(
 		}
 		se.Attributes().PutStr(AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
 	}
+	if cfg.ErrorGroupingName.Enabled {
+		if s.exceptionMessage != "" {
+			se.Attributes().PutStr(AttributeErrorGroupingName, s.exceptionMessage)
+		}
+	}
 
 	// Transaction type and sampled are added as span event enrichment only for errors
 	if parentCtx.isTransaction && s.exception {
