@@ -88,9 +88,7 @@ type SpanEventConfig struct {
 	ErrorID               AttributeConfig `mapstructure:"error_id"`
 	ErrorExceptionHandled AttributeConfig `mapstructure:"error_exception_handled"`
 	ErrorGroupingKey      AttributeConfig `mapstructure:"error_grouping_key"`
-
-	// For no exceptions/errors
-	EventKind AttributeConfig `mapstructure:"event_kind"`
+	ErrorGroupingName     AttributeConfig `mapstructure:"error_grouping_name"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -141,7 +139,7 @@ func Enabled() Config {
 			ErrorID:               AttributeConfig{Enabled: true},
 			ErrorExceptionHandled: AttributeConfig{Enabled: true},
 			ErrorGroupingKey:      AttributeConfig{Enabled: true},
-			EventKind:             AttributeConfig{Enabled: true},
+			ErrorGroupingName:     AttributeConfig{Enabled: true},
 		},
 	}
 }

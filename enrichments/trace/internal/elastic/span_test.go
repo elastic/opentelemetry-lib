@@ -811,6 +811,7 @@ func TestSpanEventEnrich(t *testing.T) {
 					hash.Write([]byte("java.net.ConnectionError"))
 					return hex.EncodeToString(hash.Sum(nil))
 				}(),
+				AttributeErrorGroupingName:  "something is wrong",
 				AttributeTransactionSampled: true,
 				AttributeTransactionType:    "unknown",
 			},
@@ -843,6 +844,7 @@ func TestSpanEventEnrich(t *testing.T) {
 					hash.Write([]byte("java.net.ConnectionError"))
 					return hex.EncodeToString(hash.Sum(nil))
 				}(),
+				AttributeErrorGroupingName: "something is wrong",
 			},
 		},
 	} {
