@@ -32,6 +32,9 @@ func EnrichResource(resource pcommon.Resource, cfg config.Config) {
 }
 
 type resourceEnrichmentContext struct {
+	hostName    string
+	k8sNodeName string
+
 	telemetrySDKName       string
 	telemetrySDKLanguage   string
 	telemetrySDKVersion    string
@@ -42,6 +45,10 @@ type resourceEnrichmentContext struct {
 func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
 	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
 		switch k {
+		case semconv.AttributeHostName:
+			s.hostName = v.Str()
+		case semconv.AttributeK8SNodeName:
+			s.k8sNodeName = v.Str()
 		case semconv.AttributeTelemetrySDKName:
 			s.telemetrySDKName = v.Str()
 		case semconv.AttributeTelemetrySDKLanguage:
@@ -61,6 +68,9 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	}
 	if cfg.AgentVersion.Enabled {
 		s.setAgentVersion(resource)
+	}
+	if cfg.OverrideHostName.Enabled {
+		s.overrideHostNameWithK8sNodeName(resource)
 	}
 }
 
@@ -104,4 +114,15 @@ func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
 		agentVersion = s.telemetrySDKVersion
 	}
 	resource.Attributes().PutStr(AttributeAgentVersion, agentVersion)
+}
+
+func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pcommon.Resource) {
+	if s.k8sNodeName == "" {
+		return
+	}
+	// Host name is set same as k8s node name. In case, both host name
+	// and k8s node name are set then host name is overridden as this is
+	// considered an invalid configuration/smell and k8s node name is
+	// given higher preference.
+	resource.Attributes().PutStr(semconv.AttributeHostName, s.k8sNodeName)
 }

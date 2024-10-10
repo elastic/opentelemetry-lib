@@ -162,6 +162,37 @@ func TestResourceEnrich(t *testing.T) {
 				AttributeAgentVersion: "1.2.3",
 			},
 		},
+		{
+			name: "host_name_override_with_k8s_node_name",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeHostName, "test-host")
+				res.Attributes().PutStr(semconv.AttributeK8SNodeName, "k8s-node")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				semconv.AttributeHostName:    "k8s-node",
+				semconv.AttributeK8SNodeName: "k8s-node",
+				AttributeAgentName:           "otlp",
+				AttributeAgentVersion:        "unknown",
+			},
+		},
+		{
+			name: "host_name_if_empty_set_from_k8s_node_name",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeK8SNodeName, "k8s-node")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				semconv.AttributeHostName:    "k8s-node",
+				semconv.AttributeK8SNodeName: "k8s-node",
+				AttributeAgentName:           "otlp",
+				AttributeAgentVersion:        "unknown",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Merge existing resource attrs with the attrs added
