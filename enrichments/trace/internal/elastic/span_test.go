@@ -488,6 +488,40 @@ func TestElasticSpanEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "http_span_deprecated_http_url",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// peer.service should be ignored if more specific deductions
+				// can be made about the service target.
+				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
+				span.Attributes().PutInt(
+					semconv.AttributeHTTPResponseStatusCode,
+					http.StatusOK,
+				)
+				span.Attributes().PutStr(
+					semconv.AttributeHTTPURL,
+					"https://www.foo.bar:443/search?q=OpenTelemetry#SemConv",
+				)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanRepresentativeCount:        float64(1),
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "http",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeServiceTargetType:              "http",
+				AttributeServiceTargetName:              "www.foo.bar:443",
+				AttributeSpanDestinationServiceResource: "testsvc",
+			},
+		},
+		{
 			name: "http_span_no_full_url",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
