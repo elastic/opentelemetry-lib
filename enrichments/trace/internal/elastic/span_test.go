@@ -633,6 +633,58 @@ func TestElasticSpanEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "rpc_span_service.{address, port}",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// No peer.service is set
+				span.Attributes().PutStr(semconv.AttributeRPCService, "service.Test")
+				span.Attributes().PutStr(semconv.AttributeServerAddress, "10.2.20.18")
+				span.Attributes().PutInt(semconv.AttributeServerPort, 8081)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanRepresentativeCount:        float64(1),
+				AttributeSpanType:                       "external",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeServiceTargetType:              "external",
+				AttributeServiceTargetName:              "service.Test",
+				AttributeSpanDestinationServiceResource: "10.2.20.18:8081",
+			},
+		},
+		{
+			name: "rpc_span_net.peer.{address, port}_fallback",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// No peer.service is set
+				span.Attributes().PutStr(semconv.AttributeRPCService, "service.Test")
+				span.Attributes().PutStr(semconv.AttributeNetPeerName, "10.2.20.18")
+				span.Attributes().PutInt(semconv.AttributeNetPeerPort, 8081)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanRepresentativeCount:        float64(1),
+				AttributeSpanType:                       "external",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeServiceTargetType:              "external",
+				AttributeServiceTargetName:              "service.Test",
+				AttributeSpanDestinationServiceResource: "10.2.20.18:8081",
+			},
+		},
+		{
 			name: "messaging_basic",
 			input: func() ptrace.Span {
 				span := getElasticSpan()

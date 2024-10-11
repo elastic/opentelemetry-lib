@@ -56,6 +56,7 @@ type spanEnrichmentContext struct {
 	urlFull *url.URL
 
 	peerService              string
+	serverAddress            string
 	urlScheme                string
 	urlDomain                string
 	urlPath                  string
@@ -68,6 +69,7 @@ type spanEnrichmentContext struct {
 	messagingSystem          string
 	messagingDestinationName string
 
+	serverPort     int64
 	urlPort        int64
 	httpStatusCode int64
 
@@ -91,6 +93,24 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		switch k {
 		case semconv.AttributePeerService:
 			s.peerService = v.Str()
+		case semconv.AttributeServerAddress:
+			s.serverAddress = v.Str()
+		case semconv.AttributeServerPort:
+			s.serverPort = v.Int()
+		case semconv.AttributeNetPeerName:
+			if s.serverAddress == "" {
+				// net.peer.name is deprecated, so has lower priority
+				// only set when not already set with server.address
+				// and allowed to be overridden by server.address.
+				s.serverAddress = v.Str()
+			}
+		case semconv.AttributeNetPeerPort:
+			if s.serverPort == 0 {
+				// net.peer.port is deprecated, so has lower priority
+				// only set when not already set with server.port and
+				// allowed to be overridden by server.port.
+				s.serverPort = v.Int()
+			}
 		case semconv.AttributeMessagingDestinationName:
 			s.isMessaging = true
 			s.messagingDestinationName = v.Str()
@@ -385,7 +405,10 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 		}
 	case s.isHTTP:
 		targetType = "http"
-		if resource := getHostPort(s.urlFull, s.urlDomain, s.urlPort); resource != "" {
+		if resource := getHostPort(
+			s.urlFull, s.urlDomain, s.urlPort,
+			s.serverAddress, s.serverPort, // fallback
+		); resource != "" {
 			targetName = resource
 		}
 	}
@@ -419,7 +442,10 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 		}
 	case s.isRPC, s.isHTTP:
 		if destnResource == "" {
-			if res := getHostPort(s.urlFull, s.urlDomain, s.urlPort); res != "" {
+			if res := getHostPort(
+				s.urlFull, s.urlDomain, s.urlPort,
+				s.serverAddress, s.serverPort, // fallback
+			); res != "" {
 				destnResource = res
 			}
 		}
@@ -588,15 +614,23 @@ func getValueForKeyInString(str string, key string, separator rune, assignChar r
 // getHostPort derives the host:port value from url.* attributes. Unlike
 // apm-data, the current code does NOT fallback to net.* or http.*
 // attributes as most of these are now deprecated.
-func getHostPort(urlFull *url.URL, urlDomain string, urlPort int64) string {
-	if urlFull != nil {
+func getHostPort(
+	urlFull *url.URL, urlDomain string, urlPort int64,
+	fallbackServerAddress string, fallbackServerPort int64,
+) string {
+	switch {
+	case urlFull != nil:
 		return urlFull.Host
-	}
-	if urlDomain != "" {
+	case urlDomain != "":
 		if urlPort == 0 {
 			return urlDomain
 		}
 		return net.JoinHostPort(urlDomain, strconv.FormatInt(urlPort, 10))
+	case fallbackServerAddress != "":
+		if fallbackServerPort == 0 {
+			return fallbackServerAddress
+		}
+		return net.JoinHostPort(fallbackServerAddress, strconv.FormatInt(fallbackServerPort, 10))
 	}
 	return ""
 }
