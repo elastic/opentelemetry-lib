@@ -108,13 +108,13 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 			s.httpStatusCode = v.Int()
 		case semconv.AttributeHTTPMethod,
 			semconv.AttributeHTTPRequestMethod,
-			semconv.AttributeHTTPURL,
 			semconv.AttributeHTTPTarget,
 			semconv.AttributeHTTPScheme,
 			semconv.AttributeHTTPFlavor,
 			semconv.AttributeNetHostName:
 			s.isHTTP = true
-		case semconv.AttributeURLFull:
+		case semconv.AttributeURLFull,
+			semconv.AttributeHTTPURL:
 			s.isHTTP = true
 			// ignoring error as if parse fails then we don't want the url anyway
 			s.urlFull, _ = url.Parse(v.Str())

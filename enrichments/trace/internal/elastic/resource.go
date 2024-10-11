@@ -22,7 +22,7 @@ import (
 
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	semconv "go.opentelemetry.io/collector/semconv/v1.22.0"
+	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
