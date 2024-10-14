@@ -611,9 +611,6 @@ func getValueForKeyInString(str string, key string, separator rune, assignChar r
 	return ""
 }
 
-// getHostPort derives the host:port value from url.* attributes. Unlike
-// apm-data, the current code does NOT fallback to net.* or http.*
-// attributes as most of these are now deprecated.
 func getHostPort(
 	urlFull *url.URL, urlDomain string, urlPort int64,
 	fallbackServerAddress string, fallbackServerPort int64,
