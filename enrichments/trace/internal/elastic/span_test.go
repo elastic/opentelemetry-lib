@@ -96,7 +96,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRepresentativeCount: float64(256),
 				AttributeTransactionDurationUs:          int64(0),
 				AttributeEventOutcome:                   "success",
-				AttributeSuccessCount:                   int64(1),
+				AttributeSuccessCount:                   int64(256),
 				AttributeTransactionResult:              "Success",
 				AttributeTransactionType:                "unknown",
 			},
