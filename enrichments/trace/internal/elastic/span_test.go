@@ -319,6 +319,36 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionType:                "messaging",
 			},
 		},
+		{
+			name: "inferred_spans",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
+				AttributeTransactionRoot:                true,
+				AttributeTransactionID:                  "0100000000000000",
+				AttributeTransactionName:                "testtxn",
+				AttributeProcessorEvent:                 "transaction",
+				AttributeTransactionRepresentativeCount: float64(1),
+				AttributeTransactionDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeTransactionResult:              "Success",
+				AttributeTransactionType:                "unknown",
+				AttributeChildIDs:                       []any{"0300000000000000"},
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Merge existing input attrs with the attrs added
@@ -825,6 +855,32 @@ func TestElasticSpanEnrich(t *testing.T) {
 				AttributeServiceTargetType:              "cassandra",
 				AttributeServiceTargetName:              "testsvc",
 				AttributeSpanDestinationServiceResource: "testsvc",
+			},
+		},
+		{
+			name: "inferred_spans",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:             startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                "testspan",
+				AttributeProcessorEvent:          "span",
+				AttributeSpanRepresentativeCount: float64(1),
+				AttributeSpanType:                "unknown",
+				AttributeSpanDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:            "success",
+				AttributeSuccessCount:            int64(1),
+				AttributeChildIDs:                []any{"0300000000000000"},
 			},
 		},
 	} {
