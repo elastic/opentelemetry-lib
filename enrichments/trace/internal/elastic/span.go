@@ -465,20 +465,21 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
 	spanLinks := span.Links()
 	childIDs := pcommon.NewSlice()
-	for i := 0; i < spanLinks.Len(); i++ {
-		spanLink := spanLinks.At(i)
+	spanLinks.RemoveIf(func(spanLink ptrace.SpanLink) (remove bool) {
 		spanID := spanLink.SpanID()
-		spanLink.Attributes().RemoveIf(func(k string, v pcommon.Value) bool {
+		spanLink.Attributes().Range(func(k string, v pcommon.Value) bool {
 			switch k {
 			case "is_child", "elastic.is_child":
 				if v.Bool() && !spanID.IsEmpty() {
+					remove = true // remove the span link if it has the child attrs
 					childIDs.AppendEmpty().SetStr(hex.EncodeToString(spanID[:]))
 				}
-				return true
+				return false // stop the loop
 			}
-			return false
+			return true
 		})
-	}
+		return remove
+	})
 
 	if childIDs.Len() > 0 {
 		childIDs.MoveAndAppendTo(span.Attributes().PutEmptySlice(AttributeChildIDs))
