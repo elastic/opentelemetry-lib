@@ -322,7 +322,7 @@ func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
 func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	// default to success outcome
 	outcome := "success"
-	successCount := 1
+	successCount := getRepresentativeCount(span.TraceState().AsRaw())
 	switch {
 	case s.spanStatusCode == ptrace.StatusCodeError:
 		outcome = "failure"
