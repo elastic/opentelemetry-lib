@@ -26,6 +26,7 @@ import (
 
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -48,10 +49,11 @@ func TestElasticTransactionEnrich(t *testing.T) {
 		return span
 	}
 	for _, tc := range []struct {
-		name          string
-		input         ptrace.Span
-		config        config.ElasticTransactionConfig
-		enrichedAttrs map[string]any
+		name              string
+		input             ptrace.Span
+		config            config.ElasticTransactionConfig
+		enrichedAttrs     map[string]any
+		expectedSpanLinks *ptrace.SpanLinkSlice
 	}{
 		{
 			// test case gives a summary of what is emitted by default
@@ -319,20 +321,67 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionType:                "messaging",
 			},
 		},
+		{
+			name: "inferred_spans",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+
+				childLink2 := span.Links().AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
+				AttributeTransactionRoot:                true,
+				AttributeTransactionID:                  "0100000000000000",
+				AttributeTransactionName:                "testtxn",
+				AttributeProcessorEvent:                 "transaction",
+				AttributeTransactionRepresentativeCount: float64(1),
+				AttributeTransactionDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeTransactionResult:              "Success",
+				AttributeTransactionType:                "unknown",
+				AttributeChildIDs:                       []any{"0300000000000000", "0400000000000000"},
+			},
+			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
+				spanLinks := ptrace.NewSpanLinkSlice()
+				// Only the span link without `is_child` or `elastic.is_child` is expected
+				spanLinks.AppendEmpty().SetSpanID([8]byte{2})
+				return &spanLinks
+			}(),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// Merge existing input attrs with the attrs added
-			// by enrichment to get the expected attributes.
-			expectedAttrs := tc.input.Attributes().AsRaw()
+			expectedSpan := ptrace.NewSpan()
+			tc.input.CopyTo(expectedSpan)
+
+			// Merge with the expected attributes and override the span links.
 			for k, v := range tc.enrichedAttrs {
-				expectedAttrs[k] = v
+				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
 			EnrichSpan(tc.input, config.Config{
 				Transaction: tc.config,
 			})
-
-			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
+			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
 }
@@ -351,10 +400,11 @@ func TestElasticSpanEnrich(t *testing.T) {
 		return span
 	}
 	for _, tc := range []struct {
-		name          string
-		input         ptrace.Span
-		config        config.ElasticSpanConfig
-		enrichedAttrs map[string]any
+		name              string
+		input             ptrace.Span
+		config            config.ElasticSpanConfig
+		enrichedAttrs     map[string]any
+		expectedSpanLinks *ptrace.SpanLinkSlice
 	}{
 		{
 			// test case gives a summary of what is emitted by default
@@ -827,20 +877,63 @@ func TestElasticSpanEnrich(t *testing.T) {
 				AttributeSpanDestinationServiceResource: "testsvc",
 			},
 		},
+		{
+			name: "inferred_spans",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+
+				childLink2 := span.Links().AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:             startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                "testspan",
+				AttributeProcessorEvent:          "span",
+				AttributeSpanRepresentativeCount: float64(1),
+				AttributeSpanType:                "unknown",
+				AttributeSpanDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:            "success",
+				AttributeSuccessCount:            int64(1),
+				AttributeChildIDs:                []any{"0300000000000000", "0400000000000000"},
+			},
+			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
+				spanLinks := ptrace.NewSpanLinkSlice()
+				// Only the span link without `is_child` or `elastic.is_child` is expected
+				spanLinks.AppendEmpty().SetSpanID([8]byte{2})
+				return &spanLinks
+			}(),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// Merge existing input attrs with the attrs added
-			// by enrichment to get the expected attributes.
-			expectedAttrs := tc.input.Attributes().AsRaw()
+			expectedSpan := ptrace.NewSpan()
+			tc.input.CopyTo(expectedSpan)
+
+			// Merge with the expected attributes and override the span links.
 			for k, v := range tc.enrichedAttrs {
-				expectedAttrs[k] = v
+				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
 			EnrichSpan(tc.input, config.Config{
 				Span: tc.config,
 			})
-
-			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
+			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
 }

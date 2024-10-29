@@ -232,6 +232,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
+	if cfg.InferredSpans.Enabled {
+		s.setInferredSpans(span)
+	}
 }
 
 func (s *spanEnrichmentContext) enrichSpan(
@@ -265,6 +268,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	}
 	if cfg.DestinationService.Enabled {
 		s.setDestinationService(span)
+	}
+	if cfg.InferredSpans.Enabled {
+		s.setInferredSpans(span)
 	}
 }
 
@@ -453,6 +459,30 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 
 	if destnResource != "" {
 		span.Attributes().PutStr(AttributeSpanDestinationServiceResource, destnResource)
+	}
+}
+
+func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
+	spanLinks := span.Links()
+	childIDs := pcommon.NewSlice()
+	spanLinks.RemoveIf(func(spanLink ptrace.SpanLink) (remove bool) {
+		spanID := spanLink.SpanID()
+		spanLink.Attributes().Range(func(k string, v pcommon.Value) bool {
+			switch k {
+			case "is_child", "elastic.is_child":
+				if v.Bool() && !spanID.IsEmpty() {
+					remove = true // remove the span link if it has the child attrs
+					childIDs.AppendEmpty().SetStr(hex.EncodeToString(spanID[:]))
+				}
+				return false // stop the loop
+			}
+			return true
+		})
+		return remove
+	})
+
+	if childIDs.Len() > 0 {
+		childIDs.MoveAndAppendTo(span.Attributes().PutEmptySlice(AttributeChildIDs))
 	}
 }
 
