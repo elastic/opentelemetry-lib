@@ -18,12 +18,15 @@
 package elastic
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -46,10 +49,11 @@ func TestElasticTransactionEnrich(t *testing.T) {
 		return span
 	}
 	for _, tc := range []struct {
-		name          string
-		input         ptrace.Span
-		config        config.ElasticTransactionConfig
-		enrichedAttrs map[string]any
+		name              string
+		input             ptrace.Span
+		config            config.ElasticTransactionConfig
+		enrichedAttrs     map[string]any
+		expectedSpanLinks *ptrace.SpanLinkSlice
 	}{
 		{
 			// test case gives a summary of what is emitted by default
@@ -94,7 +98,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionRepresentativeCount: float64(256),
 				AttributeTransactionDurationUs:          int64(0),
 				AttributeEventOutcome:                   "success",
-				AttributeSuccessCount:                   int64(1),
+				AttributeSuccessCount:                   int64(256),
 				AttributeTransactionResult:              "Success",
 				AttributeTransactionType:                "unknown",
 			},
@@ -317,20 +321,67 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				AttributeTransactionType:                "messaging",
 			},
 		},
+		{
+			name: "inferred_spans",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+
+				childLink2 := span.Links().AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeTransactionSampled:             true,
+				AttributeTransactionRoot:                true,
+				AttributeTransactionID:                  "0100000000000000",
+				AttributeTransactionName:                "testtxn",
+				AttributeProcessorEvent:                 "transaction",
+				AttributeTransactionRepresentativeCount: float64(1),
+				AttributeTransactionDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeTransactionResult:              "Success",
+				AttributeTransactionType:                "unknown",
+				AttributeChildIDs:                       []any{"0300000000000000", "0400000000000000"},
+			},
+			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
+				spanLinks := ptrace.NewSpanLinkSlice()
+				// Only the span link without `is_child` or `elastic.is_child` is expected
+				spanLinks.AppendEmpty().SetSpanID([8]byte{2})
+				return &spanLinks
+			}(),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// Merge existing input attrs with the attrs added
-			// by enrichment to get the expected attributes.
-			expectedAttrs := tc.input.Attributes().AsRaw()
+			expectedSpan := ptrace.NewSpan()
+			tc.input.CopyTo(expectedSpan)
+
+			// Merge with the expected attributes and override the span links.
 			for k, v := range tc.enrichedAttrs {
-				expectedAttrs[k] = v
+				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
 			EnrichSpan(tc.input, config.Config{
 				Transaction: tc.config,
 			})
-
-			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
+			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
 }
@@ -349,10 +400,11 @@ func TestElasticSpanEnrich(t *testing.T) {
 		return span
 	}
 	for _, tc := range []struct {
-		name          string
-		input         ptrace.Span
-		config        config.ElasticSpanConfig
-		enrichedAttrs map[string]any
+		name              string
+		input             ptrace.Span
+		config            config.ElasticSpanConfig
+		enrichedAttrs     map[string]any
+		expectedSpanLinks *ptrace.SpanLinkSlice
 	}{
 		{
 			// test case gives a summary of what is emitted by default
@@ -486,6 +538,40 @@ func TestElasticSpanEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "http_span_deprecated_http_url",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// peer.service should be ignored if more specific deductions
+				// can be made about the service target.
+				span.Attributes().PutStr(semconv.AttributePeerService, "testsvc")
+				span.Attributes().PutInt(
+					semconv.AttributeHTTPResponseStatusCode,
+					http.StatusOK,
+				)
+				span.Attributes().PutStr(
+					semconv.AttributeHTTPURL,
+					"https://www.foo.bar:443/search?q=OpenTelemetry#SemConv",
+				)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanRepresentativeCount:        float64(1),
+				AttributeSpanType:                       "external",
+				AttributeSpanSubtype:                    "http",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeServiceTargetType:              "http",
+				AttributeServiceTargetName:              "www.foo.bar:443",
+				AttributeSpanDestinationServiceResource: "testsvc",
+			},
+		},
+		{
 			name: "http_span_no_full_url",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
@@ -594,6 +680,58 @@ func TestElasticSpanEnrich(t *testing.T) {
 				AttributeServiceTargetType:              "external",
 				AttributeServiceTargetName:              "service.Test",
 				AttributeSpanDestinationServiceResource: "testsvc",
+			},
+		},
+		{
+			name: "rpc_span_service.{address, port}",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// No peer.service is set
+				span.Attributes().PutStr(semconv.AttributeRPCService, "service.Test")
+				span.Attributes().PutStr(semconv.AttributeServerAddress, "10.2.20.18")
+				span.Attributes().PutInt(semconv.AttributeServerPort, 8081)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanRepresentativeCount:        float64(1),
+				AttributeSpanType:                       "external",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeServiceTargetType:              "external",
+				AttributeServiceTargetName:              "service.Test",
+				AttributeSpanDestinationServiceResource: "10.2.20.18:8081",
+			},
+		},
+		{
+			name: "rpc_span_net.peer.{address, port}_fallback",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// No peer.service is set
+				span.Attributes().PutStr(semconv.AttributeRPCService, "service.Test")
+				span.Attributes().PutStr(semconv.AttributeNetPeerName, "10.2.20.18")
+				span.Attributes().PutInt(semconv.AttributeNetPeerPort, 8081)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:                    startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                       "testspan",
+				AttributeProcessorEvent:                 "span",
+				AttributeSpanRepresentativeCount:        float64(1),
+				AttributeSpanType:                       "external",
+				AttributeSpanDurationUs:                 expectedDuration.Microseconds(),
+				AttributeEventOutcome:                   "success",
+				AttributeSuccessCount:                   int64(1),
+				AttributeServiceTargetType:              "external",
+				AttributeServiceTargetName:              "service.Test",
+				AttributeSpanDestinationServiceResource: "10.2.20.18:8081",
 			},
 		},
 		{
@@ -739,20 +877,63 @@ func TestElasticSpanEnrich(t *testing.T) {
 				AttributeSpanDestinationServiceResource: "testsvc",
 			},
 		},
+		{
+			name: "inferred_spans",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+
+				childLink2 := span.Links().AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:             startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                "testspan",
+				AttributeProcessorEvent:          "span",
+				AttributeSpanRepresentativeCount: float64(1),
+				AttributeSpanType:                "unknown",
+				AttributeSpanDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:            "success",
+				AttributeSuccessCount:            int64(1),
+				AttributeChildIDs:                []any{"0300000000000000", "0400000000000000"},
+			},
+			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
+				spanLinks := ptrace.NewSpanLinkSlice()
+				// Only the span link without `is_child` or `elastic.is_child` is expected
+				spanLinks.AppendEmpty().SetSpanID([8]byte{2})
+				return &spanLinks
+			}(),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// Merge existing input attrs with the attrs added
-			// by enrichment to get the expected attributes.
-			expectedAttrs := tc.input.Attributes().AsRaw()
+			expectedSpan := ptrace.NewSpan()
+			tc.input.CopyTo(expectedSpan)
+
+			// Merge with the expected attributes and override the span links.
 			for k, v := range tc.enrichedAttrs {
-				expectedAttrs[k] = v
+				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
 			EnrichSpan(tc.input, config.Config{
 				Span: tc.config,
 			})
-
-			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
+			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
 }
@@ -762,34 +943,87 @@ func TestSpanEventEnrich(t *testing.T) {
 	ts := pcommon.NewTimestampFromTime(now)
 	for _, tc := range []struct {
 		name          string
+		parent        ptrace.Span
 		input         ptrace.SpanEvent
 		config        config.SpanEventConfig
+		errorID       bool // indicates if the error ID should be present in the result
 		enrichedAttrs map[string]any
 	}{
 		{
-			name: "not_exception",
+			name:   "not_exception",
+			parent: ptrace.NewSpan(),
 			input: func() ptrace.SpanEvent {
 				event := ptrace.NewSpanEvent()
 				event.SetTimestamp(ts)
 				return event
 			}(),
-			config: config.Enabled().SpanEvent,
+			config:  config.Enabled().SpanEvent,
+			errorID: false, // error ID is only present for exceptions
 			enrichedAttrs: map[string]any{
 				AttributeTimestampUs: ts.AsTime().UnixMicro(),
 			},
 		},
 		{
-			name: "exception",
+			name: "exception_with_elastic_txn",
+			parent: func() ptrace.Span {
+				// No parent, elastic txn
+				span := ptrace.NewSpan()
+				return span
+			}(),
 			input: func() ptrace.SpanEvent {
 				event := ptrace.NewSpanEvent()
 				event.SetName("exception")
 				event.SetTimestamp(ts)
+				event.Attributes().PutStr(semconv.AttributeExceptionType, "java.net.ConnectionError")
+				event.Attributes().PutStr(semconv.AttributeExceptionMessage, "something is wrong")
+				event.Attributes().PutStr(semconv.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
 				return event
 			}(),
-			config: config.Enabled().SpanEvent,
+			config:  config.Enabled().SpanEvent,
+			errorID: true,
 			enrichedAttrs: map[string]any{
-				AttributeTimestampUs:    ts.AsTime().UnixMicro(),
-				AttributeProcessorEvent: "error",
+				AttributeTimestampUs:           ts.AsTime().UnixMicro(),
+				AttributeProcessorEvent:        "error",
+				AttributeErrorExceptionHandled: true,
+				AttributeErrorGroupingKey: func() string {
+					hash := md5.New()
+					hash.Write([]byte("java.net.ConnectionError"))
+					return hex.EncodeToString(hash.Sum(nil))
+				}(),
+				AttributeErrorGroupingName:  "something is wrong",
+				AttributeTransactionSampled: true,
+				AttributeTransactionType:    "unknown",
+			},
+		},
+		{
+			name: "exception_with_elastic_span",
+			parent: func() ptrace.Span {
+				// Parent, elastic span
+				span := ptrace.NewSpan()
+				span.SetParentSpanID([8]byte{8, 9, 10, 11, 12, 13, 14})
+				return span
+			}(),
+			input: func() ptrace.SpanEvent {
+				event := ptrace.NewSpanEvent()
+				event.SetName("exception")
+				event.SetTimestamp(ts)
+				event.Attributes().PutStr(semconv.AttributeExceptionType, "java.net.ConnectionError")
+				event.Attributes().PutStr(semconv.AttributeExceptionMessage, "something is wrong")
+				event.Attributes().PutStr(semconv.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
+				return event
+			}(),
+			config:  config.Enabled().SpanEvent,
+			errorID: true,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:           ts.AsTime().UnixMicro(),
+				AttributeProcessorEvent:        "error",
+				AttributeErrorExceptionHandled: true,
+				AttributeErrorGroupingKey: func() string {
+					hash := md5.New()
+					hash.Write([]byte("java.net.ConnectionError"))
+					return hex.EncodeToString(hash.Sum(nil))
+				}(),
+				AttributeErrorGroupingName: "something is wrong",
 			},
 		},
 	} {
@@ -801,13 +1035,20 @@ func TestSpanEventEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			span := ptrace.NewSpan()
-			tc.input.MoveTo(span.Events().AppendEmpty())
-			EnrichSpan(span, config.Config{
+			tc.input.MoveTo(tc.parent.Events().AppendEmpty())
+			EnrichSpan(tc.parent, config.Config{
 				SpanEvent: tc.config,
 			})
 
-			assert.Empty(t, cmp.Diff(expectedAttrs, span.Events().At(0).Attributes().AsRaw()))
+			actual := tc.parent.Events().At(0).Attributes()
+			errorID, ok := actual.Get(AttributeErrorID)
+			assert.Equal(t, tc.errorID, ok, "error_id must be present for exception and must not be present for non-exception")
+			if tc.errorID {
+				assert.NotEmpty(t, errorID, "error_id must not be empty")
+			}
+			// Ignore error in actual diff since it is randomly generated
+			actual.Remove(AttributeErrorID)
+			assert.Empty(t, cmp.Diff(expectedAttrs, actual.AsRaw()))
 		})
 	}
 }

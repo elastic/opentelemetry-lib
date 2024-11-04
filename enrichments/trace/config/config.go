@@ -28,8 +28,9 @@ type Config struct {
 
 // ResourceConfig configures the enrichment of resource attributes.
 type ResourceConfig struct {
-	AgentName    AttributeConfig `mapstructure:"agent_name"`
-	AgentVersion AttributeConfig `mapstructure:"agent_version"`
+	AgentName        AttributeConfig `mapstructure:"agent_name"`
+	AgentVersion     AttributeConfig `mapstructure:"agent_version"`
+	OverrideHostName AttributeConfig `mapstructure:"override_host_name"`
 }
 
 // ScopeConfig configures the enrichment of scope attributes.
@@ -55,6 +56,7 @@ type ElasticTransactionConfig struct {
 	Type                AttributeConfig `mapstructure:"type"`
 	Result              AttributeConfig `mapstructure:"result"`
 	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
+	InferredSpans       AttributeConfig `mapstructure:"inferred_spans"`
 }
 
 // ElasticSpanConfig configures the enrichment attributes for the spans
@@ -72,6 +74,7 @@ type ElasticSpanConfig struct {
 	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
 	ServiceTarget       AttributeConfig `mapstructure:"service_target"`
 	DestinationService  AttributeConfig `mapstructure:"destination_service"`
+	InferredSpans       AttributeConfig `mapstructure:"inferred_spans"`
 }
 
 // SpanEventConfig configures enrichment attributes for the span events.
@@ -79,8 +82,16 @@ type SpanEventConfig struct {
 	// TimestampUs is a temporary attribute to enable higher
 	// resolution timestamps in Elasticsearch. For more details see:
 	// https://github.com/elastic/opentelemetry-dev/issues/374.
-	TimestampUs    AttributeConfig `mapstructure:"timestamp_us"`
-	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
+	TimestampUs        AttributeConfig `mapstructure:"timestamp_us"`
+	TransactionSampled AttributeConfig `mapstructure:"transaction_sampled"`
+	TransactionType    AttributeConfig `mapstructure:"transaction_type"`
+	ProcessorEvent     AttributeConfig `mapstructure:"processor_event"`
+
+	// For exceptions/errors
+	ErrorID               AttributeConfig `mapstructure:"error_id"`
+	ErrorExceptionHandled AttributeConfig `mapstructure:"error_exception_handled"`
+	ErrorGroupingKey      AttributeConfig `mapstructure:"error_grouping_key"`
+	ErrorGroupingName     AttributeConfig `mapstructure:"error_grouping_name"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
@@ -92,8 +103,9 @@ type AttributeConfig struct {
 func Enabled() Config {
 	return Config{
 		Resource: ResourceConfig{
-			AgentName:    AttributeConfig{Enabled: true},
-			AgentVersion: AttributeConfig{Enabled: true},
+			AgentName:        AttributeConfig{Enabled: true},
+			AgentVersion:     AttributeConfig{Enabled: true},
+			OverrideHostName: AttributeConfig{Enabled: true},
 		},
 		Scope: ScopeConfig{
 			ServiceFrameworkName:    AttributeConfig{Enabled: true},
@@ -111,6 +123,7 @@ func Enabled() Config {
 			Result:              AttributeConfig{Enabled: true},
 			EventOutcome:        AttributeConfig{Enabled: true},
 			RepresentativeCount: AttributeConfig{Enabled: true},
+			InferredSpans:       AttributeConfig{Enabled: true},
 		},
 		Span: ElasticSpanConfig{
 			TimestampUs:         AttributeConfig{Enabled: true},
@@ -122,10 +135,17 @@ func Enabled() Config {
 			ServiceTarget:       AttributeConfig{Enabled: true},
 			DestinationService:  AttributeConfig{Enabled: true},
 			RepresentativeCount: AttributeConfig{Enabled: true},
+			InferredSpans:       AttributeConfig{Enabled: true},
 		},
 		SpanEvent: SpanEventConfig{
-			TimestampUs:    AttributeConfig{Enabled: true},
-			ProcessorEvent: AttributeConfig{Enabled: true},
+			TimestampUs:           AttributeConfig{Enabled: true},
+			TransactionSampled:    AttributeConfig{Enabled: true},
+			TransactionType:       AttributeConfig{Enabled: true},
+			ProcessorEvent:        AttributeConfig{Enabled: true},
+			ErrorID:               AttributeConfig{Enabled: true},
+			ErrorExceptionHandled: AttributeConfig{Enabled: true},
+			ErrorGroupingKey:      AttributeConfig{Enabled: true},
+			ErrorGroupingName:     AttributeConfig{Enabled: true},
 		},
 	}
 }

@@ -18,7 +18,11 @@
 package elastic
 
 import (
+	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"net/http"
@@ -52,6 +56,7 @@ type spanEnrichmentContext struct {
 	urlFull *url.URL
 
 	peerService              string
+	serverAddress            string
 	urlScheme                string
 	urlDomain                string
 	urlPath                  string
@@ -64,11 +69,14 @@ type spanEnrichmentContext struct {
 	messagingSystem          string
 	messagingDestinationName string
 
+	serverPort     int64
 	urlPort        int64
 	httpStatusCode int64
 
 	spanStatusCode ptrace.StatusCode
 
+	// TODO (lahsivjar): Refactor span enrichment to better utilize isTransaction
+	isTransaction            bool
 	isMessaging              bool
 	isRPC                    bool
 	isHTTP                   bool
@@ -85,6 +93,24 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		switch k {
 		case semconv.AttributePeerService:
 			s.peerService = v.Str()
+		case semconv.AttributeServerAddress:
+			s.serverAddress = v.Str()
+		case semconv.AttributeServerPort:
+			s.serverPort = v.Int()
+		case semconv.AttributeNetPeerName:
+			if s.serverAddress == "" {
+				// net.peer.name is deprecated, so has lower priority
+				// only set when not already set with server.address
+				// and allowed to be overridden by server.address.
+				s.serverAddress = v.Str()
+			}
+		case semconv.AttributeNetPeerPort:
+			if s.serverPort == 0 {
+				// net.peer.port is deprecated, so has lower priority
+				// only set when not already set with server.port and
+				// allowed to be overridden by server.port.
+				s.serverPort = v.Int()
+			}
 		case semconv.AttributeMessagingDestinationName:
 			s.isMessaging = true
 			s.messagingDestinationName = v.Str()
@@ -102,13 +128,13 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 			s.httpStatusCode = v.Int()
 		case semconv.AttributeHTTPMethod,
 			semconv.AttributeHTTPRequestMethod,
-			semconv.AttributeHTTPURL,
 			semconv.AttributeHTTPTarget,
 			semconv.AttributeHTTPScheme,
 			semconv.AttributeHTTPFlavor,
 			semconv.AttributeNetHostName:
 			s.isHTTP = true
-		case semconv.AttributeURLFull:
+		case semconv.AttributeURLFull,
+			semconv.AttributeHTTPURL:
 			s.isHTTP = true
 			// ignoring error as if parse fails then we don't want the url anyway
 			s.urlFull, _ = url.Parse(v.Str())
@@ -149,19 +175,22 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		return true
 	})
 
-	// Ensure all dependent attributes are handled.
 	s.normalizeAttributes()
-
-	if isElasticTransaction(span) {
-		s.enrichTransaction(span, cfg.Transaction)
-	} else {
-		s.enrichSpan(span, cfg.Span)
-	}
+	s.isTransaction = isElasticTransaction(span)
+	s.enrich(span, cfg)
 
 	spanEvents := span.Events()
 	for i := 0; i < spanEvents.Len(); i++ {
 		var c spanEventEnrichmentContext
-		c.enrich(spanEvents.At(i), cfg.SpanEvent)
+		c.enrich(s, spanEvents.At(i), cfg.SpanEvent)
+	}
+}
+
+func (s *spanEnrichmentContext) enrich(span ptrace.Span, cfg config.Config) {
+	if s.isTransaction {
+		s.enrichTransaction(span, cfg.Transaction)
+	} else {
+		s.enrichSpan(span, cfg.Span)
 	}
 }
 
@@ -173,7 +202,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Sampled.Enabled {
-		span.Attributes().PutBool(AttributeTransactionSampled, true)
+		span.Attributes().PutBool(AttributeTransactionSampled, s.getSampled())
 	}
 	if cfg.ID.Enabled {
 		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
@@ -195,13 +224,16 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
 	}
 	if cfg.Type.Enabled {
-		s.setTxnType(span)
+		span.Attributes().PutStr(AttributeTransactionType, s.getTxnType())
 	}
 	if cfg.Result.Enabled {
 		s.setTxnResult(span)
 	}
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
+	}
+	if cfg.InferredSpans.Enabled {
+		s.setInferredSpans(span)
 	}
 }
 
@@ -237,6 +269,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.DestinationService.Enabled {
 		s.setDestinationService(span)
 	}
+	if cfg.InferredSpans.Enabled {
+		s.setInferredSpans(span)
+	}
 }
 
 // normalizeAttributes sets any dependent attributes that
@@ -247,7 +282,12 @@ func (s *spanEnrichmentContext) normalizeAttributes() {
 	}
 }
 
-func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
+func (s *spanEnrichmentContext) getSampled() bool {
+	// Assumes that the method is called only for transaction
+	return true
+}
+
+func (s *spanEnrichmentContext) getTxnType() string {
 	txnType := "unknown"
 	switch {
 	case s.isMessaging:
@@ -255,7 +295,7 @@ func (s *spanEnrichmentContext) setTxnType(span ptrace.Span) {
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
 	}
-	span.Attributes().PutStr(AttributeTransactionType, txnType)
+	return txnType
 }
 
 func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
@@ -288,7 +328,7 @@ func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
 func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	// default to success outcome
 	outcome := "success"
-	successCount := 1
+	successCount := getRepresentativeCount(span.TraceState().AsRaw())
 	switch {
 	case s.spanStatusCode == ptrace.StatusCodeError:
 		outcome = "failure"
@@ -371,7 +411,10 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 		}
 	case s.isHTTP:
 		targetType = "http"
-		if resource := getHostPort(s.urlFull, s.urlDomain, s.urlPort); resource != "" {
+		if resource := getHostPort(
+			s.urlFull, s.urlDomain, s.urlPort,
+			s.serverAddress, s.serverPort, // fallback
+		); resource != "" {
 			targetName = resource
 		}
 	}
@@ -405,7 +448,10 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 		}
 	case s.isRPC, s.isHTTP:
 		if destnResource == "" {
-			if res := getHostPort(s.urlFull, s.urlDomain, s.urlPort); res != "" {
+			if res := getHostPort(
+				s.urlFull, s.urlDomain, s.urlPort,
+				s.serverAddress, s.serverPort, // fallback
+			); res != "" {
 				destnResource = res
 			}
 		}
@@ -416,16 +462,58 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 }
 
+func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
+	spanLinks := span.Links()
+	childIDs := pcommon.NewSlice()
+	spanLinks.RemoveIf(func(spanLink ptrace.SpanLink) (remove bool) {
+		spanID := spanLink.SpanID()
+		spanLink.Attributes().Range(func(k string, v pcommon.Value) bool {
+			switch k {
+			case "is_child", "elastic.is_child":
+				if v.Bool() && !spanID.IsEmpty() {
+					remove = true // remove the span link if it has the child attrs
+					childIDs.AppendEmpty().SetStr(hex.EncodeToString(spanID[:]))
+				}
+				return false // stop the loop
+			}
+			return true
+		})
+		return remove
+	})
+
+	if childIDs.Len() > 0 {
+		childIDs.MoveAndAppendTo(span.Attributes().PutEmptySlice(AttributeChildIDs))
+	}
+}
+
 type spanEventEnrichmentContext struct {
-	exception bool
+	exceptionType    string
+	exceptionMessage string
+
+	exception        bool
+	exceptionEscaped bool
 }
 
 func (s *spanEventEnrichmentContext) enrich(
+	parentCtx *spanEnrichmentContext,
 	se ptrace.SpanEvent,
 	cfg config.SpanEventConfig,
 ) {
 	// Extract top level span event information.
 	s.exception = se.Name() == "exception"
+	if s.exception {
+		se.Attributes().Range(func(k string, v pcommon.Value) bool {
+			switch k {
+			case semconv.AttributeExceptionEscaped:
+				s.exceptionEscaped = v.Bool()
+			case semconv.AttributeExceptionType:
+				s.exceptionType = v.Str()
+			case semconv.AttributeExceptionMessage:
+				s.exceptionMessage = v.Str()
+			}
+			return true
+		})
+	}
 
 	// Enrich span event attributes.
 	if cfg.TimestampUs.Enabled {
@@ -433,6 +521,46 @@ func (s *spanEventEnrichmentContext) enrich(
 	}
 	if cfg.ProcessorEvent.Enabled && s.exception {
 		se.Attributes().PutStr(AttributeProcessorEvent, "error")
+	}
+	if s.exceptionType == "" && s.exceptionMessage == "" {
+		// Span event does not represent an exception
+		return
+	}
+
+	// Span event represents exception
+	if cfg.ErrorID.Enabled {
+		if id, err := newUniqueID(); err == nil {
+			se.Attributes().PutStr(AttributeErrorID, id)
+		}
+	}
+	if cfg.ErrorExceptionHandled.Enabled {
+		se.Attributes().PutBool(AttributeErrorExceptionHandled, !s.exceptionEscaped)
+	}
+	if cfg.ErrorGroupingKey.Enabled {
+		// See https://github.com/elastic/apm-data/issues/299
+		hash := md5.New()
+		// ignoring errors in hashing
+		if s.exceptionType != "" {
+			io.WriteString(hash, s.exceptionType)
+		} else if s.exceptionMessage != "" {
+			io.WriteString(hash, s.exceptionMessage)
+		}
+		se.Attributes().PutStr(AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
+	}
+	if cfg.ErrorGroupingName.Enabled {
+		if s.exceptionMessage != "" {
+			se.Attributes().PutStr(AttributeErrorGroupingName, s.exceptionMessage)
+		}
+	}
+
+	// Transaction type and sampled are added as span event enrichment only for errors
+	if parentCtx.isTransaction && s.exception {
+		if cfg.TransactionSampled.Enabled {
+			se.Attributes().PutBool(AttributeTransactionSampled, parentCtx.getSampled())
+		}
+		if cfg.TransactionType.Enabled {
+			se.Attributes().PutStr(AttributeTransactionType, parentCtx.getTxnType())
+		}
 	}
 }
 
@@ -513,18 +641,23 @@ func getValueForKeyInString(str string, key string, separator rune, assignChar r
 	return ""
 }
 
-// getHostPort derives the host:port value from url.* attributes. Unlike
-// apm-data, the current code does NOT fallback to net.* or http.*
-// attributes as most of these are now deprecated.
-func getHostPort(urlFull *url.URL, urlDomain string, urlPort int64) string {
-	if urlFull != nil {
+func getHostPort(
+	urlFull *url.URL, urlDomain string, urlPort int64,
+	fallbackServerAddress string, fallbackServerPort int64,
+) string {
+	switch {
+	case urlFull != nil:
 		return urlFull.Host
-	}
-	if urlDomain != "" {
+	case urlDomain != "":
 		if urlPort == 0 {
 			return urlDomain
 		}
 		return net.JoinHostPort(urlDomain, strconv.FormatInt(urlPort, 10))
+	case fallbackServerAddress != "":
+		if fallbackServerPort == 0 {
+			return fallbackServerAddress
+		}
+		return net.JoinHostPort(fallbackServerAddress, strconv.FormatInt(fallbackServerPort, 10))
 	}
 	return ""
 }
@@ -539,4 +672,17 @@ var standardStatusCodeResults = [...]string{
 	"HTTP 3xx",
 	"HTTP 4xx",
 	"HTTP 5xx",
+}
+
+func newUniqueID() (string, error) {
+	var u [16]byte
+	if _, err := io.ReadFull(rand.Reader, u[:]); err != nil {
+		return "", err
+	}
+
+	// convert to string
+	buf := make([]byte, 32)
+	hex.Encode(buf, u[:])
+
+	return string(buf), nil
 }
