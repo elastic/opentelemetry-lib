@@ -914,6 +914,28 @@ func TestElasticSpanEnrich(t *testing.T) {
 				return &spanLinks
 			}(),
 		},
+		{
+			name: "external_type_genai",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				span.Attributes().PutStr(semconvAttributeGenAiSystem, "openai")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				AttributeTimestampUs:             startTs.AsTime().UnixMicro(),
+				AttributeSpanName:                "testspan",
+				AttributeProcessorEvent:          "span",
+				AttributeSpanRepresentativeCount: float64(1),
+				AttributeSpanType:                "external",
+				AttributeSpanSubtype:             "genai",
+				AttributeSpanDurationUs:          expectedDuration.Microseconds(),
+				AttributeEventOutcome:            "success",
+				AttributeSuccessCount:            int64(1),
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()

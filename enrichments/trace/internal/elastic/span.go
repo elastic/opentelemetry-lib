@@ -38,6 +38,12 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+// Here we are duplicating newer semconv attributes because since v1.26.0
+// all deprecated symbols we are using have been removed
+const (
+	semconvAttributeGenAiSystem = "gen_ai.system"
+)
+
 // EnrichSpan adds Elastic specific attributes to the OTel span.
 // These attributes are derived from the base attributes and appended to
 // the span attributes. The enrichment logic is performed by categorizing
@@ -82,6 +88,7 @@ type spanEnrichmentContext struct {
 	isHTTP                   bool
 	isDB                     bool
 	messagingDestinationTemp bool
+	isGenAi                  bool
 }
 
 func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
@@ -171,6 +178,8 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		case semconv.AttributeDBSystem:
 			s.isDB = true
 			s.dbSystem = v.Str()
+		case semconvAttributeGenAiSystem:
+			s.isGenAi = true
 		}
 		return true
 	})
@@ -361,6 +370,9 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
 	case s.isHTTP:
 		spanType = "external"
 		spanSubtype = "http"
+	case s.isGenAi:
+		spanType = "external"
+		spanSubtype = "genai"
 	default:
 		switch span.Kind() {
 		case ptrace.SpanKindInternal:
