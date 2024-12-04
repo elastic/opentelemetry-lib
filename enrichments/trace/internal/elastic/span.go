@@ -33,15 +33,10 @@ import (
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv27 "go.opentelemetry.io/collector/semconv/v1.27.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
-)
-
-// Here we are duplicating newer semconv attributes because since v1.26.0
-// all deprecated symbols we are using have been removed
-const (
-	semconvAttributeGenAiSystem = "gen_ai.system"
 )
 
 // EnrichSpan adds Elastic specific attributes to the OTel span.
@@ -98,87 +93,87 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 	// Extract information from span attributes.
 	span.Attributes().Range(func(k string, v pcommon.Value) bool {
 		switch k {
-		case semconv.AttributePeerService:
+		case semconv25.AttributePeerService:
 			s.peerService = v.Str()
-		case semconv.AttributeServerAddress:
+		case semconv25.AttributeServerAddress:
 			s.serverAddress = v.Str()
-		case semconv.AttributeServerPort:
+		case semconv25.AttributeServerPort:
 			s.serverPort = v.Int()
-		case semconv.AttributeNetPeerName:
+		case semconv25.AttributeNetPeerName:
 			if s.serverAddress == "" {
 				// net.peer.name is deprecated, so has lower priority
 				// only set when not already set with server.address
 				// and allowed to be overridden by server.address.
 				s.serverAddress = v.Str()
 			}
-		case semconv.AttributeNetPeerPort:
+		case semconv25.AttributeNetPeerPort:
 			if s.serverPort == 0 {
 				// net.peer.port is deprecated, so has lower priority
 				// only set when not already set with server.port and
 				// allowed to be overridden by server.port.
 				s.serverPort = v.Int()
 			}
-		case semconv.AttributeMessagingDestinationName:
+		case semconv25.AttributeMessagingDestinationName:
 			s.isMessaging = true
 			s.messagingDestinationName = v.Str()
-		case semconv.AttributeMessagingOperation:
+		case semconv25.AttributeMessagingOperation:
 			s.isMessaging = true
-		case semconv.AttributeMessagingSystem:
+		case semconv25.AttributeMessagingSystem:
 			s.isMessaging = true
 			s.messagingSystem = v.Str()
-		case semconv.AttributeMessagingDestinationTemporary:
+		case semconv25.AttributeMessagingDestinationTemporary:
 			s.isMessaging = true
 			s.messagingDestinationTemp = true
-		case semconv.AttributeHTTPStatusCode,
-			semconv.AttributeHTTPResponseStatusCode:
+		case semconv25.AttributeHTTPStatusCode,
+			semconv25.AttributeHTTPResponseStatusCode:
 			s.isHTTP = true
 			s.httpStatusCode = v.Int()
-		case semconv.AttributeHTTPMethod,
-			semconv.AttributeHTTPRequestMethod,
-			semconv.AttributeHTTPTarget,
-			semconv.AttributeHTTPScheme,
-			semconv.AttributeHTTPFlavor,
-			semconv.AttributeNetHostName:
+		case semconv25.AttributeHTTPMethod,
+			semconv25.AttributeHTTPRequestMethod,
+			semconv25.AttributeHTTPTarget,
+			semconv25.AttributeHTTPScheme,
+			semconv25.AttributeHTTPFlavor,
+			semconv25.AttributeNetHostName:
 			s.isHTTP = true
-		case semconv.AttributeURLFull,
-			semconv.AttributeHTTPURL:
+		case semconv25.AttributeURLFull,
+			semconv25.AttributeHTTPURL:
 			s.isHTTP = true
 			// ignoring error as if parse fails then we don't want the url anyway
 			s.urlFull, _ = url.Parse(v.Str())
-		case semconv.AttributeURLScheme:
+		case semconv25.AttributeURLScheme:
 			s.isHTTP = true
 			s.urlScheme = v.Str()
-		case semconv.AttributeURLDomain:
+		case semconv25.AttributeURLDomain:
 			s.isHTTP = true
 			s.urlDomain = v.Str()
-		case semconv.AttributeURLPort:
+		case semconv25.AttributeURLPort:
 			s.isHTTP = true
 			s.urlPort = v.Int()
-		case semconv.AttributeURLPath:
+		case semconv25.AttributeURLPath:
 			s.isHTTP = true
 			s.urlPath = v.Str()
-		case semconv.AttributeURLQuery:
+		case semconv25.AttributeURLQuery:
 			s.isHTTP = true
 			s.urlQuery = v.Str()
-		case semconv.AttributeRPCGRPCStatusCode:
+		case semconv25.AttributeRPCGRPCStatusCode:
 			s.isRPC = true
 			s.grpcStatus = codes.Code(v.Int()).String()
-		case semconv.AttributeRPCSystem:
+		case semconv25.AttributeRPCSystem:
 			s.isRPC = true
 			s.rpcSystem = v.Str()
-		case semconv.AttributeRPCService:
+		case semconv25.AttributeRPCService:
 			s.isRPC = true
 			s.rpcService = v.Str()
-		case semconv.AttributeDBStatement,
-			semconv.AttributeDBUser:
+		case semconv25.AttributeDBStatement,
+			semconv25.AttributeDBUser:
 			s.isDB = true
-		case semconv.AttributeDBName:
+		case semconv25.AttributeDBName:
 			s.isDB = true
 			s.dbName = v.Str()
-		case semconv.AttributeDBSystem:
+		case semconv25.AttributeDBSystem:
 			s.isDB = true
 			s.dbSystem = v.Str()
-		case semconvAttributeGenAiSystem:
+		case semconv27.AttributeGenAiSystem:
 			s.isGenAi = true
 		}
 		return true
@@ -516,11 +511,11 @@ func (s *spanEventEnrichmentContext) enrich(
 	if s.exception {
 		se.Attributes().Range(func(k string, v pcommon.Value) bool {
 			switch k {
-			case semconv.AttributeExceptionEscaped:
+			case semconv25.AttributeExceptionEscaped:
 				s.exceptionEscaped = v.Bool()
-			case semconv.AttributeExceptionType:
+			case semconv25.AttributeExceptionType:
 				s.exceptionType = v.Str()
-			case semconv.AttributeExceptionMessage:
+			case semconv25.AttributeExceptionMessage:
 				s.exceptionMessage = v.Str()
 			}
 			return true
