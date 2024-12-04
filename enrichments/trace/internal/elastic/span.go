@@ -69,6 +69,7 @@ type spanEnrichmentContext struct {
 	dbSystem                 string
 	messagingSystem          string
 	messagingDestinationName string
+	genAiSystem              string
 
 	serverPort     int64
 	urlPort        int64
@@ -175,6 +176,7 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 			s.dbSystem = v.Str()
 		case semconv27.AttributeGenAiSystem:
 			s.isGenAi = true
+			s.genAiSystem = v.Str()
 		}
 		return true
 	})
@@ -366,8 +368,8 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
 		spanType = "external"
 		spanSubtype = "http"
 	case s.isGenAi:
-		spanType = "external"
-		spanSubtype = "genai"
+		spanType = "genai"
+		spanSubtype = s.genAiSystem
 	default:
 		switch span.Kind() {
 		case ptrace.SpanKindInternal:
