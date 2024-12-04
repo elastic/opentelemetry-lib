@@ -916,7 +916,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 		},
 		{
-			name: "external_type_genai",
+			name: "genai_with_system",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
