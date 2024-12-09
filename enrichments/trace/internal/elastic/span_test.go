@@ -412,9 +412,14 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled(),
 			enrichedAttrs: map[string]any{
-				AttributeTimestampUs:                    int64(0),
-				AttributeTransactionName:                "rootClientSpan",
-				AttributeProcessorEvent:                 "transaction",
+				AttributeTimestampUs:     int64(0),
+				AttributeTransactionName: "rootClientSpan",
+				AttributeProcessorEvent: func() pcommon.Slice {
+					p := pcommon.NewSlice()
+					p.AppendEmpty().SetStr("transaction")
+					p.AppendEmpty().SetStr("span")
+					return p
+				}().AsRaw(),
 				AttributeSpanType:                       "external",
 				AttributeSpanSubtype:                    "http",
 				AttributeSpanDestinationServiceResource: "localhost:8080",
@@ -450,9 +455,14 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled(),
 			enrichedAttrs: map[string]any{
-				AttributeTimestampUs:                    int64(0),
-				AttributeTransactionName:                "rootClientSpan",
-				AttributeProcessorEvent:                 "transaction",
+				AttributeTimestampUs:     int64(0),
+				AttributeTransactionName: "rootClientSpan",
+				AttributeProcessorEvent: func() pcommon.Slice {
+					p := pcommon.NewSlice()
+					p.AppendEmpty().SetStr("transaction")
+					p.AppendEmpty().SetStr("span")
+					return p
+				}().AsRaw(),
 				AttributeSpanType:                       "db",
 				AttributeSpanSubtype:                    "mssql",
 				AttributeSpanDestinationServiceResource: "mssql",
@@ -490,9 +500,14 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled(),
 			enrichedAttrs: map[string]any{
-				AttributeTimestampUs:                    int64(0),
-				AttributeTransactionName:                "rootClientSpan",
-				AttributeProcessorEvent:                 "transaction",
+				AttributeTimestampUs:     int64(0),
+				AttributeTransactionName: "rootClientSpan",
+				AttributeProcessorEvent: func() pcommon.Slice {
+					p := pcommon.NewSlice()
+					p.AppendEmpty().SetStr("transaction")
+					p.AppendEmpty().SetStr("span")
+					return p
+				}().AsRaw(),
 				AttributeSpanType:                       "messaging",
 				AttributeSpanSubtype:                    "rabbitmq",
 				AttributeSpanDestinationServiceResource: "rabbitmq/T",
