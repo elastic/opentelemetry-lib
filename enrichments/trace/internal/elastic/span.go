@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/elastic/opentelemetry-lib/common"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -205,32 +206,32 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	cfg config.ElasticTransactionConfig,
 ) {
 	if cfg.TimestampUs.Enabled {
-		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
+		span.Attributes().PutInt(common.AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Sampled.Enabled {
-		span.Attributes().PutBool(AttributeTransactionSampled, s.getSampled())
+		span.Attributes().PutBool(common.AttributeTransactionSampled, s.getSampled())
 	}
 	if cfg.ID.Enabled {
-		span.Attributes().PutStr(AttributeTransactionID, span.SpanID().String())
+		span.Attributes().PutStr(common.AttributeTransactionID, span.SpanID().String())
 	}
 	if cfg.Root.Enabled {
-		span.Attributes().PutBool(AttributeTransactionRoot, isTraceRoot(span))
+		span.Attributes().PutBool(common.AttributeTransactionRoot, isTraceRoot(span))
 	}
 	if cfg.Name.Enabled {
-		span.Attributes().PutStr(AttributeTransactionName, span.Name())
+		span.Attributes().PutStr(common.AttributeTransactionName, span.Name())
 	}
 	if cfg.ProcessorEvent.Enabled {
-		span.Attributes().PutStr(AttributeProcessorEvent, "transaction")
+		span.Attributes().PutStr(common.AttributeProcessorEvent, "transaction")
 	}
 	if cfg.RepresentativeCount.Enabled {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
-		span.Attributes().PutDouble(AttributeTransactionRepresentativeCount, repCount)
+		span.Attributes().PutDouble(common.AttributeTransactionRepresentativeCount, repCount)
 	}
 	if cfg.DurationUs.Enabled {
-		span.Attributes().PutInt(AttributeTransactionDurationUs, getDurationUs(span))
+		span.Attributes().PutInt(common.AttributeTransactionDurationUs, getDurationUs(span))
 	}
 	if cfg.Type.Enabled {
-		span.Attributes().PutStr(AttributeTransactionType, s.getTxnType())
+		span.Attributes().PutStr(common.AttributeTransactionType, s.getTxnType())
 	}
 	if cfg.Result.Enabled {
 		s.setTxnResult(span)
@@ -248,17 +249,17 @@ func (s *spanEnrichmentContext) enrichSpan(
 	cfg config.ElasticSpanConfig,
 ) {
 	if cfg.TimestampUs.Enabled {
-		span.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
+		span.Attributes().PutInt(common.AttributeTimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Name.Enabled {
-		span.Attributes().PutStr(AttributeSpanName, span.Name())
+		span.Attributes().PutStr(common.AttributeSpanName, span.Name())
 	}
 	if cfg.ProcessorEvent.Enabled {
-		span.Attributes().PutStr(AttributeProcessorEvent, "span")
+		span.Attributes().PutStr(common.AttributeProcessorEvent, "span")
 	}
 	if cfg.RepresentativeCount.Enabled {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
-		span.Attributes().PutDouble(AttributeSpanRepresentativeCount, repCount)
+		span.Attributes().PutDouble(common.AttributeSpanRepresentativeCount, repCount)
 	}
 	if cfg.TypeSubtype.Enabled {
 		s.setSpanTypeSubtype(span)
@@ -267,7 +268,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 		s.setEventOutcome(span)
 	}
 	if cfg.DurationUs.Enabled {
-		span.Attributes().PutInt(AttributeSpanDurationUs, getDurationUs(span))
+		span.Attributes().PutInt(common.AttributeSpanDurationUs, getDurationUs(span))
 	}
 	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
@@ -328,7 +329,7 @@ func (s *spanEnrichmentContext) setTxnResult(span ptrace.Span) {
 		}
 	}
 
-	span.Attributes().PutStr(AttributeTransactionResult, result)
+	span.Attributes().PutStr(common.AttributeTransactionResult, result)
 }
 
 func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
@@ -347,8 +348,8 @@ func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 		outcome = "failure"
 		successCount = 0
 	}
-	span.Attributes().PutStr(AttributeEventOutcome, outcome)
-	span.Attributes().PutInt(AttributeSuccessCount, int64(successCount))
+	span.Attributes().PutStr(common.AttributeEventOutcome, outcome)
+	span.Attributes().PutInt(common.AttributeSuccessCount, int64(successCount))
 }
 
 func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
@@ -380,9 +381,9 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
 		}
 	}
 
-	span.Attributes().PutStr(AttributeSpanType, spanType)
+	span.Attributes().PutStr(common.AttributeSpanType, spanType)
 	if spanSubtype != "" {
-		span.Attributes().PutStr(AttributeSpanSubtype, spanSubtype)
+		span.Attributes().PutStr(common.AttributeSpanSubtype, spanSubtype)
 	}
 }
 
@@ -429,8 +430,8 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 	}
 
 	if targetType != "" || targetName != "" {
-		span.Attributes().PutStr(AttributeServiceTargetType, targetType)
-		span.Attributes().PutStr(AttributeServiceTargetName, targetName)
+		span.Attributes().PutStr(common.AttributeServiceTargetType, targetType)
+		span.Attributes().PutStr(common.AttributeServiceTargetName, targetName)
 	}
 }
 
@@ -467,7 +468,7 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 
 	if destnResource != "" {
-		span.Attributes().PutStr(AttributeSpanDestinationServiceResource, destnResource)
+		span.Attributes().PutStr(common.AttributeSpanDestinationServiceResource, destnResource)
 	}
 }
 
@@ -491,7 +492,7 @@ func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
 	})
 
 	if childIDs.Len() > 0 {
-		childIDs.MoveAndAppendTo(span.Attributes().PutEmptySlice(AttributeChildIDs))
+		childIDs.MoveAndAppendTo(span.Attributes().PutEmptySlice(common.AttributeChildIDs))
 	}
 }
 
@@ -526,10 +527,10 @@ func (s *spanEventEnrichmentContext) enrich(
 
 	// Enrich span event attributes.
 	if cfg.TimestampUs.Enabled {
-		se.Attributes().PutInt(AttributeTimestampUs, getTimestampUs(se.Timestamp()))
+		se.Attributes().PutInt(common.AttributeTimestampUs, getTimestampUs(se.Timestamp()))
 	}
 	if cfg.ProcessorEvent.Enabled && s.exception {
-		se.Attributes().PutStr(AttributeProcessorEvent, "error")
+		se.Attributes().PutStr(common.AttributeProcessorEvent, "error")
 	}
 	if s.exceptionType == "" && s.exceptionMessage == "" {
 		// Span event does not represent an exception
@@ -539,11 +540,11 @@ func (s *spanEventEnrichmentContext) enrich(
 	// Span event represents exception
 	if cfg.ErrorID.Enabled {
 		if id, err := newUniqueID(); err == nil {
-			se.Attributes().PutStr(AttributeErrorID, id)
+			se.Attributes().PutStr(common.AttributeErrorID, id)
 		}
 	}
 	if cfg.ErrorExceptionHandled.Enabled {
-		se.Attributes().PutBool(AttributeErrorExceptionHandled, !s.exceptionEscaped)
+		se.Attributes().PutBool(common.AttributeErrorExceptionHandled, !s.exceptionEscaped)
 	}
 	if cfg.ErrorGroupingKey.Enabled {
 		// See https://github.com/elastic/apm-data/issues/299
@@ -554,21 +555,21 @@ func (s *spanEventEnrichmentContext) enrich(
 		} else if s.exceptionMessage != "" {
 			io.WriteString(hash, s.exceptionMessage)
 		}
-		se.Attributes().PutStr(AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
+		se.Attributes().PutStr(common.AttributeErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
 	}
 	if cfg.ErrorGroupingName.Enabled {
 		if s.exceptionMessage != "" {
-			se.Attributes().PutStr(AttributeErrorGroupingName, s.exceptionMessage)
+			se.Attributes().PutStr(common.AttributeErrorGroupingName, s.exceptionMessage)
 		}
 	}
 
 	// Transaction type and sampled are added as span event enrichment only for errors
 	if parentCtx.isTransaction && s.exception {
 		if cfg.TransactionSampled.Enabled {
-			se.Attributes().PutBool(AttributeTransactionSampled, parentCtx.getSampled())
+			se.Attributes().PutBool(common.AttributeTransactionSampled, parentCtx.getSampled())
 		}
 		if cfg.TransactionType.Enabled {
-			se.Attributes().PutStr(AttributeTransactionType, parentCtx.getTxnType())
+			se.Attributes().PutStr(common.AttributeTransactionType, parentCtx.getTxnType())
 		}
 	}
 }

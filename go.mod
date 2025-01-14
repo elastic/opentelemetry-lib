@@ -3,6 +3,7 @@ module github.com/elastic/opentelemetry-lib
 go 1.22.7
 
 require (
+	github.com/elastic/opentelemetry-lib/common v0.1.0
 	github.com/google/go-cmp v0.6.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.117.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.117.0

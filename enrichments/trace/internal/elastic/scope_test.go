@@ -20,6 +20,7 @@ package elastic
 import (
 	"testing"
 
+	"github.com/elastic/opentelemetry-lib/common"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -47,8 +48,8 @@ func TestScopeEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Scope,
 			enrichedAttrs: map[string]any{
-				AttributeServiceFrameworkName:    "test",
-				AttributeServiceFrameworkVersion: "",
+				common.AttributeServiceFrameworkName:    "test",
+				common.AttributeServiceFrameworkVersion: "",
 			},
 		},
 		{
@@ -61,8 +62,8 @@ func TestScopeEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Scope,
 			enrichedAttrs: map[string]any{
-				AttributeServiceFrameworkName:    "test",
-				AttributeServiceFrameworkVersion: "v1.0.0",
+				common.AttributeServiceFrameworkName:    "test",
+				common.AttributeServiceFrameworkVersion: "v1.0.0",
 			},
 		},
 	} {
