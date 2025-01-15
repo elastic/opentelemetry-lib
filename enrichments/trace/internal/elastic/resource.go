@@ -20,7 +20,7 @@ package elastic
 import (
 	"fmt"
 
-	"github.com/elastic/opentelemetry-lib/common"
+	elasticattr "github.com/elastic/opentelemetry-lib/elasticattributes"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
@@ -100,7 +100,7 @@ func (s *resourceEnrichmentContext) setAgentName(resource pcommon.Resource) {
 		)
 	}
 
-	resource.Attributes().PutStr(common.AttributeAgentName, agentName)
+	resource.Attributes().PutStr(elasticattr.AgentName, agentName)
 }
 
 func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
@@ -115,7 +115,7 @@ func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
 	case s.telemetrySDKVersion != "":
 		agentVersion = s.telemetrySDKVersion
 	}
-	resource.Attributes().PutStr(common.AttributeAgentVersion, agentVersion)
+	resource.Attributes().PutStr(elasticattr.AgentVersion, agentVersion)
 }
 
 func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pcommon.Resource) {

@@ -20,7 +20,7 @@ package elastic
 import (
 	"testing"
 
-	"github.com/elastic/opentelemetry-lib/common"
+	elasticattr "github.com/elastic/opentelemetry-lib/elasticattributes"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -45,8 +45,8 @@ func TestResourceEnrich(t *testing.T) {
 			input:  pcommon.NewResource(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "otlp",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "otlp",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -58,8 +58,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -72,8 +72,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor/unknown/elastic",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/unknown/elastic",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -87,8 +87,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor/cpp/elastic",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/cpp/elastic",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -100,8 +100,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "otlp/cpp",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "otlp/cpp",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -114,8 +114,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor/cpp",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/cpp",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -128,8 +128,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor",
-				common.AttributeAgentVersion: "9.999.9",
+				elasticattr.AgentName:    "customflavor",
+				elasticattr.AgentVersion: "9.999.9",
 			},
 		},
 		{
@@ -143,8 +143,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor/unknown/elastic",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/unknown/elastic",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -159,8 +159,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				common.AttributeAgentName:    "customflavor/unknown/elastic",
-				common.AttributeAgentVersion: "1.2.3",
+				elasticattr.AgentName:    "customflavor/unknown/elastic",
+				elasticattr.AgentVersion: "1.2.3",
 			},
 		},
 		{
@@ -175,8 +175,8 @@ func TestResourceEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				semconv.AttributeHostName:    "k8s-node",
 				semconv.AttributeK8SNodeName: "k8s-node",
-				common.AttributeAgentName:    "otlp",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:        "otlp",
+				elasticattr.AgentVersion:     "unknown",
 			},
 		},
 		{
@@ -190,8 +190,8 @@ func TestResourceEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				semconv.AttributeHostName:    "k8s-node",
 				semconv.AttributeK8SNodeName: "k8s-node",
-				common.AttributeAgentName:    "otlp",
-				common.AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:        "otlp",
+				elasticattr.AgentVersion:     "unknown",
 			},
 		},
 	} {
