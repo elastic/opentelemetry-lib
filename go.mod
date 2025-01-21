@@ -4,8 +4,7 @@ go 1.22.7
 
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.17.0
-	github.com/elastic/opentelemetry-lib/common v0.1.0
-	github.com/elastic/opentelemetry-lib/elasticattr v0.0.0
+	github.com/elastic/opentelemetry-lib/elasticattr v0.1.0
 	github.com/google/go-cmp v0.6.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.117.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.117.0
@@ -40,5 +39,3 @@ require (
 	google.golang.org/protobuf v1.36.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/elastic/opentelemetry-lib/elasticattr => ./elasticattr
