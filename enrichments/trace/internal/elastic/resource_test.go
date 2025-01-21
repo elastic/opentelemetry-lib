@@ -20,7 +20,7 @@ package elastic
 import (
 	"testing"
 
-	elasticattr "github.com/elastic/opentelemetry-lib/elasticattributes"
+	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"

@@ -20,7 +20,7 @@ package elastic
 import (
 	"fmt"
 
-	elasticattr "github.com/elastic/opentelemetry-lib/elasticattributes"
+	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"

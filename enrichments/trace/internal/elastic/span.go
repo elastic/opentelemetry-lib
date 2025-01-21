@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	elasticattr "github.com/elastic/opentelemetry-lib/elasticattributes"
+	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"

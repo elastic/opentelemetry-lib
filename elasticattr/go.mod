@@ -1,3 +1,3 @@
-module github.com/elastic/opentelemetry-lib/elasticattributes
+module github.com/elastic/opentelemetry-lib/elasticattr
 
 go 1.22.7
