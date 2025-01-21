@@ -56,19 +56,15 @@ const (
 // - Add Otel tracer
 // - Collection metrics
 type ElasticsearchFetcher struct {
-	client        *elasticsearch.Client
-	cacheDuration time.Duration
-
-	mu    sync.RWMutex
-	last  time.Time
-	cache []AgentConfig
-
-	searchSize int
-
+	last             time.Time
+	client           *elasticsearch.Client
+	logger           *zap.Logger
+	cache            []AgentConfig
+	cacheDuration    time.Duration
+	searchSize       int
+	mu               sync.RWMutex
 	invalidESCfg     atomic.Bool
 	cacheInitialized atomic.Bool
-
-	logger *zap.Logger
 }
 
 func NewElasticsearchFetcher(
@@ -144,20 +140,20 @@ func (f *ElasticsearchFetcher) Run(ctx context.Context) error {
 }
 
 type cacheResult struct {
-	Hits struct {
+	ScrollID string `json:"_scroll_id"`
+	Hits     struct {
 		Hits []struct {
 			Source struct {
-				AgentName string `json:"agent_name"`
-				ETag      string `json:"etag"`
-				Service   struct {
+				Settings map[string]string `json:"settings"`
+				Service  struct {
 					Name        string `json:"name"`
 					Environment string `json:"environment"`
 				} `json:"service"`
-				Settings map[string]string `json:"settings"`
+				AgentName string `json:"agent_name"`
+				ETag      string `json:"etag"`
 			} `json:"_source"`
 		} `json:"hits"`
 	} `json:"hits"`
-	ScrollID string `json:"_scroll_id"`
 }
 
 func (f *ElasticsearchFetcher) refreshCache(ctx context.Context) (err error) {

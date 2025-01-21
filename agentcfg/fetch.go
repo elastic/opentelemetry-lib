@@ -33,27 +33,23 @@ type Fetcher interface {
 
 // AgentConfig holds an agent configuration definition.
 type AgentConfig struct {
+	// Config holds configuration settings that should be sent to
+	// agents matching the above constraints.
+	Config map[string]string
 	// ServiceName holds the service name to which this agent configuration
 	// applies. This is optional.
 	ServiceName string
-
 	// ServiceEnvironment holds the service environment to which this agent
 	// configuration applies. This is optional.
 	ServiceEnvironment string
-
 	// AgentName holds the agent name to which this agent configuration
 	// applies. This is optional, and is used for filtering configuration
 	// settings for unauthenticated agents.
 	AgentName string
-
 	// Etag holds a unique ID for the configuration, which agents
 	// will send along with their queries. The server uses this to
 	// determine whether agent configuration has been applied.
 	Etag string
-
-	// Config holds configuration settings that should be sent to
-	// agents matching the above constraints.
-	Config map[string]string
 }
 
 // matchAgentConfig finds a matching AgentConfig based on the received Query.
