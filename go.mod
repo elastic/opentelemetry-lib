@@ -4,7 +4,6 @@ go 1.22.7
 
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.17.0
-	github.com/elastic/opentelemetry-lib/elasticattr v0.1.0
 	github.com/google/go-cmp v0.6.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.117.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.117.0
