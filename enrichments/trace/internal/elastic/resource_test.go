@@ -20,6 +20,7 @@ package elastic
 import (
 	"testing"
 
+	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -44,8 +45,8 @@ func TestResourceEnrich(t *testing.T) {
 			input:  pcommon.NewResource(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "otlp",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "otlp",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -57,8 +58,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -71,8 +72,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor/unknown/elastic",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/unknown/elastic",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -86,8 +87,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor/cpp/elastic",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/cpp/elastic",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -99,8 +100,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "otlp/cpp",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "otlp/cpp",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -113,8 +114,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor/cpp",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/cpp",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -127,8 +128,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor",
-				AttributeAgentVersion: "9.999.9",
+				elasticattr.AgentName:    "customflavor",
+				elasticattr.AgentVersion: "9.999.9",
 			},
 		},
 		{
@@ -142,8 +143,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor/unknown/elastic",
-				AttributeAgentVersion: "unknown",
+				elasticattr.AgentName:    "customflavor/unknown/elastic",
+				elasticattr.AgentVersion: "unknown",
 			},
 		},
 		{
@@ -158,8 +159,8 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				AttributeAgentName:    "customflavor/unknown/elastic",
-				AttributeAgentVersion: "1.2.3",
+				elasticattr.AgentName:    "customflavor/unknown/elastic",
+				elasticattr.AgentVersion: "1.2.3",
 			},
 		},
 		{
@@ -174,8 +175,8 @@ func TestResourceEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				semconv.AttributeHostName:    "k8s-node",
 				semconv.AttributeK8SNodeName: "k8s-node",
-				AttributeAgentName:           "otlp",
-				AttributeAgentVersion:        "unknown",
+				elasticattr.AgentName:        "otlp",
+				elasticattr.AgentVersion:     "unknown",
 			},
 		},
 		{
@@ -189,8 +190,8 @@ func TestResourceEnrich(t *testing.T) {
 			enrichedAttrs: map[string]any{
 				semconv.AttributeHostName:    "k8s-node",
 				semconv.AttributeK8SNodeName: "k8s-node",
-				AttributeAgentName:           "otlp",
-				AttributeAgentVersion:        "unknown",
+				elasticattr.AgentName:        "otlp",
+				elasticattr.AgentVersion:     "unknown",
 			},
 		},
 	} {
