@@ -99,7 +99,6 @@ func (s *resourceEnrichmentContext) setAgentName(resource pcommon.Resource) {
 			s.telemetrySDKLanguage,
 		)
 	}
-
 	resource.Attributes().PutStr(elasticattr.AgentName, agentName)
 }
 
