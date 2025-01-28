@@ -67,24 +67,24 @@ func NewDefaultClientConfig() ClientConfig {
 }
 
 type ClientConfig struct {
-	// This setting is required if CloudID is not set and if the
-	// ELASTICSEARCH_URL environment variable is not set.
-	Endpoints []string `mapstructure:"endpoints"`
+	confighttp.ClientConfig `mapstructure:",squash"`
 
 	// CloudID holds the cloud ID to identify the Elastic Cloud cluster to send events to.
 	// https://www.elastic.co/guide/en/cloud/current/ec-cloud-id.html
 	//
 	// This setting is required if no URL is configured.
-	CloudID string `mapstructure:"cloudid"`
+	CloudID string        `mapstructure:"cloudid"`
+	Retry   RetrySettings `mapstructure:"retry"`
 
-	confighttp.ClientConfig `mapstructure:",squash"`
+	// This setting is required if CloudID is not set and if the
+
+	// ELASTICSEARCH_URL environment variable is not set.
+	Endpoints []string          `mapstructure:"endpoints"`
+	Discovery DiscoverySettings `mapstructure:"discover"`
 
 	// TelemetrySettings contains settings useful for testing/debugging purposes
 	// This is experimental and may change at any time.
 	TelemetrySettings `mapstructure:"telemetry"`
-
-	Discovery DiscoverySettings `mapstructure:"discover"`
-	Retry     RetrySettings     `mapstructure:"retry"`
 }
 
 type TelemetrySettings struct {
@@ -95,24 +95,16 @@ type TelemetrySettings struct {
 // RetrySettings defines settings for the HTTP request retries in the Elasticsearch exporter.
 // Failed sends are retried with exponential backoff.
 type RetrySettings struct {
-	// Enabled allows users to disable retry without having to comment out all settings.
-	Enabled bool `mapstructure:"enabled"`
-
-	// MaxRequests configures how often an HTTP request is attempted before it is assumed to be failed.
-	// Deprecated: use MaxRetries instead.
-	MaxRequests int `mapstructure:"max_requests"`
-
-	// MaxRetries configures how many times an HTTP request is retried.
-	MaxRetries int `mapstructure:"max_retries"`
-
-	// InitialInterval configures the initial waiting time if a request failed.
-	InitialInterval time.Duration `mapstructure:"initial_interval"`
-
-	// MaxInterval configures the max waiting time if consecutive requests failed.
-	MaxInterval time.Duration `mapstructure:"max_interval"`
-
 	// RetryOnStatus configures the status codes that trigger request or document level retries.
 	RetryOnStatus []int `mapstructure:"retry_on_status"`
+	// MaxRetries configures how many times an HTTP request is retried.
+	MaxRetries int `mapstructure:"max_retries"`
+	// InitialInterval configures the initial waiting time if a request failed.
+	InitialInterval time.Duration `mapstructure:"initial_interval"`
+	// MaxInterval configures the max waiting time if consecutive requests failed.
+	MaxInterval time.Duration `mapstructure:"max_interval"`
+	// Enabled allows users to disable retry without having to comment out all settings.
+	Enabled bool `mapstructure:"enabled"`
 }
 
 // DiscoverySettings defines Elasticsearch node discovery related settings.
@@ -150,14 +142,8 @@ func (cfg *ClientConfig) Validate() error {
 		return errors.New("compression must be one of [none, gzip]")
 	}
 
-	if cfg.Retry.MaxRequests != 0 && cfg.Retry.MaxRetries != 0 {
-		return errors.New("must not specify both retry::max_requests and retry::max_retries")
-	}
-	if cfg.Retry.MaxRequests < 0 {
-		return errors.New("retry::max_requests should be non-negative")
-	}
 	if cfg.Retry.MaxRetries < 0 {
-		return errors.New("retry::max_retries should be non-negative")
+		return errors.New("retry::max_requests should be non-negative")
 	}
 	return cfg.ClientConfig.Validate()
 }

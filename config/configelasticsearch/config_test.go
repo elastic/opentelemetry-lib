@@ -171,13 +171,12 @@ func TestConfig_Validate(t *testing.T) {
 			}),
 			err: `compression must be one of [none, gzip]`,
 		},
-		"both max_retries and max_requests specified": {
+		"invalid max_requests specified": {
 			config: withDefaultConfig(func(cfg *ClientConfig) {
 				cfg.Endpoints = []string{"http://test:9200"}
-				cfg.Retry.MaxRetries = 1
-				cfg.Retry.MaxRequests = 1
+				cfg.Retry.MaxRetries = -1
 			}),
-			err: `must not specify both retry::max_requests and retry::max_retries`,
+			err: `retry::max_requests should be non-negative`,
 		},
 	}
 
