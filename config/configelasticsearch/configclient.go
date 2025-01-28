@@ -6,7 +6,7 @@
 // not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//	http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -73,13 +73,12 @@ type ClientConfig struct {
 	// https://www.elastic.co/guide/en/cloud/current/ec-cloud-id.html
 	//
 	// This setting is required if no URL is configured.
-	CloudID string        `mapstructure:"cloudid"`
-	Retry   RetrySettings `mapstructure:"retry"`
-
-	// This setting is required if CloudID is not set and if the
-
+	CloudID string `mapstructure:"cloudid"`
 	// ELASTICSEARCH_URL environment variable is not set.
-	Endpoints []string          `mapstructure:"endpoints"`
+	Endpoints []string `mapstructure:"endpoints"`
+
+	Retry RetrySettings `mapstructure:"retry"`
+
 	Discovery DiscoverySettings `mapstructure:"discover"`
 
 	// TelemetrySettings contains settings useful for testing/debugging purposes
