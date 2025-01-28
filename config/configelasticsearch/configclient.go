@@ -4,11 +4,13 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"go.opentelemetry.io/collector/config/configcompression"
 	"go.opentelemetry.io/collector/config/confighttp"
 )
 
@@ -18,6 +20,34 @@ var (
 	errConfigEndpointRequired = errors.New("exactly one of [endpoint, endpoints, cloudid] must be specified")
 	errConfigEmptyEndpoint    = errors.New("endpoint must not be empty")
 )
+
+// NewDefaultClientConfig returns ClientConfig type object with
+// the default values of 'MaxIdleConns' and 'IdleConnTimeout', as well as [http.DefaultTransport] values.
+// Other config options are not added as they are initialized with 'zero value' by GoLang as default.
+// We encourage to use this function to create an object of ClientConfig.
+func NewDefaultClientConfig() ClientConfig {
+	// The default values are taken from the values of 'DefaultTransport' of 'http' package.
+	defaultHTTPClientConfig := confighttp.NewDefaultClientConfig()
+	defaultHTTPClientConfig.Timeout = 90 * time.Second
+	defaultHTTPClientConfig.Compression = configcompression.TypeGzip
+
+	return ClientConfig{
+		ClientConfig: defaultHTTPClientConfig,
+		TelemetrySettings: TelemetrySettings{
+			LogRequestBody:  false,
+			LogResponseBody: false,
+		},
+		Retry: RetrySettings{
+			Enabled:         true,
+			MaxRetries:      0, // default is set in exporter code
+			InitialInterval: 100 * time.Millisecond,
+			MaxInterval:     1 * time.Minute,
+			RetryOnStatus: []int{
+				http.StatusTooManyRequests,
+			},
+		},
+	}
+}
 
 type ClientConfig struct {
 	// This setting is required if CloudID is not set and if the
@@ -38,8 +68,6 @@ type ClientConfig struct {
 
 	Discovery DiscoverySettings `mapstructure:"discover"`
 	Retry     RetrySettings     `mapstructure:"retry"`
-
-	CacheDuration time.Duration `mapstructure:"cache_duration"`
 }
 
 type TelemetrySettings struct {
@@ -101,6 +129,10 @@ func (cfg *ClientConfig) Validate() error {
 		}
 	}
 
+	if cfg.Compression != "none" && cfg.Compression != configcompression.TypeGzip {
+		return errors.New("compression must be one of [none, gzip]")
+	}
+
 	if cfg.Retry.MaxRequests != 0 && cfg.Retry.MaxRetries != 0 {
 		return errors.New("must not specify both retry::max_requests and retry::max_retries")
 	}
@@ -110,7 +142,7 @@ func (cfg *ClientConfig) Validate() error {
 	if cfg.Retry.MaxRetries < 0 {
 		return errors.New("retry::max_retries should be non-negative")
 	}
-	return nil
+	return cfg.ClientConfig.Validate()
 }
 
 func validateEndpoint(endpoint string) error {
