@@ -1,0 +1,14 @@
+multiple_endpoints:
+  endpoints:
+    - http://localhost:9200
+    - http://localhost:8080
+with_cloudid:
+  cloudid: foo:YmFyLmNsb3VkLmVzLmlvJGFiYzEyMyRkZWY0NTY=
+confighttp_endpoint:
+  endpoint: https://elastic.example.com:9200
+compression_none:
+  endpoint: https://elastic.example.com:9200
+  compression: none
+compression_gzip:
+  endpoint: https://elastic.example.com:9200
+  compression: gzip
