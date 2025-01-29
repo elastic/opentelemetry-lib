@@ -146,6 +146,8 @@ func (cfg *ClientConfig) ToClient(
 		EnableMetrics:     false, // TODO
 		EnableDebugLogger: false, // TODO
 		Logger:            &esLogger,
+
+		Instrumentation: elasticsearch.NewOpenTelemetryInstrumentation(telemetry.TracerProvider, false),
 	})
 }
 
