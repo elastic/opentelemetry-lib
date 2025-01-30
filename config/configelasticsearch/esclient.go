@@ -25,8 +25,10 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
+	"github.com/elastic/elastic-transport-go/v8/elastictransport"
 	"github.com/elastic/go-elasticsearch/v8"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 )
 
@@ -147,8 +149,29 @@ func (cfg *ClientConfig) ToClient(
 		EnableDebugLogger: false, // TODO
 		Logger:            &esLogger,
 
-		Instrumentation: elasticsearch.NewOpenTelemetryInstrumentation(telemetry.TracerProvider, false),
+		Instrumentation: func() elastictransport.Instrumentation {
+			// only set tracing if enabled and not the noop tracer
+			if !isNoopTracer(telemetry.TracerProvider) {
+				return elasticsearch.NewOpenTelemetryInstrumentation(telemetry.TracerProvider, false)
+			}
+			return nil
+		}(),
 	})
+}
+
+func isNoopTracer(provider trace.TracerProvider) bool {
+	if provider == nil {
+		return true
+	}
+
+	// The actual implementation of the no-op tracer (tracer.noopNoContextTracer)
+	// is not exported by the OpenTelemetry collector, so we cannot directly check for it.
+	// Instead, we create a span and verify whether it records data.
+	//
+	// If the tracer is a no-op, the span will not record any events or attributes.
+	// We avoid ending the span to prevent unnecessary delivery.
+	_, span := provider.Tracer("es-config").Start(context.Background(), "noop-test")
+	return !span.IsRecording()
 }
 
 func createElasticsearchBackoffFunc(config *RetrySettings) func(int) time.Duration {
