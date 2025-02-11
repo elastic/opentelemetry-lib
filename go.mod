@@ -4,7 +4,7 @@ go 1.22.7
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
-	github.com/elastic/elastic-transport-go/v8 v8.6.0
+	github.com/elastic/elastic-transport-go/v8 v8.6.1
 	github.com/elastic/go-elasticsearch/v8 v8.17.0
 	github.com/google/go-cmp v0.6.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.119.0
