@@ -938,6 +938,33 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SuccessCount:            int64(1),
 			},
 		},
+		{
+			name: "rpc_span_with_only_rpc_sevice_attr",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				// rpc.service should be used as destination.service.resource
+				// if no other attributes are present.
+				span.Attributes().PutStr(semconv25.AttributeRPCService, "myService")
+				span.Attributes().PutStr(semconv25.AttributeRPCSystem, "grpc")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                       "testspan",
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanType:                       "external",
+				elasticattr.SpanSubtype:                    "grpc",
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetType:              "grpc",
+				elasticattr.ServiceTargetName:              "myService",
+				elasticattr.SpanDestinationServiceResource: "myService",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
