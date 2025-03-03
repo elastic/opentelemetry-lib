@@ -463,6 +463,9 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 				s.serverAddress, s.serverPort, // fallback
 			); res != "" {
 				destnResource = res
+			} else {
+				// fallback to RPC service
+				destnResource = s.rpcService
 			}
 		}
 	}
