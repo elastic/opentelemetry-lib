@@ -388,6 +388,152 @@ func TestElasticTransactionEnrich(t *testing.T) {
 	}
 }
 
+// Tests root spans that represent a dependency and are mapped to a transaction.
+func TestRootSpanAsDependencyEnrich(t *testing.T) {
+	for _, tc := range []struct {
+		name              string
+		input             ptrace.Span
+		config            config.Config
+		enrichedAttrs     map[string]any
+		expectedSpanLinks *ptrace.SpanLinkSlice
+	}{
+		{
+			name: "outgoing_http_root_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr(semconv27.AttributeHTTPRequestMethod, "GET")
+				span.Attributes().PutStr(semconv27.AttributeURLFull, "http://localhost:8080")
+				span.Attributes().PutInt(semconv27.AttributeHTTPResponseStatusCode, 200)
+				span.Attributes().PutStr(semconv27.AttributeNetworkProtocolVersion, "1.1")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "external",
+				elasticattr.SpanSubtype:                    "http",
+				elasticattr.SpanDestinationServiceResource: "localhost:8080",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "localhost:8080",
+				elasticattr.ServiceTargetType:              "http",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				elasticattr.TransactionType:                "external.http",
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
+		{
+			name: "db_root_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr(semconv25.AttributeDBSystem, "mssql")
+
+				span.Attributes().PutStr(semconv25.AttributeDBName, "myDb")
+				span.Attributes().PutStr(semconv25.AttributeDBOperation, "SELECT")
+				span.Attributes().PutStr(semconv25.AttributeDBStatement, "SELECT * FROM wuser_table")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "db",
+				elasticattr.SpanSubtype:                    "mssql",
+				elasticattr.SpanDestinationServiceResource: "mssql",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "myDb",
+				elasticattr.ServiceTargetType:              "mssql",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "db.mssql",
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
+		{
+			name: "producer_messaging_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindProducer)
+
+				span.Attributes().PutStr(semconv25.AttributeServerAddress, "myServer")
+				span.Attributes().PutStr(semconv25.AttributeServerPort, "1234")
+				span.Attributes().PutStr(semconv25.AttributeMessagingSystem, "rabbitmq")
+				span.Attributes().PutStr(semconv25.AttributeMessagingDestinationName, "T")
+				span.Attributes().PutStr(semconv25.AttributeMessagingOperation, "publish")
+				span.Attributes().PutStr(semconv25.AttributeMessagingClientID, "a")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "messaging",
+				elasticattr.SpanSubtype:                    "rabbitmq",
+				elasticattr.SpanDestinationServiceResource: "rabbitmq/T",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "T",
+				elasticattr.ServiceTargetType:              "rabbitmq",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "messaging.rabbitmq",
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			expectedSpan := ptrace.NewSpan()
+			tc.input.CopyTo(expectedSpan)
+
+			// Merge with the expected attributes and override the span links.
+			for k, v := range tc.enrichedAttrs {
+				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
+			}
+
+			EnrichSpan(tc.input, tc.config)
+			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
+		})
+	}
+}
+
 // Tests the enrichment logic for elastic's span definition.
 func TestElasticSpanEnrich(t *testing.T) {
 	now := time.Unix(3600, 0)
