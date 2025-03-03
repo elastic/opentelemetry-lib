@@ -204,7 +204,7 @@ func (s *spanEnrichmentContext) enrich(span ptrace.Span, cfg config.Config) {
 		s.enrichTransaction(span, cfg.Transaction)
 	}
 	if !s.isTransaction || isExitRootSpan {
-		s.enrichSpan(span, cfg, isExitRootSpan)
+		s.enrichSpan(span, cfg.Span, cfg.Transaction.Type.Enabled, isExitRootSpan)
 	}
 }
 
@@ -253,47 +253,49 @@ func (s *spanEnrichmentContext) enrichTransaction(
 
 func (s *spanEnrichmentContext) enrichSpan(
 	span ptrace.Span,
-	cfg config.Config,
+	cfg config.ElasticSpanConfig,
+	transactionTypeEnabled bool,
 	isExitRootSpan bool,
 ) {
-	if cfg.Span.TimestampUs.Enabled {
+	var spanType, spanSubtype string
+
+	if cfg.TimestampUs.Enabled {
 		span.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
-	if cfg.Span.Name.Enabled {
+	if cfg.Name.Enabled {
 		span.Attributes().PutStr(elasticattr.SpanName, span.Name())
 	}
-	if cfg.Span.RepresentativeCount.Enabled {
+	if cfg.RepresentativeCount.Enabled {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
 		span.Attributes().PutDouble(elasticattr.SpanRepresentativeCount, repCount)
 	}
-	if cfg.Span.TypeSubtype.Enabled {
-		s.setSpanTypeSubtype(span)
+	if cfg.TypeSubtype.Enabled {
+		spanType, spanSubtype = s.setSpanTypeSubtype(span)
 	}
-	if cfg.Span.EventOutcome.Enabled {
+	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
-	if cfg.Span.DurationUs.Enabled {
+	if cfg.DurationUs.Enabled {
 		span.Attributes().PutInt(elasticattr.SpanDurationUs, getDurationUs(span))
 	}
-	if cfg.Span.ServiceTarget.Enabled {
+	if cfg.ServiceTarget.Enabled {
 		s.setServiceTarget(span)
 	}
-	if cfg.Span.DestinationService.Enabled {
+	if cfg.DestinationService.Enabled {
 		s.setDestinationService(span)
 	}
-	if cfg.Span.InferredSpans.Enabled {
+	if cfg.InferredSpans.Enabled {
 		s.setInferredSpans(span)
 	}
-	if cfg.Span.ProcessorEvent.Enabled && !isExitRootSpan {
+	if cfg.ProcessorEvent.Enabled && !isExitRootSpan {
 		span.Attributes().PutStr(elasticattr.ProcessorEvent, "span")
 	}
 
-	if isExitRootSpan && cfg.Transaction.Type.Enabled {
-		spanTypeAttr, hasType := span.Attributes().Get(elasticattr.SpanType)
-		if hasType {
-			transactionType := spanTypeAttr.Str()
-			if spanSubtypeAttr, hasSubType := span.Attributes().Get(elasticattr.SpanSubtype); hasSubType {
-				transactionType += "." + spanSubtypeAttr.Str()
+	if isExitRootSpan && transactionTypeEnabled {
+		if spanType != "" {
+			transactionType := spanType
+			if spanSubtype != "" {
+				transactionType += "." + spanSubtype
 			}
 			span.Attributes().PutStr(elasticattr.TransactionType, transactionType)
 		}
@@ -371,9 +373,7 @@ func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 	span.Attributes().PutInt(elasticattr.SuccessCount, int64(successCount))
 }
 
-func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
-	var spanType, spanSubtype string
-
+func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) (spanType string, spanSubtype string) {
 	switch {
 	case s.isDB:
 		spanType = "db"
@@ -404,6 +404,8 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) {
 	if spanSubtype != "" {
 		span.Attributes().PutStr(elasticattr.SpanSubtype, spanSubtype)
 	}
+
+	return spanType, spanSubtype
 }
 
 func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
