@@ -28,6 +28,7 @@ import (
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configcompression"
 	"go.opentelemetry.io/collector/confmap/confmaptest"
+	"go.opentelemetry.io/collector/confmap/xconfmap"
 )
 
 func TestConfig(t *testing.T) {
@@ -93,7 +94,7 @@ func TestConfig(t *testing.T) {
 			require.NoError(t, err)
 			require.NoError(t, sub.Unmarshal(&cfg))
 
-			assert.NoError(t, component.ValidateConfig(cfg))
+			assert.NoError(t, xconfmap.Validate(cfg))
 			assert.Equal(t, tt.expected, &cfg)
 
 			_, err = cfg.ToClient(context.Background(), componenttest.NewNopHost(), componenttest.NewNopTelemetrySettings())
@@ -182,7 +183,7 @@ func TestConfig_Validate(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.EqualError(t, component.ValidateConfig(tt.config), tt.err)
+			assert.EqualError(t, xconfmap.Validate(tt.config), tt.err)
 		})
 	}
 }
@@ -191,13 +192,13 @@ func TestConfig_Validate_Environment(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
 		t.Setenv("ELASTICSEARCH_URL", "http://test:9200")
 		config := withDefaultConfig()
-		err := component.ValidateConfig(config)
+		err := xconfmap.Validate(config)
 		require.NoError(t, err)
 	})
 	t.Run("invalid", func(t *testing.T) {
 		t.Setenv("ELASTICSEARCH_URL", "http://valid:9200, *:!")
 		config := withDefaultConfig()
-		err := component.ValidateConfig(config)
+		err := xconfmap.Validate(config)
 		assert.EqualError(t, err, `invalid endpoint "*:!": parse "*:!": first path segment in URL cannot contain colon`)
 	})
 }
