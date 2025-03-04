@@ -1,7 +1,6 @@
 module github.com/elastic/opentelemetry-lib
 
-go 1.22.7
-toolchain go1.23.6
+go 1.23.0
 
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
