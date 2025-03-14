@@ -194,6 +194,20 @@ func TestResourceEnrich(t *testing.T) {
 				elasticattr.AgentVersion:     "unknown",
 			},
 		},
+		{
+			name: "normalize_service_name",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeServiceName, "Apache/Drupal")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				semconv.AttributeServiceName: "Apache_Drupal",
+				elasticattr.AgentName:        "otlp",
+				elasticattr.AgentVersion:     "unknown",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Merge existing resource attrs with the attrs added
