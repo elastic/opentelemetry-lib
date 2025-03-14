@@ -19,11 +19,16 @@ package elastic
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+)
+
+var (
+	serviceNameInvalidRegexp = regexp.MustCompile("[^a-zA-Z0-9 _-]")
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
@@ -72,6 +77,16 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	}
 	if cfg.OverrideHostName.Enabled {
 		s.overrideHostNameWithK8sNodeName(resource)
+	}
+	if cfg.ServiceName.Enabled {
+		s.cleanServiceName(resource)
+	}
+}
+
+func (s *resourceEnrichmentContext) cleanServiceName(resource pcommon.Resource) {
+	if serviceName, hasServiceName := resource.Attributes().Get(semconv.AttributeServiceName); hasServiceName {
+		serviceNameNormalized := serviceNameInvalidRegexp.ReplaceAllString(serviceName.AsString(), "_")
+		resource.Attributes().PutStr(semconv.AttributeServiceName, serviceNameNormalized)
 	}
 }
 
