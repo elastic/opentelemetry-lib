@@ -42,6 +42,9 @@ type resourceEnrichmentContext struct {
 	telemetrySDKVersion    string
 	telemetryDistroName    string
 	telemetryDistroVersion string
+
+	deploymentEnvironment     string
+	deploymentEnvironmentName string
 }
 
 func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
@@ -61,6 +64,10 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 			s.telemetryDistroName = v.Str()
 		case semconv.AttributeTelemetryDistroVersion:
 			s.telemetryDistroVersion = v.Str()
+		case semconv25.AttributeDeploymentEnvironment:
+			s.deploymentEnvironment = v.Str()
+		case semconv.AttributeDeploymentEnvironmentName:
+			s.deploymentEnvironmentName = v.Str()
 		}
 		return true
 	})
@@ -85,9 +92,9 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 // ES currently doesn't allow aliases with multiple targets, so if the new field name is used (SemConv v1.27+),
 // we duplicate the value and also send it with the old field name to make the alias work.
 func (s *resourceEnrichmentContext) setDeploymentEnvironment(resource pcommon.Resource) {
-	if deploymentEnvironmentName, deploymentEnvironmentNameExists := resource.Attributes().Get(semconv.AttributeDeploymentEnvironmentName); deploymentEnvironmentNameExists {
-		if _, deploymentEnvironmentExists := resource.Attributes().Get(semconv25.AttributeDeploymentEnvironment); !deploymentEnvironmentExists {
-			resource.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, deploymentEnvironmentName.AsString())
+	if s.deploymentEnvironmentName != "" {
+		if s.deploymentEnvironment == "" {
+			resource.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, s.deploymentEnvironmentName)
 		}
 	}
 }
