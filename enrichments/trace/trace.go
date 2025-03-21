@@ -27,10 +27,11 @@ import (
 // Enricher enriches the OTel traces with attributes required to power
 // functionalities in the Elastic UI.
 type Enricher struct {
-	Config config.Config
 	// If there are more than one parser in the future we should consider
 	// abstracting the parsers in a separate internal package.
 	userAgentParser *uaparser.Parser
+
+	Config config.Config
 }
 
 // NewEnricher creates a new instance of Enricher.
