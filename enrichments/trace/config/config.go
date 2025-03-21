@@ -57,6 +57,7 @@ type ElasticTransactionConfig struct {
 	Result              AttributeConfig `mapstructure:"result"`
 	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
 	InferredSpans       AttributeConfig `mapstructure:"inferred_spans"`
+	UserAgent           AttributeConfig `mapstructure:"user_agent"`
 }
 
 // ElasticSpanConfig configures the enrichment attributes for the spans
@@ -75,6 +76,7 @@ type ElasticSpanConfig struct {
 	ServiceTarget       AttributeConfig `mapstructure:"service_target"`
 	DestinationService  AttributeConfig `mapstructure:"destination_service"`
 	InferredSpans       AttributeConfig `mapstructure:"inferred_spans"`
+	UserAgent           AttributeConfig `mapstructure:"user_agent"`
 }
 
 // SpanEventConfig configures enrichment attributes for the span events.
@@ -124,6 +126,7 @@ func Enabled() Config {
 			EventOutcome:        AttributeConfig{Enabled: true},
 			RepresentativeCount: AttributeConfig{Enabled: true},
 			InferredSpans:       AttributeConfig{Enabled: true},
+			UserAgent:           AttributeConfig{Enabled: true},
 		},
 		Span: ElasticSpanConfig{
 			TimestampUs:         AttributeConfig{Enabled: true},
@@ -136,6 +139,7 @@ func Enabled() Config {
 			DestinationService:  AttributeConfig{Enabled: true},
 			RepresentativeCount: AttributeConfig{Enabled: true},
 			InferredSpans:       AttributeConfig{Enabled: true},
+			UserAgent:           AttributeConfig{Enabled: true},
 		},
 		SpanEvent: SpanEventConfig{
 			TimestampUs:           AttributeConfig{Enabled: true},

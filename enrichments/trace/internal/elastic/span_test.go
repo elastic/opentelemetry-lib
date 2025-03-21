@@ -29,6 +29,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 	"github.com/stretchr/testify/assert"
+	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
@@ -364,6 +365,63 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				return &spanLinks
 			}(),
 		},
+		{
+			name: "user_agent_parse_name_version",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+				semconv27.AttributeUserAgentName:           "Firefox",
+				semconv27.AttributeUserAgentVersion:        "126.0",
+			},
+		},
+		{
+			name: "user_agent_no_override",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
+				// In practical situations the user_agent.{name, version} should be derived from the
+				// original user agent, however, for testing we are setting different values.
+				span.Attributes().PutStr(semconv27.AttributeUserAgentName, "Chrome")
+				span.Attributes().PutStr(semconv27.AttributeUserAgentVersion, "51.0.2704")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+				// If user_agent.{name, version} are already set then don't override them.
+				semconv27.AttributeUserAgentName:    "Chrome",
+				semconv27.AttributeUserAgentVersion: "51.0.2704",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
@@ -382,7 +440,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 
 			EnrichSpan(tc.input, config.Config{
 				Transaction: tc.config,
-			})
+			}, uaparser.NewFromSaved())
 			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
@@ -528,7 +586,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
-			EnrichSpan(tc.input, tc.config)
+			EnrichSpan(tc.input, tc.config, uaparser.NewFromSaved())
 			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
@@ -1111,6 +1169,57 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDestinationServiceResource: "myService",
 			},
 		},
+		{
+			name: "user_agent_parse_name_version",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604.1")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "unknown",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+				semconv27.AttributeUserAgentName:    "Mobile Safari",
+				semconv27.AttributeUserAgentVersion: "13.1.1",
+			},
+		},
+		{
+			name: "user_agent_no_override",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
+				// In practical situations the user_agent.{name, version} should be derived from the
+				// original user agent, however, for testing we are setting different values.
+				span.Attributes().PutStr(semconv27.AttributeUserAgentName, "Chrome")
+				span.Attributes().PutStr(semconv27.AttributeUserAgentVersion, "51.0.2704")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "unknown",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+				// If user_agent.{name, version} are already set then don't override them.
+				semconv27.AttributeUserAgentName:    "Chrome",
+				semconv27.AttributeUserAgentVersion: "51.0.2704",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
@@ -1129,7 +1238,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 
 			EnrichSpan(tc.input, config.Config{
 				Span: tc.config,
-			})
+			}, uaparser.NewFromSaved())
 			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
@@ -1235,7 +1344,7 @@ func TestSpanEventEnrich(t *testing.T) {
 			tc.input.MoveTo(tc.parent.Events().AppendEmpty())
 			EnrichSpan(tc.parent, config.Config{
 				SpanEvent: tc.config,
-			})
+			}, uaparser.NewFromSaved())
 
 			actual := tc.parent.Events().At(0).Attributes()
 			errorID, ok := actual.Get(elasticattr.ErrorID)

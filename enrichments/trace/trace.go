@@ -20,6 +20,7 @@ package trace
 import (
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/internal/elastic"
+	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -27,12 +28,16 @@ import (
 // functionalities in the Elastic UI.
 type Enricher struct {
 	Config config.Config
+	// If there are more than one parser in the future we should consider
+	// abstracting the parsers in a separate internal package.
+	userAgentParser *uaparser.Parser
 }
 
 // NewEnricher creates a new instance of Enricher.
 func NewEnricher(cfg config.Config) *Enricher {
 	return &Enricher{
-		Config: cfg,
+		Config:          cfg,
+		userAgentParser: uaparser.NewFromSaved(),
 	}
 }
 
@@ -51,7 +56,7 @@ func (e *Enricher) Enrich(pt ptrace.Traces) {
 			elastic.EnrichScope(scopeSpan.Scope(), e.Config)
 			spans := scopeSpan.Spans()
 			for k := 0; k < spans.Len(); k++ {
-				elastic.EnrichSpan(spans.At(k), e.Config)
+				elastic.EnrichSpan(spans.At(k), e.Config, e.userAgentParser)
 			}
 		}
 	}

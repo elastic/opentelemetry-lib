@@ -32,6 +32,7 @@ import (
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
+	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
@@ -49,9 +50,13 @@ import (
 //   - Elastic spans, defined as all spans (including transactions).
 //     However, for the enrichment logic spans are treated as a separate
 //     entity i.e. all transactions are not enriched as spans and vice versa.
-func EnrichSpan(span ptrace.Span, cfg config.Config) {
+func EnrichSpan(
+	span ptrace.Span,
+	cfg config.Config,
+	userAgentParser *uaparser.Parser,
+) {
 	var c spanEnrichmentContext
-	c.Enrich(span, cfg)
+	c.Enrich(span, cfg, userAgentParser)
 }
 
 type spanEnrichmentContext struct {
@@ -72,6 +77,13 @@ type spanEnrichmentContext struct {
 	messagingDestinationName string
 	genAiSystem              string
 
+	// The inferred* attributes are derived from a base attribute
+	userAgentOriginal        string
+	userAgentName            string
+	userAgentVersion         string
+	inferredUserAgentName    string
+	inferredUserAgentVersion string
+
 	serverPort     int64
 	urlPort        int64
 	httpStatusCode int64
@@ -88,7 +100,11 @@ type spanEnrichmentContext struct {
 	isGenAi                  bool
 }
 
-func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
+func (s *spanEnrichmentContext) Enrich(
+	span ptrace.Span,
+	cfg config.Config,
+	userAgentParser *uaparser.Parser,
+) {
 	// Extract top level span information.
 	s.spanStatusCode = span.Status().Code()
 
@@ -178,11 +194,17 @@ func (s *spanEnrichmentContext) Enrich(span ptrace.Span, cfg config.Config) {
 		case semconv27.AttributeGenAiSystem:
 			s.isGenAi = true
 			s.genAiSystem = v.Str()
+		case semconv27.AttributeUserAgentOriginal:
+			s.userAgentOriginal = v.Str()
+		case semconv27.AttributeUserAgentName:
+			s.userAgentName = v.Str()
+		case semconv27.AttributeUserAgentVersion:
+			s.userAgentVersion = v.Str()
 		}
 		return true
 	})
 
-	s.normalizeAttributes()
+	s.normalizeAttributes(userAgentParser)
 	s.isTransaction = isElasticTransaction(span)
 	s.enrich(span, cfg)
 
@@ -249,6 +271,9 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.InferredSpans.Enabled {
 		s.setInferredSpans(span)
 	}
+	if cfg.UserAgent.Enabled {
+		s.setUserAgentIfRequired(span)
+	}
 }
 
 func (s *spanEnrichmentContext) enrichSpan(
@@ -290,6 +315,9 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.ProcessorEvent.Enabled && !isExitRootSpan {
 		span.Attributes().PutStr(elasticattr.ProcessorEvent, "span")
 	}
+	if cfg.UserAgent.Enabled {
+		s.setUserAgentIfRequired(span)
+	}
 
 	if isExitRootSpan && transactionTypeEnabled {
 		if spanType != "" {
@@ -304,9 +332,14 @@ func (s *spanEnrichmentContext) enrichSpan(
 
 // normalizeAttributes sets any dependent attributes that
 // might not have been explicitly set as an attribute.
-func (s *spanEnrichmentContext) normalizeAttributes() {
+func (s *spanEnrichmentContext) normalizeAttributes(userAgentPraser *uaparser.Parser) {
 	if s.rpcSystem == "" && s.grpcStatus != "" {
 		s.rpcSystem = "grpc"
+	}
+	if s.userAgentOriginal != "" && userAgentPraser != nil {
+		ua := userAgentPraser.ParseUserAgent(s.userAgentOriginal)
+		s.inferredUserAgentName = ua.Family
+		s.inferredUserAgentVersion = ua.ToVersionString()
 	}
 }
 
@@ -517,6 +550,15 @@ func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
 
 	if childIDs.Len() > 0 {
 		childIDs.MoveAndAppendTo(span.Attributes().PutEmptySlice(elasticattr.ChildIDs))
+	}
+}
+
+func (s *spanEnrichmentContext) setUserAgentIfRequired(span ptrace.Span) {
+	if s.userAgentName == "" && s.inferredUserAgentName != "" {
+		span.Attributes().PutStr(semconv27.AttributeUserAgentName, s.inferredUserAgentName)
+	}
+	if s.userAgentVersion == "" && s.inferredUserAgentVersion != "" {
+		span.Attributes().PutStr(semconv27.AttributeUserAgentVersion, s.inferredUserAgentVersion)
 	}
 }
 
