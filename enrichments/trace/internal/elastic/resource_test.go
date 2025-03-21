@@ -25,7 +25,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 )
 
 func TestResourceEnrich(t *testing.T) {
@@ -192,6 +193,56 @@ func TestResourceEnrich(t *testing.T) {
 				semconv.AttributeK8SNodeName: "k8s-node",
 				elasticattr.AgentName:        "otlp",
 				elasticattr.AgentVersion:     "unknown",
+			},
+		},
+		{
+			// Pre SemConv 1.27
+			name: "deployment_environment_set",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, "prod")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				semconv25.AttributeDeploymentEnvironment: "prod",
+				elasticattr.AgentName:                    "otlp",
+				elasticattr.AgentVersion:                 "unknown",
+			},
+		},
+		{
+			// SemConv 1.27+ with new `deployment.environment.name` field
+			name: "deployment_environment_name_set",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeDeploymentEnvironmentName, "prod")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				// To satisfy aliases defined in ES, we duplicate the value for both fields.
+				semconv25.AttributeDeploymentEnvironment:   "prod",
+				semconv.AttributeDeploymentEnvironmentName: "prod",
+				elasticattr.AgentName:                      "otlp",
+				elasticattr.AgentVersion:                   "unknown",
+			},
+		},
+		{
+			// Mixed pre and post SemConv 1.27 versions (should be an edge case, but some EDOTs might do this).
+			name: "deployment_environment_mixed",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(semconv.AttributeDeploymentEnvironmentName, "prod")
+				res.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, "test")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				// If both are set, we don't touch those values and take them as they are.
+				semconv25.AttributeDeploymentEnvironment:   "test",
+				semconv.AttributeDeploymentEnvironmentName: "prod",
+				elasticattr.AgentName:                      "otlp",
+				elasticattr.AgentVersion:                   "unknown",
 			},
 		},
 	} {
