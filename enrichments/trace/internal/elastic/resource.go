@@ -81,7 +81,6 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	if cfg.OverrideHostName.Enabled {
 		s.overrideHostNameWithK8sNodeName(resource)
 	}
-
 	if cfg.DeploymentEnvironment.Enabled {
 		s.setDeploymentEnvironment(resource)
 	}
