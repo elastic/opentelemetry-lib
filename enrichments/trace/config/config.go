@@ -28,9 +28,10 @@ type Config struct {
 
 // ResourceConfig configures the enrichment of resource attributes.
 type ResourceConfig struct {
-	AgentName        AttributeConfig `mapstructure:"agent_name"`
-	AgentVersion     AttributeConfig `mapstructure:"agent_version"`
-	OverrideHostName AttributeConfig `mapstructure:"override_host_name"`
+	AgentName             AttributeConfig `mapstructure:"agent_name"`
+	AgentVersion          AttributeConfig `mapstructure:"agent_version"`
+	OverrideHostName      AttributeConfig `mapstructure:"override_host_name"`
+	DeploymentEnvironment AttributeConfig `mapstructure:"deployment_environment"`
 }
 
 // ScopeConfig configures the enrichment of scope attributes.
@@ -105,9 +106,10 @@ type AttributeConfig struct {
 func Enabled() Config {
 	return Config{
 		Resource: ResourceConfig{
-			AgentName:        AttributeConfig{Enabled: true},
-			AgentVersion:     AttributeConfig{Enabled: true},
-			OverrideHostName: AttributeConfig{Enabled: true},
+			AgentName:             AttributeConfig{Enabled: true},
+			AgentVersion:          AttributeConfig{Enabled: true},
+			OverrideHostName:      AttributeConfig{Enabled: true},
+			DeploymentEnvironment: AttributeConfig{Enabled: true},
 		},
 		Scope: ScopeConfig{
 			ServiceFrameworkName:    AttributeConfig{Enabled: true},
