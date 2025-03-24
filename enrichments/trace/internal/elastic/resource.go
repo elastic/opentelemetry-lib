@@ -23,7 +23,8 @@ import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	semconv "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
@@ -41,6 +42,9 @@ type resourceEnrichmentContext struct {
 	telemetrySDKVersion    string
 	telemetryDistroName    string
 	telemetryDistroVersion string
+
+	deploymentEnvironment     string
+	deploymentEnvironmentName string
 }
 
 func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
@@ -60,6 +64,10 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 			s.telemetryDistroName = v.Str()
 		case semconv.AttributeTelemetryDistroVersion:
 			s.telemetryDistroVersion = v.Str()
+		case semconv25.AttributeDeploymentEnvironment:
+			s.deploymentEnvironment = v.Str()
+		case semconv.AttributeDeploymentEnvironmentName:
+			s.deploymentEnvironmentName = v.Str()
 		}
 		return true
 	})
@@ -72,6 +80,19 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	}
 	if cfg.OverrideHostName.Enabled {
 		s.overrideHostNameWithK8sNodeName(resource)
+	}
+	if cfg.DeploymentEnvironment.Enabled {
+		s.setDeploymentEnvironment(resource)
+	}
+}
+
+// SemConv v1.27.0 deprecated `deployment.environment` and added `deployment.environment.name` in favor of it.
+// In the `otel-data` ES plugin we alias `service.environment` to `deployment.environment`.
+// ES currently doesn't allow aliases with multiple targets, so if the new field name is used (SemConv v1.27+),
+// we duplicate the value and also send it with the old field name to make the alias work.
+func (s *resourceEnrichmentContext) setDeploymentEnvironment(resource pcommon.Resource) {
+	if s.deploymentEnvironmentName != "" && s.deploymentEnvironment == "" {
+		resource.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, s.deploymentEnvironmentName)
 	}
 }
 
