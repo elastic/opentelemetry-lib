@@ -91,10 +91,8 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 // ES currently doesn't allow aliases with multiple targets, so if the new field name is used (SemConv v1.27+),
 // we duplicate the value and also send it with the old field name to make the alias work.
 func (s *resourceEnrichmentContext) setDeploymentEnvironment(resource pcommon.Resource) {
-	if s.deploymentEnvironmentName != "" {
-		if s.deploymentEnvironment == "" {
-			resource.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, s.deploymentEnvironmentName)
-		}
+	if s.deploymentEnvironmentName != "" && s.deploymentEnvironment == "" {
+		resource.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, s.deploymentEnvironmentName)
 	}
 }
 
