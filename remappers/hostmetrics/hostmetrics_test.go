@@ -29,7 +29,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
+	"go.uber.org/zap/zaptest/observer"
 )
 
 var (
@@ -348,10 +351,16 @@ func doTestRemap(t *testing.T, id string, remapOpts ...Option) {
 			resource := pcommon.NewResource()
 			resource.Attributes().FromRaw(tc.resourceAttrs)
 
+			core, observedLogs := observer.New(zapcore.WarnLevel)
+			logger := zap.New(core)
+
 			actual := pmetric.NewMetricSlice()
-			r := NewRemapper(zaptest.NewLogger(t), remapOpts...)
+			r := NewRemapper(logger, remapOpts...)
 			r.Remap(sm, actual, resource)
 			assert.Empty(t, cmp.Diff(tc.expected, testutils.MetricSliceToTestMetric(t, actual), cmpopts.EquateApprox(0, 0.001)))
+
+			// There should be no warning or error logs.
+			assert.Zero(t, observedLogs.Len())
 		})
 	}
 }
