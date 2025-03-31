@@ -18,8 +18,6 @@
 package hostmetrics
 
 import (
-	"errors"
-
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 
@@ -146,7 +144,10 @@ func remapCPUMetrics(
 	)
 
 	if numCores == 0 {
-		return errors.New("system.cpu.logical.count metric is missing in the hostmetrics")
+		// system.cpu.logical.count is optional, and if it's not
+		// present we can't calculate the normalized values.
+		// This is not an error, so we just return early.
+		return nil
 	}
 
 	totalNorm := totalPercent / float64(numCores)
