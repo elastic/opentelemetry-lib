@@ -2,6 +2,8 @@ module github.com/elastic/opentelemetry-lib
 
 go 1.23.0
 
+toolchain go1.24.1
+
 require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/elastic/elastic-transport-go/v8 v8.6.1
@@ -22,7 +24,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.35.0
 	go.opentelemetry.io/proto/otlp v1.5.0
 	go.uber.org/zap v1.27.0
-	google.golang.org/grpc v1.71.0
+	google.golang.org/grpc v1.71.1
 )
 
 require (
