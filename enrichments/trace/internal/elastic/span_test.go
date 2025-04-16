@@ -570,6 +570,41 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanRepresentativeCount:        float64(1),
 			},
 		},
+		// This one is a non root span representing a dependency. The test asserts that such spans are not
+		// accidentally mapped into a transaction.
+		{
+			name: "producer_messaging_non_root_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindProducer)
+				// Adding parent id to make sure this is not a root span.
+				span.SetParentSpanID([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
+				span.Attributes().PutStr(semconv25.AttributeServerAddress, "myServer")
+				span.Attributes().PutStr(semconv25.AttributeServerPort, "1234")
+				span.Attributes().PutStr(semconv25.AttributeMessagingSystem, "rabbitmq")
+				span.Attributes().PutStr(semconv25.AttributeMessagingDestinationName, "T")
+				span.Attributes().PutStr(semconv25.AttributeMessagingOperation, "publish")
+				span.Attributes().PutStr(semconv25.AttributeMessagingClientID, "a")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanType:                       "messaging",
+				elasticattr.SpanSubtype:                    "rabbitmq",
+				elasticattr.SpanDestinationServiceResource: "rabbitmq/T",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "T",
+				elasticattr.ServiceTargetType:              "rabbitmq",
+				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()

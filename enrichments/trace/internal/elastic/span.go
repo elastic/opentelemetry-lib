@@ -220,7 +220,7 @@ func (s *spanEnrichmentContext) enrich(span ptrace.Span, cfg config.Config) {
 	// In OTel, a local root span can represent an outgoing call or a producer span.
 	// In such cases, the span is still mapped into a transaction, but enriched
 	// with additional attributes that are specific to the outgoing call or producer span.
-	isExitRootSpan := s.isTransaction && span.Kind() == ptrace.SpanKindClient || span.Kind() == ptrace.SpanKindProducer
+	isExitRootSpan := s.isTransaction && (span.Kind() == ptrace.SpanKindClient || span.Kind() == ptrace.SpanKindProducer)
 
 	if s.isTransaction {
 		s.enrichTransaction(span, cfg.Transaction)
