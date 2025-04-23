@@ -98,6 +98,7 @@ type spanEnrichmentContext struct {
 	isDB                     bool
 	messagingDestinationTemp bool
 	isGenAi                  bool
+	isMobile                 bool
 }
 
 func (s *spanEnrichmentContext) Enrich(
@@ -200,6 +201,10 @@ func (s *spanEnrichmentContext) Enrich(
 			s.userAgentName = v.Str()
 		case semconv27.AttributeUserAgentVersion:
 			s.userAgentVersion = v.Str()
+		case "type":
+			if v.Str() == "mobile" {
+				s.isMobile = true
+			}
 		}
 		return true
 	})
@@ -355,6 +360,8 @@ func (s *spanEnrichmentContext) getTxnType() string {
 		txnType = "messaging"
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
+	case s.isMobile:
+		txnType = "mobile"
 	}
 	return txnType
 }
