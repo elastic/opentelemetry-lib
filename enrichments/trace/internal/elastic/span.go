@@ -356,12 +356,12 @@ func (s *spanEnrichmentContext) getSampled() bool {
 func (s *spanEnrichmentContext) getTxnType() string {
 	txnType := "unknown"
 	switch {
+	case s.isMobile:
+		txnType = "mobile"
 	case s.isMessaging:
 		txnType = "messaging"
 	case s.isRPC, s.isHTTP:
 		txnType = "request"
-	case s.isMobile:
-		txnType = "mobile"
 	}
 	return txnType
 }

@@ -463,7 +463,7 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 	for _, tc := range []struct {
 		name              string
 		input             ptrace.Span
-		config            config.ElasticTransactionConfig
+		config            config.Config
 		enrichedAttrs     map[string]any
 		expectedSpanLinks *ptrace.SpanLinkSlice
 	}{
@@ -475,7 +475,7 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 				span.Attributes().PutStr("type", "mobile")
 				return span
 			}(),
-			config: config.Enabled().Transaction,
+			config: config.Enabled(),
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    int64(0),
 				elasticattr.TransactionSampled:             true,
@@ -504,7 +504,7 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 				span.Attributes().PutInt(semconv25.AttributeHTTPStatusCode, http.StatusOK)
 				return span
 			}(),
-			config: config.Enabled().Transaction,
+			config: config.Enabled(),
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
 				elasticattr.TransactionSampled:             true,
@@ -532,9 +532,9 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 				span.Attributes().PutStr(semconv27.AttributeNetworkProtocolVersion, "1.1")
 				return span
 			}(),
-			config: config.Enabled().Transaction,
+			config: config.Enabled(),
 			enrichedAttrs: map[string]any{
-				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
 				elasticattr.TransactionName:                "rootClientSpan",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.SpanType:                       "external",
@@ -546,7 +546,7 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 				elasticattr.ServiceTargetName:              "localhost:8080",
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.TransactionID:                  "0100000000000000",
-				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "HTTP 2xx",
 				elasticattr.TransactionType:                "mobile",
@@ -572,9 +572,7 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
-			EnrichSpan(tc.input, config.Config{
-				Transaction: tc.config,
-			}, uaparser.NewFromSaved())
+			EnrichSpan(tc.input, tc.config, uaparser.NewFromSaved())
 			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}
