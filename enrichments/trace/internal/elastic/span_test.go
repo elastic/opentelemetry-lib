@@ -446,6 +446,140 @@ func TestElasticTransactionEnrich(t *testing.T) {
 	}
 }
 
+// Tests the enrichment logic for elastic's transaction definition for mobile agents.
+func TestElasticTransactionEnrichForMobile(t *testing.T) {
+	now := time.Unix(3600, 0)
+	expectedDuration := time.Minute
+	endTs := pcommon.NewTimestampFromTime(now)
+	startTs := pcommon.NewTimestampFromTime(now.Add(-1 * expectedDuration))
+	getElasticMobileTxn := func() ptrace.Span {
+		span := ptrace.NewSpan()
+		span.SetSpanID([8]byte{1})
+		span.SetStartTimestamp(startTs)
+		span.SetEndTimestamp(endTs)
+		span.Attributes().PutStr("type", "mobile")
+		return span
+	}
+	for _, tc := range []struct {
+		name              string
+		input             ptrace.Span
+		config            config.ElasticTransactionConfig
+		enrichedAttrs     map[string]any
+		expectedSpanLinks *ptrace.SpanLinkSlice
+	}{
+		{
+			// test case gives a summary of what is emitted by default
+			name: "empty",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.Attributes().PutStr("type", "mobile")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "",
+				elasticattr.TransactionName:                "",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "mobile",
+			},
+		},
+		{
+			name:          "all_disabled",
+			input:         getElasticMobileTxn(),
+			enrichedAttrs: map[string]any{},
+		},
+		{
+			name: "http_status_ok",
+			input: func() ptrace.Span {
+				span := getElasticMobileTxn()
+				span.SetName("testtxn")
+				span.Attributes().PutInt(semconv25.AttributeHTTPStatusCode, http.StatusOK)
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				elasticattr.TransactionType:                "mobile",
+			},
+		},
+		{
+			name: "outgoing_http_root_span",
+			input: func() ptrace.Span {
+				span := getElasticMobileTxn()
+				span.SetName("rootClientSpan")
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr(semconv27.AttributeHTTPRequestMethod, "GET")
+				span.Attributes().PutStr(semconv27.AttributeURLFull, "http://localhost:8080")
+				span.Attributes().PutInt(semconv27.AttributeHTTPResponseStatusCode, 200)
+				span.Attributes().PutStr(semconv27.AttributeNetworkProtocolVersion, "1.1")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "external",
+				elasticattr.SpanSubtype:                    "http",
+				elasticattr.SpanDestinationServiceResource: "localhost:8080",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "localhost:8080",
+				elasticattr.ServiceTargetType:              "http",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				elasticattr.TransactionType:                "mobile",
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			expectedSpan := ptrace.NewSpan()
+			tc.input.CopyTo(expectedSpan)
+
+			// Merge with the expected attributes and override the span links.
+			for k, v := range tc.enrichedAttrs {
+				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
+			}
+
+			EnrichSpan(tc.input, config.Config{
+				Transaction: tc.config,
+			}, uaparser.NewFromSaved())
+			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
+		})
+	}
+}
+
 // Tests root spans that represent a dependency and are mapped to a transaction.
 func TestRootSpanAsDependencyEnrich(t *testing.T) {
 	for _, tc := range []struct {
