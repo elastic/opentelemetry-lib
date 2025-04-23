@@ -324,7 +324,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 		s.setUserAgentIfRequired(span)
 	}
 
-	if isExitRootSpan && transactionTypeEnabled {
+	if isExitRootSpan && transactionTypeEnabled && !s.isMobile {
 		if spanType != "" {
 			transactionType := spanType
 			if spanSubtype != "" {

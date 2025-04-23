@@ -552,7 +552,7 @@ func TestElasticTransactionEnrichForMobile(t *testing.T) {
 				elasticattr.TransactionType:                "mobile",
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
-				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.SpanRepresentativeCount:        float64(1),
 			},
 		},
