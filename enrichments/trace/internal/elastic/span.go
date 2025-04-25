@@ -203,7 +203,6 @@ func (s *spanEnrichmentContext) Enrich(
 		case semconv27.AttributeUserAgentVersion:
 			s.userAgentVersion = v.Str()
 		case "type":
-			s.hasType = true
 			s.typeValue = v.Str()
 		}
 		return true
