@@ -446,8 +446,8 @@ func TestElasticTransactionEnrich(t *testing.T) {
 	}
 }
 
-// Tests the enrichment logic for elastic's transaction definition for mobile agents.
-func TestElasticTransactionEnrichForMobile(t *testing.T) {
+// Tests the enrichment logic for elastic's transaction definition with type.
+func TestElasticTransactionEnrichWithType(t *testing.T) {
 	now := time.Unix(3600, 0)
 	expectedDuration := time.Minute
 	endTs := pcommon.NewTimestampFromTime(now)
