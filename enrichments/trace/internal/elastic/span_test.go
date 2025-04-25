@@ -51,6 +51,11 @@ func TestElasticTransactionEnrich(t *testing.T) {
 		span.SetEndTimestamp(endTs)
 		return span
 	}
+	getElasticMobileTxn := func() ptrace.Span {
+		span := getElasticTxn()
+		span.Attributes().PutStr("type", "mobile")
+		return span
+	}
 	for _, tc := range []struct {
 		name              string
 		input             ptrace.Span
@@ -422,6 +427,58 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				semconv27.AttributeUserAgentVersion: "51.0.2704",
 			},
 		},
+		{
+			name: "with_type",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.Attributes().PutStr("type", "mobile")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "",
+				elasticattr.TransactionName:                "",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "mobile",
+			},
+		},
+		{
+			name:          "all_disabled_for_mobile",
+			input:         getElasticMobileTxn(),
+			enrichedAttrs: map[string]any{},
+		},
+		{
+			name: "http_status_ok_for_mobile",
+			input: func() ptrace.Span {
+				span := getElasticMobileTxn()
+				span.SetName("testtxn")
+				span.Attributes().PutInt(semconv25.AttributeHTTPStatusCode, http.StatusOK)
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				elasticattr.TransactionType:                "mobile",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
@@ -467,59 +524,6 @@ func TestElasticTransactionEnrichWithType(t *testing.T) {
 		enrichedAttrs     map[string]any
 		expectedSpanLinks *ptrace.SpanLinkSlice
 	}{
-		{
-			// test case gives a summary of what is emitted by default
-			name: "empty",
-			input: func() ptrace.Span {
-				span := ptrace.NewSpan()
-				span.Attributes().PutStr("type", "mobile")
-				return span
-			}(),
-			config: config.Enabled(),
-			enrichedAttrs: map[string]any{
-				elasticattr.TimestampUs:                    int64(0),
-				elasticattr.TransactionSampled:             true,
-				elasticattr.TransactionRoot:                true,
-				elasticattr.TransactionID:                  "",
-				elasticattr.TransactionName:                "",
-				elasticattr.ProcessorEvent:                 "transaction",
-				elasticattr.TransactionRepresentativeCount: float64(1),
-				elasticattr.TransactionDurationUs:          int64(0),
-				elasticattr.EventOutcome:                   "success",
-				elasticattr.SuccessCount:                   int64(1),
-				elasticattr.TransactionResult:              "Success",
-				elasticattr.TransactionType:                "mobile",
-			},
-		},
-		{
-			name:          "all_disabled",
-			input:         getElasticMobileTxn(),
-			enrichedAttrs: map[string]any{},
-		},
-		{
-			name: "http_status_ok",
-			input: func() ptrace.Span {
-				span := getElasticMobileTxn()
-				span.SetName("testtxn")
-				span.Attributes().PutInt(semconv25.AttributeHTTPStatusCode, http.StatusOK)
-				return span
-			}(),
-			config: config.Enabled(),
-			enrichedAttrs: map[string]any{
-				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.TransactionSampled:             true,
-				elasticattr.TransactionRoot:                true,
-				elasticattr.TransactionID:                  "0100000000000000",
-				elasticattr.TransactionName:                "testtxn",
-				elasticattr.ProcessorEvent:                 "transaction",
-				elasticattr.TransactionRepresentativeCount: float64(1),
-				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
-				elasticattr.EventOutcome:                   "success",
-				elasticattr.SuccessCount:                   int64(1),
-				elasticattr.TransactionResult:              "HTTP 2xx",
-				elasticattr.TransactionType:                "mobile",
-			},
-		},
 		{
 			name: "outgoing_http_root_span",
 			input: func() ptrace.Span {
@@ -733,6 +737,44 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "T",
 				elasticattr.ServiceTargetType:              "rabbitmq",
+				elasticattr.SpanDurationUs:                 int64(0),
+				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
+		{
+			name: "outgoing_mobile_http_root_span",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr("type", "mobile")
+				span.Attributes().PutStr(semconv27.AttributeHTTPRequestMethod, "GET")
+				span.Attributes().PutStr(semconv27.AttributeURLFull, "http://localhost:8080")
+				span.Attributes().PutInt(semconv27.AttributeHTTPResponseStatusCode, 200)
+				span.Attributes().PutStr(semconv27.AttributeNetworkProtocolVersion, "1.1")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "external",
+				elasticattr.SpanSubtype:                    "http",
+				elasticattr.SpanDestinationServiceResource: "localhost:8080",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "localhost:8080",
+				elasticattr.ServiceTargetType:              "http",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				elasticattr.TransactionType:                "mobile",
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
 				elasticattr.SpanDurationUs:                 int64(0),
 				elasticattr.SpanRepresentativeCount:        float64(1),
 			},
