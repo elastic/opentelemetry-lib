@@ -99,7 +99,6 @@ type spanEnrichmentContext struct {
 	isDB                     bool
 	messagingDestinationTemp bool
 	isGenAi                  bool
-	hasType                  bool
 }
 
 func (s *spanEnrichmentContext) Enrich(
@@ -323,7 +322,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 		s.setUserAgentIfRequired(span)
 	}
 
-	if isExitRootSpan && transactionTypeEnabled && !s.hasType {
+	if isExitRootSpan && transactionTypeEnabled && s.typeValue == "" {
 		if spanType != "" {
 			transactionType := spanType
 			if spanSubtype != "" {
