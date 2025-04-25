@@ -355,7 +355,7 @@ func (s *spanEnrichmentContext) getSampled() bool {
 func (s *spanEnrichmentContext) getTxnType() string {
 	txnType := "unknown"
 	switch {
-	case s.hasType:
+	case s.typeValue != "":
 		txnType = s.typeValue
 	case s.isMessaging:
 		txnType = "messaging"
