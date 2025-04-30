@@ -76,6 +76,7 @@ type spanEnrichmentContext struct {
 	messagingSystem          string
 	messagingDestinationName string
 	genAiSystem              string
+	typeValue                string
 
 	// The inferred* attributes are derived from a base attribute
 	userAgentOriginal        string
@@ -200,6 +201,8 @@ func (s *spanEnrichmentContext) Enrich(
 			s.userAgentName = v.Str()
 		case semconv27.AttributeUserAgentVersion:
 			s.userAgentVersion = v.Str()
+		case "type":
+			s.typeValue = v.Str()
 		}
 		return true
 	})
@@ -319,7 +322,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 		s.setUserAgentIfRequired(span)
 	}
 
-	if isExitRootSpan && transactionTypeEnabled {
+	if isExitRootSpan && transactionTypeEnabled && s.typeValue == "" {
 		if spanType != "" {
 			transactionType := spanType
 			if spanSubtype != "" {
@@ -351,6 +354,8 @@ func (s *spanEnrichmentContext) getSampled() bool {
 func (s *spanEnrichmentContext) getTxnType() string {
 	txnType := "unknown"
 	switch {
+	case s.typeValue != "":
+		txnType = s.typeValue
 	case s.isMessaging:
 		txnType = "messaging"
 	case s.isRPC, s.isHTTP:
