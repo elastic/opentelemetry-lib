@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/elastic/opentelemetry-lib/enrichments/logs/mobile"
+	"github.com/elastic/opentelemetry-lib/enrichments/logs/internal/mobile"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
