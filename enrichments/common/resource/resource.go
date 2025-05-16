@@ -21,14 +21,13 @@ import (
 	"fmt"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
-func EnrichResource(resource pcommon.Resource, cfg config.ResourceConfig) {
+func EnrichResource(resource pcommon.Resource, cfg ResourceConfig) {
 	var c resourceEnrichmentContext
 	c.Enrich(resource, cfg)
 }
@@ -47,7 +46,7 @@ type resourceEnrichmentContext struct {
 	deploymentEnvironmentName string
 }
 
-func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
+func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg ResourceConfig) {
 	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
 		switch k {
 		case semconv.AttributeHostName:

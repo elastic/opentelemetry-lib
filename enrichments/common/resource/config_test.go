@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package config
+package resource
 
 import (
 	"reflect"
@@ -26,12 +26,8 @@ import (
 )
 
 func TestEnabled(t *testing.T) {
-	config := Enabled()
-	assertAllEnabled(t, reflect.ValueOf(config.Resource))
-	assertAllEnabled(t, reflect.ValueOf(config.Scope))
-	assertAllEnabled(t, reflect.ValueOf(config.Transaction))
-	assertAllEnabled(t, reflect.ValueOf(config.Span))
-	assertAllEnabled(t, reflect.ValueOf(config.SpanEvent))
+	config := EnabledConfig()
+	assertAllEnabled(t, reflect.ValueOf(config))
 }
 
 func assertAllEnabled(t *testing.T, cfg reflect.Value) {
