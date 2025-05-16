@@ -15,7 +15,7 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 		for j := 0; j < scopeLogs.Len(); j++ {
 			logRecords := scopeLogs.At(j).LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
-				mobile.EnrichLogRecord(logRecords.At(k))
+				mobile.EnrichLogEvent(logRecords.At(k))
 			}
 		}
 	}
