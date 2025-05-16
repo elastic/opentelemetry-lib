@@ -28,9 +28,9 @@ import (
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
-func EnrichResource(resource pcommon.Resource, cfg config.Config) {
+func EnrichResource(resource pcommon.Resource, cfg config.ResourceConfig) {
 	var c resourceEnrichmentContext
-	c.Enrich(resource, cfg.Resource)
+	c.Enrich(resource, cfg)
 }
 
 type resourceEnrichmentContext struct {

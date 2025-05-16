@@ -254,9 +254,7 @@ func TestResourceEnrich(t *testing.T) {
 				expectedAttrs[k] = v
 			}
 
-			EnrichResource(tc.input, config.Config{
-				Resource: tc.config,
-			})
+			EnrichResource(tc.input, tc.config)
 
 			assert.Empty(t, cmp.Diff(expectedAttrs, tc.input.Attributes().AsRaw()))
 		})

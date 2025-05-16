@@ -51,7 +51,7 @@ func (e *Enricher) Enrich(pt ptrace.Traces) {
 	resSpans := pt.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
 		resSpan := resSpans.At(i)
-		resource.EnrichResource(resSpan.Resource(), e.Config)
+		resource.EnrichResource(resSpan.Resource(), e.Config.Resource)
 		scopeSpans := resSpan.ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
 			scopeSpan := scopeSpans.At(j)
