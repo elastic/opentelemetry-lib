@@ -1,4 +1,4 @@
-package log
+package mobile
 
 import "go.opentelemetry.io/collector/pdata/plog"
 
