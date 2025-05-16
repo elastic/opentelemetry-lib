@@ -1,6 +1,9 @@
-package mobile
+package log
 
-import "go.opentelemetry.io/collector/pdata/plog"
+import (
+	"github.com/elastic/opentelemetry-lib/enrichments/logs/mobile"
+	"go.opentelemetry.io/collector/pdata/plog"
+)
 
 type Enricher struct {
 }
@@ -12,7 +15,7 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 		for j := 0; j < scopeLogs.Len(); j++ {
 			logRecords := scopeLogs.At(j).LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
-				// todo
+				mobile.EnrichLogRecord(logRecords.At(k))
 			}
 		}
 	}
