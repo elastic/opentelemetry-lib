@@ -1,4 +1,4 @@
-package log
+package logs
 
 import (
 	"github.com/elastic/opentelemetry-lib/enrichments/common/attribute"
@@ -10,11 +10,15 @@ import (
 type Enricher struct {
 }
 
+func NewEnricher() *Enricher {
+	return &Enricher{}
+}
+
 func (e *Enricher) Enrich(logs plog.Logs) {
 	resourceLogs := logs.ResourceLogs()
 	resourceConfig := resource.ResourceConfig{
 		AgentName: attribute.AttributeConfig{
-			Enabled: false,
+			Enabled: true,
 		},
 	}
 
