@@ -2,14 +2,19 @@ package mobile
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
 func TestEnrichCrashEvents(t *testing.T) {
+	now := time.Unix(3600, 0)
+	timestamp := pcommon.NewTimestampFromTime(now)
 	logRecord := plog.NewLogRecord()
+	logRecord.SetTimestamp(timestamp)
 	logRecord.Attributes().PutStr("event.name", "device.crash")
 	logRecord.Attributes().PutStr("exception.message", "Exception message")
 	logRecord.Attributes().PutStr("exception.type", "java.lang.RuntimeException")
@@ -21,6 +26,7 @@ func TestEnrichCrashEvents(t *testing.T) {
 	logRecord.CopyTo(expectedLogRecord)
 
 	expectedLogRecord.Attributes().PutStr("processor.event", "error")
+	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
 
 	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw()))
 }
