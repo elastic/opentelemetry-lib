@@ -26,6 +26,7 @@ func TestEnrichCrashEvents(t *testing.T) {
 	logRecord.CopyTo(expectedLogRecord)
 
 	expectedLogRecord.Attributes().PutStr("processor.event", "error")
+	expectedLogRecord.Attributes().PutStr("error.id", "todo")
 	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
 
 	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw()))
