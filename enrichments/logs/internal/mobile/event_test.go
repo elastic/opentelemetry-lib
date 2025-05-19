@@ -22,12 +22,10 @@ func TestEnrichCrashEvents(t *testing.T) {
 
 	EnrichLogEvent(logRecord)
 
-	expectedLogRecord := plog.NewLogRecord()
-	logRecord.CopyTo(expectedLogRecord)
+	expectedAttributes := map[string]any{
+		"processor.event": "error",
+		"timestamp.us":    timestamp.AsTime().UnixMicro(),
+	}
 
-	expectedLogRecord.Attributes().PutStr("processor.event", "error")
-	expectedLogRecord.Attributes().PutStr("error.id", "todo")
-	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
-
-	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw()))
+	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedAttributes))
 }
