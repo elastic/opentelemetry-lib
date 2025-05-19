@@ -1,7 +1,11 @@
 package mobile
 
-import "go.opentelemetry.io/collector/pdata/plog"
+import (
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"go.opentelemetry.io/collector/pdata/plog"
+)
 
 func EnrichLogEvent(logRecord plog.LogRecord) {
-	logRecord.Attributes().PutStr("processor.event", "error")
+	logRecord.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
+	logRecord.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(logRecord.Timestamp()))
 }
