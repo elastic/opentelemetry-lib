@@ -1,4 +1,4 @@
-package attribute
+package elasticattr
 
 // AttributeConfig is the configuration options for each attribute.
 type AttributeConfig struct {

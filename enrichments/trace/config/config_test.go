@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/elastic/opentelemetry-lib/enrichments/common/attribute"
+	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +39,7 @@ func assertAllEnabled(t *testing.T, cfg reflect.Value) {
 
 	for i := 0; i < cfg.NumField(); i++ {
 		rAttrCfg := cfg.Field(i).Interface()
-		attrCfg, ok := rAttrCfg.(attribute.AttributeConfig)
+		attrCfg, ok := rAttrCfg.(elasticattr.AttributeConfig)
 		require.True(t, ok, "must be a type of AttributeConfig")
 		require.True(t, attrCfg.Enabled, "must be enabled")
 	}

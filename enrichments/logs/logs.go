@@ -1,7 +1,7 @@
 package logs
 
 import (
-	"github.com/elastic/opentelemetry-lib/enrichments/common/attribute"
+	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/common/resource"
 	"github.com/elastic/opentelemetry-lib/enrichments/logs/internal/mobile"
 	"go.opentelemetry.io/collector/pdata/plog"
@@ -17,7 +17,7 @@ func NewEnricher() *Enricher {
 func (e *Enricher) Enrich(logs plog.Logs) {
 	resourceLogs := logs.ResourceLogs()
 	resourceConfig := resource.ResourceConfig{
-		AgentName: attribute.AttributeConfig{
+		AgentName: elasticattr.AttributeConfig{
 			Enabled: true,
 		},
 	}
