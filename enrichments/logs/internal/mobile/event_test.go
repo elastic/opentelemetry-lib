@@ -27,5 +27,20 @@ func TestEnrichCrashEvents(t *testing.T) {
 	expectedLogRecord.Attributes().PutStr("processor.event", "error")
 	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
 
-	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw()))
+	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw(), ignoreMapKey("error.id")))
+	errorId, ok := logRecord.Attributes().Get("error.id")
+	if !ok {
+		assert.Fail(t, "error.id not found")
+	}
+	assert.Equal(t, 32, len(errorId.AsString()))
+}
+
+func ignoreMapKey(k string) cmp.Option {
+	return cmp.FilterPath(func(p cmp.Path) bool {
+		mapIndex, ok := p.Last().(cmp.MapIndex)
+		if !ok {
+			return false
+		}
+		return mapIndex.Key().String() == k
+	}, cmp.Ignore())
 }
