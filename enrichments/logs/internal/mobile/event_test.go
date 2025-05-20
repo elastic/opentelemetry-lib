@@ -19,13 +19,13 @@ func TestEnrichCrashEvents(t *testing.T) {
 	logRecord.Attributes().PutStr("exception.message", "Exception message")
 	logRecord.Attributes().PutStr("exception.type", "java.lang.RuntimeException")
 	logRecord.Attributes().PutStr("exception.stacktrace", `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
+	expectedLogRecord := plog.NewLogRecord()
+	logRecord.CopyTo(expectedLogRecord)
 
 	EnrichLogEvent(logRecord)
 
-	expectedAttributes := map[string]any{
-		"processor.event": "error",
-		"timestamp.us":    timestamp.AsTime().UnixMicro(),
-	}
+	expectedLogRecord.Attributes().PutStr("processor.event", "error")
+	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
 
-	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedAttributes))
+	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw()))
 }
