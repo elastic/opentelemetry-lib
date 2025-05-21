@@ -22,8 +22,8 @@ func TestCurateStacktrace(t *testing.T) {
 			curated:     readTestFile(t, "curated_stacktrace2.txt"),
 		},
 	} {
-		for i := 0; i < len(tc.stacktraces); i++ {
-			assert.Equal(t, tc.curated, curateStacktrace(tc.stacktraces[i]))
+		for _, stacktrace := range tc.stacktraces {
+			assert.Equal(t, tc.curated, curateStacktrace(stacktrace))
 		}
 	}
 }
