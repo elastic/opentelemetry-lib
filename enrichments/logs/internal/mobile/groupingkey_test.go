@@ -1,7 +1,6 @@
 package mobile
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -9,13 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateGroupingKeyForStacktrace(t *testing.T) {
-	stacktrace_path := filepath.Join("testdata", "stacktrace1_a.txt")
-	bytes, err := os.ReadFile(stacktrace_path)
-	if err != nil {
-		assert.Fail(t, "Could not read test file")
-	}
-	stacktrace := string(bytes)
+func TestCurateStacktrace(t *testing.T) {
+	stacktrace := readTestFile(t, "stacktrace1_a.txt")
+	curated_stacktrace := readTestFile(t, "curated_stacktrace1.txt")
 
-	fmt.Printf("The stacktrace: %s", stacktrace)
+	assert.Equal(t, curated_stacktrace, curateStacktrace(stacktrace))
+}
+
+func readTestFile(t *testing.T, file_name string) string {
+	bytes, err := os.ReadFile(filepath.Join("testdata", file_name))
+	if err != nil {
+		t.Fatalf("Could not read test file '%v'", file_name)
+	}
+	return string(bytes)
 }
