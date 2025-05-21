@@ -9,10 +9,23 @@ import (
 )
 
 func TestCurateStacktrace(t *testing.T) {
-	stacktrace := readTestFile(t, "stacktrace1_a.txt")
-	curated_stacktrace := readTestFile(t, "curated_stacktrace1.txt")
-
-	assert.Equal(t, curated_stacktrace, curateStacktrace(stacktrace))
+	for _, tc := range []struct {
+		stacktraces []string
+		curated     string
+	}{
+		{
+			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt")},
+			curated:     readTestFile(t, "curated_stacktrace1.txt"),
+		},
+		{
+			stacktraces: []string{readTestFile(t, "stacktrace2_a.txt"), readTestFile(t, "stacktrace2_b.txt"), readTestFile(t, "stacktrace2_c.txt")},
+			curated:     readTestFile(t, "curated_stacktrace2.txt"),
+		},
+	} {
+		for i := 0; i < len(tc.stacktraces); i++ {
+			assert.Equal(t, tc.curated, curateStacktrace(tc.stacktraces[i]))
+		}
+	}
 }
 
 func readTestFile(t *testing.T, file_name string) string {

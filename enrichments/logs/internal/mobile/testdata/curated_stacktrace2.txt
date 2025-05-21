@@ -1,0 +1,1 @@
+java.lang.RuntimeExceptionatorg.example.SomeClass.callingOtherMethod(SomeClass.kt:16)atorg.example.Main.main(Main.kt:9)Causedbyatorg.example.SomeOtherClass.someOtherMethod(SomeOtherClass.kt:8)atorg.example.SomeClass.callingOtherMethod(SomeClass.kt:14)...1more
