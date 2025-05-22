@@ -18,7 +18,7 @@ func TestEnrichCrashEvents(t *testing.T) {
 	logRecord.Attributes().PutStr("event.name", "device.crash")
 	logRecord.Attributes().PutStr("exception.message", "Exception message")
 	logRecord.Attributes().PutStr("exception.type", "java.lang.RuntimeException")
-	logRecord.Attributes().PutStr("exception.stacktrace", `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
+	logRecord.Attributes().PutStr("exception.stacktrace", "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)")
 	expectedLogRecord := plog.NewLogRecord()
 	logRecord.CopyTo(expectedLogRecord)
 
@@ -26,6 +26,7 @@ func TestEnrichCrashEvents(t *testing.T) {
 
 	expectedLogRecord.Attributes().PutStr("processor.event", "error")
 	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
+	expectedLogRecord.Attributes().PutStr("error.grouping_key", "96b957020e07ac5c1ed7f86e7df9e3e393ede1284c2c52cb4e8e64f902d37833")
 
 	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw(), ignoreMapKey("error.id")))
 	errorId, ok := logRecord.Attributes().Get("error.id")

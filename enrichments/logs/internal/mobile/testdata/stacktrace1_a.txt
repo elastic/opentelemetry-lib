@@ -1,3 +1,1 @@
-java.lang.IllegalArgumentException: The arg 'abc' is not valid
-	at org.example.SomeClass.someMethod(SomeClass.kt:8)
-	at org.example.Main.main(Main.kt:9)
+Exceptioninthread"main"java.lang.RuntimeExceptionatcom.example.GenerateTrace.methodB(GenerateTrace.java:13)atcom.example.GenerateTrace.methodA(GenerateTrace.java:9)atcom.example.GenerateTrace.main(GenerateTrace.java:5)
