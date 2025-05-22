@@ -10,8 +10,12 @@ import (
 )
 
 func EnrichLogEvent(logRecord plog.LogRecord) {
+	timestamp := logRecord.Timestamp()
+	if timestamp == 0 {
+		timestamp = logRecord.ObservedTimestamp()
+	}
 	logRecord.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
-	logRecord.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(logRecord.Timestamp()))
+	logRecord.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(timestamp))
 	if id, err := newUniqueID(); err == nil {
 		logRecord.Attributes().PutStr("error.id", id)
 	}

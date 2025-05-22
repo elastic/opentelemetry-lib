@@ -12,10 +12,11 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-func TestEnrichCrashEvents(t *testing.T) {
+func TestEnrichEvents(t *testing.T) {
 	now := time.Unix(3600, 0)
 	timestamp := pcommon.NewTimestampFromTime(now)
 	stacktrace := "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
+	stacktraceHash := "96b957020e07ac5c1ed7f86e7df9e3e393ede1284c2c52cb4e8e64f902d37833"
 
 	for _, tc := range []struct {
 		name               string
@@ -36,7 +37,25 @@ func TestEnrichCrashEvents(t *testing.T) {
 			expectedAttributes: map[string]any{
 				"processor.event":    "error",
 				"timestamp.us":       timestamp.AsTime().UnixMicro(),
-				"error.grouping_key": "96b957020e07ac5c1ed7f86e7df9e3e393ede1284c2c52cb4e8e64f902d37833",
+				"error.grouping_key": stacktraceHash,
+				"error.type":         "crash",
+			},
+		},
+		{
+			name: "crash_event_without_timestamp",
+			input: func() plog.LogRecord {
+				logRecord := plog.NewLogRecord()
+				logRecord.SetObservedTimestamp(timestamp)
+				logRecord.Attributes().PutStr("event.name", "device.crash")
+				logRecord.Attributes().PutStr("exception.message", "Exception message")
+				logRecord.Attributes().PutStr("exception.type", "java.lang.RuntimeException")
+				logRecord.Attributes().PutStr("exception.stacktrace", stacktrace)
+				return logRecord
+			},
+			expectedAttributes: map[string]any{
+				"processor.event":    "error",
+				"timestamp.us":       timestamp.AsTime().UnixMicro(),
+				"error.grouping_key": stacktraceHash,
 				"error.type":         "crash",
 			},
 		},
