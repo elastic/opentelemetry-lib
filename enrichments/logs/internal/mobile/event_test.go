@@ -27,6 +27,7 @@ func TestEnrichCrashEvents(t *testing.T) {
 	expectedLogRecord.Attributes().PutStr("processor.event", "error")
 	expectedLogRecord.Attributes().PutInt("timestamp.us", timestamp.AsTime().UnixMicro())
 	expectedLogRecord.Attributes().PutStr("error.grouping_key", "96b957020e07ac5c1ed7f86e7df9e3e393ede1284c2c52cb4e8e64f902d37833")
+	expectedLogRecord.Attributes().PutStr("error.type", "crash")
 
 	assert.Empty(t, cmp.Diff(logRecord.Attributes().AsRaw(), expectedLogRecord.Attributes().AsRaw(), ignoreMapKey("error.id")))
 	errorId, ok := logRecord.Attributes().Get("error.id")

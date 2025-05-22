@@ -19,6 +19,7 @@ func EnrichLogEvent(logRecord plog.LogRecord) {
 	if ok {
 		logRecord.Attributes().PutStr("error.grouping_key", CreateGroupingKey(stacktrace.AsString()))
 	}
+	logRecord.Attributes().PutStr("error.type", "crash")
 }
 
 func newUniqueID() (string, error) {
