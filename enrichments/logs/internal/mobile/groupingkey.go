@@ -7,11 +7,11 @@ import (
 )
 
 func CreateGroupingKey(stacktrace string) string {
-	hash_bytes := sha256.Sum256([]byte(curateStacktrace(stacktrace)))
-	return hex.EncodeToString(hash_bytes[:])
+	hashBytes := sha256.Sum256([]byte(curateStacktrace(stacktrace)))
+	return hex.EncodeToString(hashBytes[:])
 }
 
 func curateStacktrace(stacktrace string) string {
-	unwanted_pattern := regexp.MustCompile(`(:\s.+)|[\r\n\s]+`)
-	return unwanted_pattern.ReplaceAllString(stacktrace, "")
+	unwantedPattern := regexp.MustCompile(`(:\s.+)|[\r\n\s]+`)
+	return unwantedPattern.ReplaceAllString(stacktrace, "")
 }
