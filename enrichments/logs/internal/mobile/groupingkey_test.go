@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCurateStacktrace(t *testing.T) {
@@ -50,8 +51,6 @@ func TestCreateGroupingKey(t *testing.T) {
 
 func readTestFile(t *testing.T, file_name string) string {
 	bytes, err := os.ReadFile(filepath.Join("testdata", file_name))
-	if err != nil {
-		t.Fatalf("Could not read test file '%v'", file_name)
-	}
+	require.NoError(t, err)
 	return string(bytes)
 }
