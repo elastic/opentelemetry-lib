@@ -59,6 +59,15 @@ func TestEnrichEvents(t *testing.T) {
 				"error.type":         "crash",
 			},
 		},
+		{
+			name: "non_crash_event",
+			input: func() plog.LogRecord {
+				logRecord := plog.NewLogRecord()
+				logRecord.Attributes().PutStr("event.name", "othername")
+				return logRecord
+			},
+			expectedAttributes: map[string]any{},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			inputLogRecord := tc.input()
@@ -68,11 +77,14 @@ func TestEnrichEvents(t *testing.T) {
 			EnrichLogEvent(inputLogRecord)
 
 			assert.Empty(t, cmp.Diff(inputLogRecord.Attributes().AsRaw(), tc.expectedAttributes, ignoreMapKey("error.id")))
-			errorId, ok := inputLogRecord.Attributes().Get("error.id")
-			if !ok {
-				assert.Fail(t, "error.id not found")
+			eventName, ok := inputLogRecord.Attributes().Get("event.name")
+			if ok && eventName.AsString() == "device.crash" {
+				errorId, ok := inputLogRecord.Attributes().Get("error.id")
+				if !ok {
+					assert.Fail(t, "error.id not found")
+				}
+				assert.Equal(t, 32, len(errorId.AsString()))
 			}
-			assert.Equal(t, 32, len(errorId.AsString()))
 		})
 	}
 }
