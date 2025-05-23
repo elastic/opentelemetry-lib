@@ -10,7 +10,7 @@ import (
 )
 
 func EnrichLogEvent(eventName string, logRecord plog.LogRecord) {
-	logRecord.Attributes().PutStr("event.kind", "event")
+	logRecord.Attributes().PutStr(elasticattr.EventKind, "event")
 
 	if eventName == "device.crash" {
 		enrichCrashEvent(logRecord)
@@ -25,13 +25,13 @@ func enrichCrashEvent(logRecord plog.LogRecord) {
 	logRecord.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
 	logRecord.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(timestamp))
 	if id, err := newUniqueID(); err == nil {
-		logRecord.Attributes().PutStr("error.id", id)
+		logRecord.Attributes().PutStr(elasticattr.ErrorID, id)
 	}
 	stacktrace, ok := logRecord.Attributes().Get("exception.stacktrace")
 	if ok {
-		logRecord.Attributes().PutStr("error.grouping_key", CreateGroupingKey(stacktrace.AsString()))
+		logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateGroupingKey(stacktrace.AsString()))
 	}
-	logRecord.Attributes().PutStr("error.type", "crash")
+	logRecord.Attributes().PutStr(elasticattr.ErrorType, "crash")
 }
 
 func newUniqueID() (string, error) {
