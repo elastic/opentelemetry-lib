@@ -9,7 +9,15 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-func EnrichLogEvent(logRecord plog.LogRecord) {
+func EnrichLogEvent(eventName string, logRecord plog.LogRecord) {
+	logRecord.Attributes().PutStr("event.kind", "event")
+
+	if eventName == "device.crash" {
+		enrichCrashEvent(logRecord)
+	}
+}
+
+func enrichCrashEvent(logRecord plog.LogRecord) {
 	timestamp := logRecord.Timestamp()
 	if timestamp == 0 {
 		timestamp = logRecord.ObservedTimestamp()

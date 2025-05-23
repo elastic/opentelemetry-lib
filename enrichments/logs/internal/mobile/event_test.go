@@ -20,11 +20,13 @@ func TestEnrichEvents(t *testing.T) {
 
 	for _, tc := range []struct {
 		name               string
+		eventName          string
 		input              func() plog.LogRecord
 		expectedAttributes map[string]any
 	}{
 		{
-			name: "crash_event",
+			name:      "crash_event",
+			eventName: "device.crash",
 			input: func() plog.LogRecord {
 				logRecord := plog.NewLogRecord()
 				logRecord.SetTimestamp(timestamp)
@@ -39,10 +41,12 @@ func TestEnrichEvents(t *testing.T) {
 				"timestamp.us":       timestamp.AsTime().UnixMicro(),
 				"error.grouping_key": stacktraceHash,
 				"error.type":         "crash",
+				"event.kind":         "event",
 			},
 		},
 		{
-			name: "crash_event_without_timestamp",
+			name:      "crash_event_without_timestamp",
+			eventName: "device.crash",
 			input: func() plog.LogRecord {
 				logRecord := plog.NewLogRecord()
 				logRecord.SetObservedTimestamp(timestamp)
@@ -57,16 +61,20 @@ func TestEnrichEvents(t *testing.T) {
 				"timestamp.us":       timestamp.AsTime().UnixMicro(),
 				"error.grouping_key": stacktraceHash,
 				"error.type":         "crash",
+				"event.kind":         "event",
 			},
 		},
 		{
-			name: "non_crash_event",
+			name:      "non_crash_event",
+			eventName: "othername",
 			input: func() plog.LogRecord {
 				logRecord := plog.NewLogRecord()
 				logRecord.Attributes().PutStr("event.name", "othername")
 				return logRecord
 			},
-			expectedAttributes: map[string]any{},
+			expectedAttributes: map[string]any{
+				"event.kind": "event",
+			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -74,16 +82,15 @@ func TestEnrichEvents(t *testing.T) {
 
 			maps.Copy(tc.expectedAttributes, inputLogRecord.Attributes().AsRaw())
 
-			EnrichLogEvent(inputLogRecord)
+			EnrichLogEvent(tc.eventName, inputLogRecord)
 
 			assert.Empty(t, cmp.Diff(inputLogRecord.Attributes().AsRaw(), tc.expectedAttributes, ignoreMapKey("error.id")))
-			eventName, ok := inputLogRecord.Attributes().Get("event.name")
-			if ok && eventName.AsString() == "device.crash" {
-				errorId, ok := inputLogRecord.Attributes().Get("error.id")
-				if !ok {
-					assert.Fail(t, "error.id not found")
-				}
+			errorId, ok := inputLogRecord.Attributes().Get("error.id")
+			if ok {
+				assert.Equal(t, "device.crash", tc.eventName)
 				assert.Equal(t, 32, len(errorId.AsString()))
+			} else {
+				assert.NotEqual(t, "device.crash", tc.eventName)
 			}
 		})
 	}

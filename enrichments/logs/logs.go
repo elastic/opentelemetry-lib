@@ -29,8 +29,23 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 		for j := 0; j < scopeLogs.Len(); j++ {
 			logRecords := scopeLogs.At(j).LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
-				mobile.EnrichLogEvent(logRecords.At(k))
+				logRecord := logRecords.At(k)
+				eventName, ok := getEventName(logRecord)
+				if ok {
+					mobile.EnrichLogEvent(eventName, logRecord)
+				}
 			}
 		}
 	}
+}
+
+func getEventName(logRecord plog.LogRecord) (string, bool) {
+	if logRecord.EventName() != "" {
+		return logRecord.EventName(), true
+	}
+	attributeValue, ok := logRecord.Attributes().Get("event.name")
+	if ok {
+		return attributeValue.AsString(), true
+	}
+	return "", false
 }

@@ -53,3 +53,12 @@ resourceLogs:
             - key: some.map.key
               value:
                 stringValue: some value
+
+    - timeUnixNano: '1544712660400000000'
+      attributes:
+      - key: event.name
+        value:
+          stringValue: attribute.event
+
+    - timeUnixNano: '1544712660400000000'
+      eventName: field.name
