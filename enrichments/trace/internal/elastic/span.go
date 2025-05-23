@@ -238,7 +238,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	cfg config.ElasticTransactionConfig,
 ) {
 	if cfg.TimestampUs.Enabled {
-		span.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
+		span.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Sampled.Enabled {
 		span.Attributes().PutBool(elasticattr.TransactionSampled, s.getSampled())
@@ -288,7 +288,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 	var spanType, spanSubtype string
 
 	if cfg.TimestampUs.Enabled {
-		span.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
+		span.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(span.StartTimestamp()))
 	}
 	if cfg.Name.Enabled {
 		span.Attributes().PutStr(elasticattr.SpanName, span.Name())
@@ -598,7 +598,7 @@ func (s *spanEventEnrichmentContext) enrich(
 
 	// Enrich span event attributes.
 	if cfg.TimestampUs.Enabled {
-		se.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(se.Timestamp()))
+		se.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(se.Timestamp()))
 	}
 	if cfg.ProcessorEvent.Enabled && s.exception {
 		se.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
@@ -741,10 +741,6 @@ func getHostPort(
 		return net.JoinHostPort(fallbackServerAddress, strconv.FormatInt(fallbackServerPort, 10))
 	}
 	return ""
-}
-
-func getTimestampUs(ts pcommon.Timestamp) int64 {
-	return int64(ts) / 1000
 }
 
 var standardStatusCodeResults = [...]string{
