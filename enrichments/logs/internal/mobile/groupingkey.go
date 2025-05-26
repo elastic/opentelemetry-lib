@@ -21,6 +21,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"regexp"
+	"strings"
 )
 
 func CreateGroupingKey(stacktrace string) string {
@@ -29,8 +30,19 @@ func CreateGroupingKey(stacktrace string) string {
 }
 
 func curateStacktrace(stacktrace string) string {
-	nonMessagePattern := regexp.MustCompile(`(?m)^((?:Caused\sby:\s[^:]+)|(?:[^\s][^:]+))(:\s.+)?$`)
-	unwantedPattern := regexp.MustCompile(`[\r\n\s]+`)
-	withoutMessages := nonMessagePattern.ReplaceAllString(stacktrace, "$1")
-	return unwantedPattern.ReplaceAllString(withoutMessages, "")
+	errorOrCausePattern := regexp.MustCompile(`^((?:Caused\sby:\s[^:]+)|(?:[^\s][^:]+))(:\s.+)?$`)
+	callSitePattern := regexp.MustCompile(`^\s+at\s.+(:\d+)\)$`)
+	unwantedPattern := regexp.MustCompile(`\s+`)
+
+	curatedLines := regexp.MustCompile(`(m?).+`).ReplaceAllStringFunc(stacktrace, func(s string) string {
+		if errorOrCausePattern.MatchString(s) {
+			return errorOrCausePattern.ReplaceAllString(s, "$1")
+		}
+		if callSitePattern.MatchString(s) {
+			return strings.Replace(s, callSitePattern.FindStringSubmatch(s)[1], "", 1)
+		}
+		return s
+	})
+
+	return unwantedPattern.ReplaceAllString(curatedLines, "")
 }
