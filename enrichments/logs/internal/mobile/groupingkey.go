@@ -29,6 +29,6 @@ func CreateGroupingKey(stacktrace string) string {
 }
 
 func curateStacktrace(stacktrace string) string {
-	unwantedPattern := regexp.MustCompile(`(:\s.+)|[\r\n\s]+`)
+	unwantedPattern := regexp.MustCompile(`(:\s.+$)|[\r\n\s]+`)
 	return unwantedPattern.ReplaceAllString(stacktrace, "")
 }
