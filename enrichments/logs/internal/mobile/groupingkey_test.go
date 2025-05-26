@@ -34,7 +34,7 @@ func TestCurateStacktrace(t *testing.T) {
 	}{
 		{
 			name:        "standalone_stacktrace",
-			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt")},
+			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt"), readTestFile(t, "stacktrace1_c.txt")},
 			curated:     readTestFile(t, "curated_stacktrace1.txt"),
 		},
 		{
@@ -59,13 +59,13 @@ func TestCreateGroupingKey(t *testing.T) {
 	}{
 		{
 			name:        "standalone_stacktrace",
-			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt")},
-			expectedId:  "fbda93aa3a0ccb785da705ff03697bb7393cb0738e31c596e797b16ea2ba2f02",
+			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt"), readTestFile(t, "stacktrace1_c.txt")},
+			expectedId:  "d03a030670a234802514cc1e8a7ff74846d5890f5f41499109421bf1d58ab310",
 		},
 		{
 			name:        "stacktrace_with_cause",
 			stacktraces: []string{readTestFile(t, "stacktrace2_a.txt"), readTestFile(t, "stacktrace2_b.txt"), readTestFile(t, "stacktrace2_c.txt")},
-			expectedId:  "10b6726bc6d9aab69389b8b5dfbd9df1a6e08db75b0777b4f2d0456adeaed50e",
+			expectedId:  "b2f6079aa1ef7044f5f2d8a7fb33a71fc60b0067171f92164b87623bda26646b",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
