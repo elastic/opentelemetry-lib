@@ -33,7 +33,7 @@ func TestEnrichEvents(t *testing.T) {
 	now := time.Unix(3600, 0)
 	timestamp := pcommon.NewTimestampFromTime(now)
 	stacktrace := "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
-	stacktraceHash := "96b957020e07ac5c1ed7f86e7df9e3e393ede1284c2c52cb4e8e64f902d37833"
+	stacktraceHash := "0d5c9be62be0db506bbc5f968566cab21eefa57763e8502250722337b2819038"
 
 	for _, tc := range []struct {
 		name               string
