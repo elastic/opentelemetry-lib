@@ -25,17 +25,21 @@ import (
 	"github.com/cespare/xxhash/v2"
 )
 
+var (
+	// Regex patterns for stack trace processing
+	errorOrCausePattern = regexp.MustCompile(`^((?:Caused\sby:\s[^:]+)|(?:[^\s][^:]+))(:\s.+)?$`)
+	callSitePattern     = regexp.MustCompile(`^\s+at\s.+(:\d+)\)$`)
+	unwantedPattern     = regexp.MustCompile(`\s+`)
+	allLinesPattern     = regexp.MustCompile(`(m?).+`)
+)
+
 func CreateGroupingKey(stacktrace string) string {
 	hash := xxhash.Sum64String(curateStacktrace(stacktrace))
 	return fmt.Sprintf("%016x", hash)
 }
 
 func curateStacktrace(stacktrace string) string {
-	errorOrCausePattern := regexp.MustCompile(`^((?:Caused\sby:\s[^:]+)|(?:[^\s][^:]+))(:\s.+)?$`)
-	callSitePattern := regexp.MustCompile(`^\s+at\s.+(:\d+)\)$`)
-	unwantedPattern := regexp.MustCompile(`\s+`)
-
-	curatedLines := regexp.MustCompile(`(m?).+`).ReplaceAllStringFunc(stacktrace, func(s string) string {
+	curatedLines := allLinesPattern.ReplaceAllStringFunc(stacktrace, func(s string) string {
 		if errorOrCausePattern.MatchString(s) {
 			return errorOrCausePattern.ReplaceAllString(s, "$1")
 		}
