@@ -18,15 +18,16 @@
 package mobile
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
+	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/cespare/xxhash/v2"
 )
 
 func CreateGroupingKey(stacktrace string) string {
-	hashBytes := sha256.Sum256([]byte(curateStacktrace(stacktrace)))
-	return hex.EncodeToString(hashBytes[:])
+	hash := xxhash.Sum64String(curateStacktrace(stacktrace))
+	return fmt.Sprintf("%016x", hash)
 }
 
 func curateStacktrace(stacktrace string) string {

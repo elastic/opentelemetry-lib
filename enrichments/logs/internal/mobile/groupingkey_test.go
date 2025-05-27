@@ -60,12 +60,12 @@ func TestCreateGroupingKey(t *testing.T) {
 		{
 			name:        "standalone_stacktrace",
 			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt"), readTestFile(t, "stacktrace1_c.txt")},
-			expectedId:  "d03a030670a234802514cc1e8a7ff74846d5890f5f41499109421bf1d58ab310",
+			expectedId:  "e3d876640dd47864",
 		},
 		{
 			name:        "stacktrace_with_cause",
 			stacktraces: []string{readTestFile(t, "stacktrace2_a.txt"), readTestFile(t, "stacktrace2_b.txt"), readTestFile(t, "stacktrace2_c.txt")},
-			expectedId:  "b2f6079aa1ef7044f5f2d8a7fb33a71fc60b0067171f92164b87623bda26646b",
+			expectedId:  "390d84a9a633fa73",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
