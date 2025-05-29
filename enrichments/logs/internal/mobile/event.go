@@ -26,15 +26,21 @@ import (
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-func EnrichLogEvent(eventName string, logRecord plog.LogRecord) {
+// EventContext contains contextual information for log event enrichment
+type EventContext struct {
+	EventName          string
+	ResourceAttributes map[string]any
+}
+
+func EnrichLogEvent(ctx EventContext, logRecord plog.LogRecord) {
 	logRecord.Attributes().PutStr(elasticattr.EventKind, "event")
 
-	if eventName == "device.crash" {
-		enrichCrashEvent(logRecord)
+	if ctx.EventName == "device.crash" {
+		enrichCrashEvent(logRecord, ctx.ResourceAttributes)
 	}
 }
 
-func enrichCrashEvent(logRecord plog.LogRecord) {
+func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 	timestamp := logRecord.Timestamp()
 	if timestamp == 0 {
 		timestamp = logRecord.ObservedTimestamp()
@@ -46,7 +52,10 @@ func enrichCrashEvent(logRecord plog.LogRecord) {
 	}
 	stacktrace, ok := logRecord.Attributes().Get("exception.stacktrace")
 	if ok {
-		logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateGroupingKey(stacktrace.AsString()))
+		language, hasLanguage := resourceAttrs["telemetry.sdk.language"]
+		if hasLanguage && language == "java" {
+			logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateGroupingKey(stacktrace.AsString()))
+		}
 	}
 	logRecord.Attributes().PutStr(elasticattr.ErrorType, "crash")
 }

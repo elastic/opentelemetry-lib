@@ -39,11 +39,15 @@ func TestEnrichEvents(t *testing.T) {
 		name               string
 		eventName          string
 		input              func() plog.LogRecord
+		resourceAttrs      map[string]any
 		expectedAttributes map[string]any
 	}{
 		{
-			name:      "crash_event",
+			name:      "crash_event_java",
 			eventName: "device.crash",
+			resourceAttrs: map[string]any{
+				"telemetry.sdk.language": "java",
+			},
 			input: func() plog.LogRecord {
 				logRecord := plog.NewLogRecord()
 				logRecord.SetTimestamp(timestamp)
@@ -62,8 +66,11 @@ func TestEnrichEvents(t *testing.T) {
 			},
 		},
 		{
-			name:      "crash_event_without_timestamp",
+			name:      "crash_event_without_timestamp_java",
 			eventName: "device.crash",
+			resourceAttrs: map[string]any{
+				"telemetry.sdk.language": "java",
+			},
 			input: func() plog.LogRecord {
 				logRecord := plog.NewLogRecord()
 				logRecord.SetObservedTimestamp(timestamp)
@@ -82,8 +89,31 @@ func TestEnrichEvents(t *testing.T) {
 			},
 		},
 		{
-			name:      "non_crash_event",
-			eventName: "othername",
+			name:      "crash_event_non_java",
+			eventName: "device.crash",
+			resourceAttrs: map[string]any{
+				"telemetry.sdk.language": "go",
+			},
+			input: func() plog.LogRecord {
+				logRecord := plog.NewLogRecord()
+				logRecord.SetTimestamp(timestamp)
+				logRecord.Attributes().PutStr("event.name", "device.crash")
+				logRecord.Attributes().PutStr("exception.message", "Exception message")
+				logRecord.Attributes().PutStr("exception.type", "go.error")
+				logRecord.Attributes().PutStr("exception.stacktrace", stacktrace)
+				return logRecord
+			},
+			expectedAttributes: map[string]any{
+				"processor.event": "error",
+				"timestamp.us":    timestamp.AsTime().UnixMicro(),
+				"error.type":      "crash",
+				"event.kind":      "event",
+			},
+		},
+		{
+			name:          "non_crash_event",
+			eventName:     "othername",
+			resourceAttrs: map[string]any{},
 			input: func() plog.LogRecord {
 				logRecord := plog.NewLogRecord()
 				logRecord.Attributes().PutStr("event.name", "othername")
@@ -99,7 +129,11 @@ func TestEnrichEvents(t *testing.T) {
 
 			maps.Copy(tc.expectedAttributes, inputLogRecord.Attributes().AsRaw())
 
-			EnrichLogEvent(tc.eventName, inputLogRecord)
+			ctx := EventContext{
+				EventName:          tc.eventName,
+				ResourceAttributes: tc.resourceAttrs,
+			}
+			EnrichLogEvent(ctx, inputLogRecord)
 
 			assert.Empty(t, cmp.Diff(inputLogRecord.Attributes().AsRaw(), tc.expectedAttributes, ignoreMapKey("error.id")))
 			errorId, ok := inputLogRecord.Attributes().Get("error.id")
