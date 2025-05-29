@@ -51,8 +51,8 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 				eventName, ok := getEventName(logRecord)
 				if ok {
 					ctx := mobile.EventContext{
-						EventName:          eventName,
 						ResourceAttributes: res.Attributes().AsRaw(),
+						EventName:          eventName,
 					}
 					mobile.EnrichLogEvent(ctx, logRecord)
 				}

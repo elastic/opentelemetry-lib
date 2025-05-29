@@ -28,8 +28,8 @@ import (
 
 // EventContext contains contextual information for log event enrichment
 type EventContext struct {
-	EventName          string
 	ResourceAttributes map[string]any
+	EventName          string
 }
 
 func EnrichLogEvent(ctx EventContext, logRecord plog.LogRecord) {

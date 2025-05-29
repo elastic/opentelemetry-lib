@@ -130,8 +130,8 @@ func TestEnrichEvents(t *testing.T) {
 			maps.Copy(tc.expectedAttributes, inputLogRecord.Attributes().AsRaw())
 
 			ctx := EventContext{
-				EventName:          tc.eventName,
 				ResourceAttributes: tc.resourceAttrs,
+				EventName:          tc.eventName,
 			}
 			EnrichLogEvent(ctx, inputLogRecord)
 
