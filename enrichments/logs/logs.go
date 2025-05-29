@@ -41,8 +41,9 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 
 	for i := 0; i < resourceLogs.Len(); i++ {
 		resourceLog := resourceLogs.At(i)
-		res := resourceLog.Resource()
-		resource.EnrichResource(res, resourceConfig)
+		logsResource := resourceLog.Resource()
+		resource.EnrichResource(logsResource, resourceConfig)
+		resourceAttrs := logsResource.Attributes().AsRaw()
 		scopeLogs := resourceLog.ScopeLogs()
 		for j := 0; j < scopeLogs.Len(); j++ {
 			logRecords := scopeLogs.At(j).LogRecords()
@@ -51,7 +52,7 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 				eventName, ok := getEventName(logRecord)
 				if ok {
 					ctx := mobile.EventContext{
-						ResourceAttributes: res.Attributes().AsRaw(),
+						ResourceAttributes: resourceAttrs,
 						EventName:          eventName,
 					}
 					mobile.EnrichLogEvent(ctx, logRecord)
