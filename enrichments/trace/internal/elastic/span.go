@@ -35,8 +35,8 @@ import (
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
-	semconv27 "go.opentelemetry.io/collector/semconv/v1.27.0"
+	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
+	semconv27 "go.opentelemetry.io/otel/semconv/v1.27.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
@@ -112,94 +112,94 @@ func (s *spanEnrichmentContext) Enrich(
 	// Extract information from span attributes.
 	span.Attributes().Range(func(k string, v pcommon.Value) bool {
 		switch k {
-		case semconv25.AttributePeerService:
+		case string(semconv25.PeerServiceKey):
 			s.peerService = v.Str()
-		case semconv25.AttributeServerAddress:
+		case string(semconv25.ServerAddressKey):
 			s.serverAddress = v.Str()
-		case semconv25.AttributeServerPort:
+		case string(semconv25.ServerPortKey):
 			s.serverPort = v.Int()
-		case semconv25.AttributeNetPeerName:
+		case string(semconv25.NetPeerNameKey):
 			if s.serverAddress == "" {
 				// net.peer.name is deprecated, so has lower priority
 				// only set when not already set with server.address
 				// and allowed to be overridden by server.address.
 				s.serverAddress = v.Str()
 			}
-		case semconv25.AttributeNetPeerPort:
+		case string(semconv25.NetPeerPortKey):
 			if s.serverPort == 0 {
 				// net.peer.port is deprecated, so has lower priority
 				// only set when not already set with server.port and
 				// allowed to be overridden by server.port.
 				s.serverPort = v.Int()
 			}
-		case semconv25.AttributeMessagingDestinationName:
+		case string(semconv25.MessagingDestinationNameKey):
 			s.isMessaging = true
 			s.messagingDestinationName = v.Str()
-		case semconv25.AttributeMessagingOperation:
+		case string(semconv25.MessagingOperationKey):
 			s.isMessaging = true
-		case semconv25.AttributeMessagingSystem:
+		case string(semconv25.MessagingSystemKey):
 			s.isMessaging = true
 			s.messagingSystem = v.Str()
-		case semconv25.AttributeMessagingDestinationTemporary:
+		case string(semconv25.MessagingDestinationTemporaryKey):
 			s.isMessaging = true
 			s.messagingDestinationTemp = true
-		case semconv25.AttributeHTTPStatusCode,
-			semconv25.AttributeHTTPResponseStatusCode:
+		case string(semconv25.HTTPStatusCodeKey),
+			string(semconv25.HTTPResponseStatusCodeKey):
 			s.isHTTP = true
 			s.httpStatusCode = v.Int()
-		case semconv25.AttributeHTTPMethod,
-			semconv25.AttributeHTTPRequestMethod,
-			semconv25.AttributeHTTPTarget,
-			semconv25.AttributeHTTPScheme,
-			semconv25.AttributeHTTPFlavor,
-			semconv25.AttributeNetHostName:
+		case string(semconv25.HTTPMethodKey),
+			string(semconv25.HTTPRequestMethodKey),
+			string(semconv25.HTTPTargetKey),
+			string(semconv25.HTTPSchemeKey),
+			string(semconv25.HTTPFlavorKey),
+			string(semconv25.NetHostNameKey):
 			s.isHTTP = true
-		case semconv25.AttributeURLFull,
-			semconv25.AttributeHTTPURL:
+		case string(semconv25.URLFullKey),
+			string(semconv25.HTTPURLKey):
 			s.isHTTP = true
 			// ignoring error as if parse fails then we don't want the url anyway
 			s.urlFull, _ = url.Parse(v.Str())
-		case semconv25.AttributeURLScheme:
+		case string(semconv25.URLSchemeKey):
 			s.isHTTP = true
 			s.urlScheme = v.Str()
-		case semconv25.AttributeURLDomain:
+		case string(semconv25.URLDomainKey):
 			s.isHTTP = true
 			s.urlDomain = v.Str()
-		case semconv25.AttributeURLPort:
+		case string(semconv25.URLPortKey):
 			s.isHTTP = true
 			s.urlPort = v.Int()
-		case semconv25.AttributeURLPath:
+		case string(semconv25.URLPathKey):
 			s.isHTTP = true
 			s.urlPath = v.Str()
-		case semconv25.AttributeURLQuery:
+		case string(semconv25.URLQueryKey):
 			s.isHTTP = true
 			s.urlQuery = v.Str()
-		case semconv25.AttributeRPCGRPCStatusCode:
+		case string(semconv25.RPCGRPCStatusCodeKey):
 			s.isRPC = true
 			s.grpcStatus = codes.Code(v.Int()).String()
-		case semconv25.AttributeRPCSystem:
+		case string(semconv25.RPCSystemKey):
 			s.isRPC = true
 			s.rpcSystem = v.Str()
-		case semconv25.AttributeRPCService:
+		case string(semconv25.RPCServiceKey):
 			s.isRPC = true
 			s.rpcService = v.Str()
-		case semconv25.AttributeDBStatement,
-			semconv25.AttributeDBUser:
+		case string(semconv25.DBStatementKey),
+			string(semconv25.DBUserKey):
 			s.isDB = true
-		case semconv25.AttributeDBName:
+		case string(semconv25.DBNameKey):
 			s.isDB = true
 			s.dbName = v.Str()
-		case semconv25.AttributeDBSystem:
+		case string(semconv25.DBSystemKey):
 			s.isDB = true
 			s.dbSystem = v.Str()
-		case semconv27.AttributeGenAiSystem:
+		case string(semconv27.GenAISystemKey):
 			s.isGenAi = true
 			s.genAiSystem = v.Str()
-		case semconv27.AttributeUserAgentOriginal:
+		case string(semconv27.UserAgentOriginalKey):
 			s.userAgentOriginal = v.Str()
-		case semconv27.AttributeUserAgentName:
+		case string(semconv27.UserAgentNameKey):
 			s.userAgentName = v.Str()
-		case semconv27.AttributeUserAgentVersion:
+		case string(semconv27.UserAgentVersionKey):
 			s.userAgentVersion = v.Str()
 		case "type":
 			s.typeValue = v.Str()
@@ -560,10 +560,16 @@ func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
 
 func (s *spanEnrichmentContext) setUserAgentIfRequired(span ptrace.Span) {
 	if s.userAgentName == "" && s.inferredUserAgentName != "" {
-		span.Attributes().PutStr(semconv27.AttributeUserAgentName, s.inferredUserAgentName)
+		span.Attributes().PutStr(
+			string(semconv27.UserAgentNameKey),
+			s.inferredUserAgentName,
+		)
 	}
 	if s.userAgentVersion == "" && s.inferredUserAgentVersion != "" {
-		span.Attributes().PutStr(semconv27.AttributeUserAgentVersion, s.inferredUserAgentVersion)
+		span.Attributes().PutStr(
+			string(semconv27.UserAgentVersionKey),
+			s.inferredUserAgentVersion,
+		)
 	}
 }
 
@@ -585,11 +591,11 @@ func (s *spanEventEnrichmentContext) enrich(
 	if s.exception {
 		se.Attributes().Range(func(k string, v pcommon.Value) bool {
 			switch k {
-			case semconv25.AttributeExceptionEscaped:
+			case string(semconv25.ExceptionEscapedKey):
 				s.exceptionEscaped = v.Bool()
-			case semconv25.AttributeExceptionType:
+			case string(semconv25.ExceptionTypeKey):
 				s.exceptionType = v.Str()
-			case semconv25.AttributeExceptionMessage:
+			case string(semconv25.ExceptionMessageKey):
 				s.exceptionMessage = v.Str()
 			}
 			return true

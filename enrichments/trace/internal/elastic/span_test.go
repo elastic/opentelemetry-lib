@@ -32,8 +32,8 @@ import (
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
-	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
-	semconv27 "go.opentelemetry.io/collector/semconv/v1.27.0"
+	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
+	semconv27 "go.opentelemetry.io/otel/semconv/v1.27.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
@@ -116,7 +116,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticTxn()
 				span.SetName("testtxn")
-				span.Attributes().PutInt(semconv25.AttributeHTTPStatusCode, http.StatusOK)
+				span.Attributes().PutInt(string(semconv25.HTTPStatusCodeKey), http.StatusOK)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -144,7 +144,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
-					semconv25.AttributeHTTPResponseStatusCode,
+					string(semconv25.HTTPResponseStatusCodeKey),
 					http.StatusProcessing,
 				)
 				return span
@@ -175,7 +175,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				// for setting event.outcome
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
-					semconv25.AttributeHTTPStatusCode, http.StatusInternalServerError)
+					string(semconv25.HTTPStatusCodeKey), http.StatusInternalServerError)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -203,7 +203,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
-					semconv25.AttributeRPCGRPCStatusCode,
+					string(semconv25.RPCGRPCStatusCodeKey),
 					int64(codes.OK),
 				)
 				return span
@@ -233,7 +233,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				// attributes should be preferred over span status for txn result
 				span.Status().SetCode(ptrace.StatusCodeOk)
 				span.Attributes().PutInt(
-					semconv25.AttributeRPCGRPCStatusCode,
+					string(semconv25.RPCGRPCStatusCodeKey),
 					int64(codes.Internal),
 				)
 				return span
@@ -310,7 +310,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				span := getElasticTxn()
 				span.SetName("testtxn")
 				span.SetSpanID([8]byte{1})
-				span.Attributes().PutStr(semconv25.AttributeMessagingSystem, "kafka")
+				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "kafka")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -375,7 +375,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticTxn()
 				span.SetName("testtxn")
-				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
+				span.Attributes().PutStr(string(semconv27.UserAgentOriginalKey), "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -392,8 +392,8 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.TransactionResult:              "Success",
 				elasticattr.TransactionType:                "unknown",
-				semconv27.AttributeUserAgentName:           "Firefox",
-				semconv27.AttributeUserAgentVersion:        "126.0",
+				string(semconv27.UserAgentNameKey):         "Firefox",
+				string(semconv27.UserAgentVersionKey):      "126.0",
 			},
 		},
 		{
@@ -401,11 +401,11 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticTxn()
 				span.SetName("testtxn")
-				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
+				span.Attributes().PutStr(string(semconv27.UserAgentOriginalKey), "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
 				// In practical situations the user_agent.{name, version} should be derived from the
 				// original user agent, however, for testing we are setting different values.
-				span.Attributes().PutStr(semconv27.AttributeUserAgentName, "Chrome")
-				span.Attributes().PutStr(semconv27.AttributeUserAgentVersion, "51.0.2704")
+				span.Attributes().PutStr(string(semconv27.UserAgentNameKey), "Chrome")
+				span.Attributes().PutStr(string(semconv27.UserAgentVersionKey), "51.0.2704")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -423,8 +423,8 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionResult:              "Success",
 				elasticattr.TransactionType:                "unknown",
 				// If user_agent.{name, version} are already set then don't override them.
-				semconv27.AttributeUserAgentName:    "Chrome",
-				semconv27.AttributeUserAgentVersion: "51.0.2704",
+				string(semconv27.UserAgentNameKey):    "Chrome",
+				string(semconv27.UserAgentVersionKey): "51.0.2704",
 			},
 		},
 		{
@@ -460,7 +460,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticMobileTxn()
 				span.SetName("testtxn")
-				span.Attributes().PutInt(semconv25.AttributeHTTPStatusCode, http.StatusOK)
+				span.Attributes().PutInt(string(semconv25.HTTPStatusCodeKey), http.StatusOK)
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -519,10 +519,10 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				span.SetName("rootClientSpan")
 				span.SetSpanID([8]byte{1})
 				span.SetKind(ptrace.SpanKindClient)
-				span.Attributes().PutStr(semconv27.AttributeHTTPRequestMethod, "GET")
-				span.Attributes().PutStr(semconv27.AttributeURLFull, "http://localhost:8080")
-				span.Attributes().PutInt(semconv27.AttributeHTTPResponseStatusCode, 200)
-				span.Attributes().PutStr(semconv27.AttributeNetworkProtocolVersion, "1.1")
+				span.Attributes().PutStr(string(semconv27.HTTPRequestMethodKey), "GET")
+				span.Attributes().PutStr(string(semconv27.URLFullKey), "http://localhost:8080")
+				span.Attributes().PutInt(string(semconv27.HTTPResponseStatusCodeKey), 200)
+				span.Attributes().PutStr(string(semconv27.NetworkProtocolVersionKey), "1.1")
 				return span
 			}(),
 			config: config.Enabled(),
@@ -556,11 +556,10 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				span.SetName("rootClientSpan")
 				span.SetSpanID([8]byte{1})
 				span.SetKind(ptrace.SpanKindClient)
-				span.Attributes().PutStr(semconv25.AttributeDBSystem, "mssql")
-
-				span.Attributes().PutStr(semconv25.AttributeDBName, "myDb")
-				span.Attributes().PutStr(semconv25.AttributeDBOperation, "SELECT")
-				span.Attributes().PutStr(semconv25.AttributeDBStatement, "SELECT * FROM wuser_table")
+				span.Attributes().PutStr(string(semconv25.DBSystemKey), "mssql")
+				span.Attributes().PutStr(string(semconv25.DBNameKey), "myDb")
+				span.Attributes().PutStr(string(semconv25.DBOperationKey), "SELECT")
+				span.Attributes().PutStr(string(semconv25.DBStatementKey), "SELECT * FROM wuser_table")
 				return span
 			}(),
 			config: config.Enabled(),
@@ -595,12 +594,12 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				span.SetSpanID([8]byte{1})
 				span.SetKind(ptrace.SpanKindProducer)
 
-				span.Attributes().PutStr(semconv25.AttributeServerAddress, "myServer")
-				span.Attributes().PutStr(semconv25.AttributeServerPort, "1234")
-				span.Attributes().PutStr(semconv25.AttributeMessagingSystem, "rabbitmq")
-				span.Attributes().PutStr(semconv25.AttributeMessagingDestinationName, "T")
-				span.Attributes().PutStr(semconv25.AttributeMessagingOperation, "publish")
-				span.Attributes().PutStr(semconv25.AttributeMessagingClientID, "a")
+				span.Attributes().PutStr(string(semconv25.ServerAddressKey), "myServer")
+				span.Attributes().PutStr(string(semconv25.ServerPortKey), "1234")
+				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "rabbitmq")
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "T")
+				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "publish")
+				span.Attributes().PutStr(string(semconv25.MessagingClientIDKey), "a")
 				return span
 			}(),
 			config: config.Enabled(),
@@ -638,12 +637,12 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				span.SetKind(ptrace.SpanKindProducer)
 				// Adding parent id to make sure this is not a root span.
 				span.SetParentSpanID([8]byte{1, 2, 3, 4, 5, 6, 7, 8})
-				span.Attributes().PutStr(semconv25.AttributeServerAddress, "myServer")
-				span.Attributes().PutStr(semconv25.AttributeServerPort, "1234")
-				span.Attributes().PutStr(semconv25.AttributeMessagingSystem, "rabbitmq")
-				span.Attributes().PutStr(semconv25.AttributeMessagingDestinationName, "T")
-				span.Attributes().PutStr(semconv25.AttributeMessagingOperation, "publish")
-				span.Attributes().PutStr(semconv25.AttributeMessagingClientID, "a")
+				span.Attributes().PutStr(string(semconv25.ServerAddressKey), "myServer")
+				span.Attributes().PutStr(string(semconv25.ServerPortKey), "1234")
+				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "rabbitmq")
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "T")
+				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "publish")
+				span.Attributes().PutStr(string(semconv25.MessagingClientIDKey), "a")
 				return span
 			}(),
 			config: config.Enabled(),
@@ -670,10 +669,10 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				span.SetSpanID([8]byte{1})
 				span.SetKind(ptrace.SpanKindClient)
 				span.Attributes().PutStr("type", "mobile")
-				span.Attributes().PutStr(semconv27.AttributeHTTPRequestMethod, "GET")
-				span.Attributes().PutStr(semconv27.AttributeURLFull, "http://localhost:8080")
-				span.Attributes().PutInt(semconv27.AttributeHTTPResponseStatusCode, 200)
-				span.Attributes().PutStr(semconv27.AttributeNetworkProtocolVersion, "1.1")
+				span.Attributes().PutStr(string(semconv27.HTTPRequestMethodKey), "GET")
+				span.Attributes().PutStr(string(semconv27.URLFullKey), "http://localhost:8080")
+				span.Attributes().PutInt(string(semconv27.HTTPResponseStatusCodeKey), 200)
+				span.Attributes().PutStr(string(semconv27.NetworkProtocolVersionKey), "1.1")
 				return span
 			}(),
 			config: config.Enabled(),
@@ -793,7 +792,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -816,9 +815,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutInt(
-					semconv25.AttributeHTTPResponseStatusCode,
+					string(semconv25.HTTPResponseStatusCodeKey),
 					http.StatusOK,
 				)
 				return span
@@ -846,13 +845,13 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutInt(
-					semconv25.AttributeHTTPResponseStatusCode,
+					string(semconv25.HTTPResponseStatusCodeKey),
 					http.StatusOK,
 				)
 				span.Attributes().PutStr(
-					semconv25.AttributeURLFull,
+					string(semconv25.URLFullKey),
 					"https://www.foo.bar:443/search?q=OpenTelemetry#SemConv",
 				)
 				return span
@@ -880,13 +879,13 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutInt(
-					semconv25.AttributeHTTPResponseStatusCode,
+					string(semconv25.HTTPResponseStatusCodeKey),
 					http.StatusOK,
 				)
 				span.Attributes().PutStr(
-					semconv25.AttributeHTTPURL,
+					string(semconv25.HTTPURLKey),
 					"https://www.foo.bar:443/search?q=OpenTelemetry#SemConv",
 				)
 				return span
@@ -914,13 +913,13 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutInt(
-					semconv25.AttributeHTTPResponseStatusCode,
+					string(semconv25.HTTPResponseStatusCodeKey),
 					http.StatusOK,
 				)
-				span.Attributes().PutStr(semconv25.AttributeURLDomain, "www.foo.bar")
-				span.Attributes().PutInt(semconv25.AttributeURLPort, 443)
+				span.Attributes().PutStr(string(semconv25.URLDomainKey), "www.foo.bar")
+				span.Attributes().PutInt(string(semconv25.URLPortKey), 443)
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -944,9 +943,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutInt(
-					semconv25.AttributeRPCGRPCStatusCode,
+					string(semconv25.RPCGRPCStatusCodeKey),
 					int64(codes.OK),
 				)
 				return span
@@ -972,8 +971,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
-				span.Attributes().PutStr(semconv25.AttributeRPCSystem, "xmlrpc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv25.RPCSystemKey), "xmlrpc")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -999,8 +998,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				// peer.service should be ignored if more specific deductions
 				// can be made about the service target.
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
-				span.Attributes().PutStr(semconv25.AttributeRPCService, "service.Test")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv25.RPCServiceKey), "service.Test")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1024,9 +1023,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				// No peer.service is set
-				span.Attributes().PutStr(semconv25.AttributeRPCService, "service.Test")
-				span.Attributes().PutStr(semconv25.AttributeServerAddress, "10.2.20.18")
-				span.Attributes().PutInt(semconv25.AttributeServerPort, 8081)
+				span.Attributes().PutStr(string(semconv25.RPCServiceKey), "service.Test")
+				span.Attributes().PutStr(string(semconv25.ServerAddressKey), "10.2.20.18")
+				span.Attributes().PutInt(string(semconv25.ServerPortKey), 8081)
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1050,9 +1049,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				// No peer.service is set
-				span.Attributes().PutStr(semconv25.AttributeRPCService, "service.Test")
-				span.Attributes().PutStr(semconv25.AttributeNetPeerName, "10.2.20.18")
-				span.Attributes().PutInt(semconv25.AttributeNetPeerPort, 8081)
+				span.Attributes().PutStr(string(semconv25.RPCServiceKey), "service.Test")
+				span.Attributes().PutStr(string(semconv25.NetPeerNameKey), "10.2.20.18")
+				span.Attributes().PutInt(string(semconv25.NetPeerPortKey), 8081)
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1075,8 +1074,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
-				span.Attributes().PutStr(semconv25.AttributeMessagingSystem, "kafka")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "kafka")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1100,8 +1099,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
-				span.Attributes().PutStr(semconv25.AttributeMessagingDestinationName, "t1")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "t1")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1124,9 +1123,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
-				span.Attributes().PutBool(semconv25.AttributeMessagingDestinationTemporary, true)
-				span.Attributes().PutStr(semconv25.AttributeMessagingDestinationName, "t1")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutBool(string(semconv25.MessagingDestinationTemporaryKey), true)
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "t1")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1149,15 +1148,12 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutStr(
-					semconv25.AttributeURLFull,
+					string(semconv25.URLFullKey),
 					"https://localhost:9200/index/_search?q=user.id:kimchy",
 				)
-				span.Attributes().PutStr(
-					semconv25.AttributeDBSystem,
-					semconv25.AttributeDBSystemElasticsearch,
-				)
+				span.Attributes().PutStr(string(semconv25.DBSystemKey), "elasticsearch")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1181,20 +1177,11 @@ func TestElasticSpanEnrich(t *testing.T) {
 			input: func() ptrace.Span {
 				span := getElasticSpan()
 				span.SetName("testspan")
-				span.Attributes().PutStr(semconv25.AttributePeerService, "testsvc")
-				span.Attributes().PutStr(
-					semconv25.AttributeRPCSystem,
-					semconv25.AttributeRPCSystemGRPC,
-				)
-				span.Attributes().PutStr(semconv25.AttributeRPCService, "cassandra.API")
-				span.Attributes().PutStr(
-					semconv25.AttributeRPCGRPCStatusCode,
-					semconv25.AttributeRPCGRPCStatusCodeOk,
-				)
-				span.Attributes().PutStr(
-					semconv25.AttributeDBSystem,
-					semconv25.AttributeDBSystemCassandra,
-				)
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv25.RPCSystemKey), "grpc")
+				span.Attributes().PutStr(string(semconv25.RPCServiceKey), "cassandra.API")
+				span.Attributes().PutInt(string(semconv25.RPCGRPCStatusCodeKey), 0)
+				span.Attributes().PutStr(string(semconv25.DBSystemKey), "cassandra")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1256,7 +1243,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				span.SetSpanID([8]byte{1})
-				span.Attributes().PutStr(semconv27.AttributeGenAiSystem, "openai")
+				span.Attributes().PutStr(string(semconv27.GenAISystemKey), "openai")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1279,8 +1266,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				// rpc.service should be used as destination.service.resource
 				// if no other attributes are present.
-				span.Attributes().PutStr(semconv25.AttributeRPCService, "myService")
-				span.Attributes().PutStr(semconv25.AttributeRPCSystem, "grpc")
+				span.Attributes().PutStr(string(semconv25.RPCServiceKey), "myService")
+				span.Attributes().PutStr(string(semconv25.RPCSystemKey), "grpc")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1305,21 +1292,21 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				span.SetSpanID([8]byte{1})
-				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604.1")
+				span.Attributes().PutStr(string(semconv27.UserAgentOriginalKey), "Mozilla/5.0 (iPhone; CPU iPhone OS 13_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604.1")
 				return span
 			}(),
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
-				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                "testspan",
-				elasticattr.ProcessorEvent:          "span",
-				elasticattr.SpanRepresentativeCount: float64(1),
-				elasticattr.SpanType:                "unknown",
-				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
-				elasticattr.EventOutcome:            "success",
-				elasticattr.SuccessCount:            int64(1),
-				semconv27.AttributeUserAgentName:    "Mobile Safari",
-				semconv27.AttributeUserAgentVersion: "13.1.1",
+				elasticattr.TimestampUs:               startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                  "testspan",
+				elasticattr.ProcessorEvent:            "span",
+				elasticattr.SpanRepresentativeCount:   float64(1),
+				elasticattr.SpanType:                  "unknown",
+				elasticattr.SpanDurationUs:            expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:              "success",
+				elasticattr.SuccessCount:              int64(1),
+				string(semconv27.UserAgentNameKey):    "Mobile Safari",
+				string(semconv27.UserAgentVersionKey): "13.1.1",
 			},
 		},
 		{
@@ -1328,11 +1315,11 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				span.SetSpanID([8]byte{1})
-				span.Attributes().PutStr(semconv27.AttributeUserAgentOriginal, "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
+				span.Attributes().PutStr(string(semconv27.UserAgentOriginalKey), "Mozilla/5.0 (X11; Linux x86_64; rv:126.0) Gecko/20100101 Firefox/126.0")
 				// In practical situations the user_agent.{name, version} should be derived from the
 				// original user agent, however, for testing we are setting different values.
-				span.Attributes().PutStr(semconv27.AttributeUserAgentName, "Chrome")
-				span.Attributes().PutStr(semconv27.AttributeUserAgentVersion, "51.0.2704")
+				span.Attributes().PutStr(string(semconv27.UserAgentNameKey), "Chrome")
+				span.Attributes().PutStr(string(semconv27.UserAgentVersionKey), "51.0.2704")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1346,8 +1333,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
 				// If user_agent.{name, version} are already set then don't override them.
-				semconv27.AttributeUserAgentName:    "Chrome",
-				semconv27.AttributeUserAgentVersion: "51.0.2704",
+				string(semconv27.UserAgentNameKey):    "Chrome",
+				string(semconv27.UserAgentVersionKey): "51.0.2704",
 			},
 		},
 	} {
@@ -1410,9 +1397,9 @@ func TestSpanEventEnrich(t *testing.T) {
 				event := ptrace.NewSpanEvent()
 				event.SetName("exception")
 				event.SetTimestamp(ts)
-				event.Attributes().PutStr(semconv25.AttributeExceptionType, "java.net.ConnectionError")
-				event.Attributes().PutStr(semconv25.AttributeExceptionMessage, "something is wrong")
-				event.Attributes().PutStr(semconv25.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
+				event.Attributes().PutStr(string(semconv25.ExceptionTypeKey), "java.net.ConnectionError")
+				event.Attributes().PutStr(string(semconv25.ExceptionMessageKey), "something is wrong")
+				event.Attributes().PutStr(string(semconv25.ExceptionStacktraceKey), `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
 				return event
 			}(),
 			config:  config.Enabled().SpanEvent,
@@ -1443,9 +1430,9 @@ func TestSpanEventEnrich(t *testing.T) {
 				event := ptrace.NewSpanEvent()
 				event.SetName("exception")
 				event.SetTimestamp(ts)
-				event.Attributes().PutStr(semconv25.AttributeExceptionType, "java.net.ConnectionError")
-				event.Attributes().PutStr(semconv25.AttributeExceptionMessage, "something is wrong")
-				event.Attributes().PutStr(semconv25.AttributeExceptionStacktrace, `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
+				event.Attributes().PutStr(string(semconv25.ExceptionTypeKey), "java.net.ConnectionError")
+				event.Attributes().PutStr(string(semconv25.ExceptionMessageKey), "something is wrong")
+				event.Attributes().PutStr(string(semconv25.ExceptionStacktraceKey), `Exception in thread "main" java.lang.RuntimeException: Test exception\\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\\n at com.example.GenerateTrace.main(GenerateTrace.java:5)`)
 				return event
 			}(),
 			config:  config.Enabled().SpanEvent,

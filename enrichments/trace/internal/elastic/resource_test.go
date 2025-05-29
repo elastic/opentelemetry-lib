@@ -25,8 +25,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
-	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
+	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 )
 
 func TestResourceEnrich(t *testing.T) {
@@ -54,7 +54,7 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -67,8 +67,8 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_distro_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
-				res.Attributes().PutStr(semconv.AttributeTelemetryDistroName, "elastic")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -81,9 +81,9 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_distro_lang_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKLanguage, "cpp")
-				res.Attributes().PutStr(semconv.AttributeTelemetryDistroName, "elastic")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "cpp")
+				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -96,7 +96,7 @@ func TestResourceEnrich(t *testing.T) {
 			name: "lang_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKLanguage, "cpp")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "cpp")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -109,8 +109,8 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_lang_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKLanguage, "cpp")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "cpp")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -123,8 +123,8 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_sdkver_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKVersion, "9.999.9")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKVersionKey), "9.999.9")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -137,9 +137,9 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_sdkver_distroname_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKVersion, "9.999.9")
-				res.Attributes().PutStr(semconv.AttributeTelemetryDistroName, "elastic")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKVersionKey), "9.999.9")
+				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -152,10 +152,10 @@ func TestResourceEnrich(t *testing.T) {
 			name: "sdkname_sdkver_distroname_distrover_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKName, "customflavor")
-				res.Attributes().PutStr(semconv.AttributeTelemetrySDKVersion, "9.999.9")
-				res.Attributes().PutStr(semconv.AttributeTelemetryDistroName, "elastic")
-				res.Attributes().PutStr(semconv.AttributeTelemetryDistroVersion, "1.2.3")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKVersionKey), "9.999.9")
+				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
+				res.Attributes().PutStr(string(semconv.TelemetryDistroVersionKey), "1.2.3")
 				return res
 			}(),
 			config: config.Enabled().Resource,
@@ -168,31 +168,31 @@ func TestResourceEnrich(t *testing.T) {
 			name: "host_name_override_with_k8s_node_name",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeHostName, "test-host")
-				res.Attributes().PutStr(semconv.AttributeK8SNodeName, "k8s-node")
+				res.Attributes().PutStr(string(semconv.HostNameKey), "test-host")
+				res.Attributes().PutStr(string(semconv.K8SNodeNameKey), "k8s-node")
 				return res
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				semconv.AttributeHostName:    "k8s-node",
-				semconv.AttributeK8SNodeName: "k8s-node",
-				elasticattr.AgentName:        "otlp",
-				elasticattr.AgentVersion:     "unknown",
+				string(semconv.HostNameKey):    "k8s-node",
+				string(semconv.K8SNodeNameKey): "k8s-node",
+				elasticattr.AgentName:          "otlp",
+				elasticattr.AgentVersion:       "unknown",
 			},
 		},
 		{
 			name: "host_name_if_empty_set_from_k8s_node_name",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeK8SNodeName, "k8s-node")
+				res.Attributes().PutStr(string(semconv.K8SNodeNameKey), "k8s-node")
 				return res
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				semconv.AttributeHostName:    "k8s-node",
-				semconv.AttributeK8SNodeName: "k8s-node",
-				elasticattr.AgentName:        "otlp",
-				elasticattr.AgentVersion:     "unknown",
+				string(semconv.HostNameKey):    "k8s-node",
+				string(semconv.K8SNodeNameKey): "k8s-node",
+				elasticattr.AgentName:          "otlp",
+				elasticattr.AgentVersion:       "unknown",
 			},
 		},
 		{
@@ -200,14 +200,14 @@ func TestResourceEnrich(t *testing.T) {
 			name: "deployment_environment_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, "prod")
+				res.Attributes().PutStr(string(semconv25.DeploymentEnvironmentKey), "prod")
 				return res
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				semconv25.AttributeDeploymentEnvironment: "prod",
-				elasticattr.AgentName:                    "otlp",
-				elasticattr.AgentVersion:                 "unknown",
+				string(semconv25.DeploymentEnvironmentKey): "prod",
+				elasticattr.AgentName:                      "otlp",
+				elasticattr.AgentVersion:                   "unknown",
 			},
 		},
 		{
@@ -215,16 +215,16 @@ func TestResourceEnrich(t *testing.T) {
 			name: "deployment_environment_name_set",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeDeploymentEnvironmentName, "prod")
+				res.Attributes().PutStr(string(semconv.DeploymentEnvironmentNameKey), "prod")
 				return res
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				// To satisfy aliases defined in ES, we duplicate the value for both fields.
-				semconv25.AttributeDeploymentEnvironment:   "prod",
-				semconv.AttributeDeploymentEnvironmentName: "prod",
-				elasticattr.AgentName:                      "otlp",
-				elasticattr.AgentVersion:                   "unknown",
+				string(semconv25.DeploymentEnvironmentKey):   "prod",
+				string(semconv.DeploymentEnvironmentNameKey): "prod",
+				elasticattr.AgentName:                        "otlp",
+				elasticattr.AgentVersion:                     "unknown",
 			},
 		},
 		{
@@ -232,17 +232,17 @@ func TestResourceEnrich(t *testing.T) {
 			name: "deployment_environment_mixed",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(semconv.AttributeDeploymentEnvironmentName, "prod")
-				res.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, "test")
+				res.Attributes().PutStr(string(semconv.DeploymentEnvironmentNameKey), "prod")
+				res.Attributes().PutStr(string(semconv25.DeploymentEnvironmentKey), "test")
 				return res
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				// If both are set, we don't touch those values and take them as they are.
-				semconv25.AttributeDeploymentEnvironment:   "test",
-				semconv.AttributeDeploymentEnvironmentName: "prod",
-				elasticattr.AgentName:                      "otlp",
-				elasticattr.AgentVersion:                   "unknown",
+				string(semconv25.DeploymentEnvironmentKey):   "test",
+				string(semconv.DeploymentEnvironmentNameKey): "prod",
+				elasticattr.AgentName:                        "otlp",
+				elasticattr.AgentVersion:                     "unknown",
 			},
 		},
 	} {

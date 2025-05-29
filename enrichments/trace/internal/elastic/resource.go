@@ -23,8 +23,8 @@ import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
-	semconv25 "go.opentelemetry.io/collector/semconv/v1.25.0"
-	semconv "go.opentelemetry.io/collector/semconv/v1.27.0"
+	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
@@ -50,23 +50,23 @@ type resourceEnrichmentContext struct {
 func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
 	resource.Attributes().Range(func(k string, v pcommon.Value) bool {
 		switch k {
-		case semconv.AttributeHostName:
+		case string(semconv.HostNameKey):
 			s.hostName = v.Str()
-		case semconv.AttributeK8SNodeName:
+		case string(semconv.K8SNodeNameKey):
 			s.k8sNodeName = v.Str()
-		case semconv.AttributeTelemetrySDKName:
+		case string(semconv.TelemetrySDKNameKey):
 			s.telemetrySDKName = v.Str()
-		case semconv.AttributeTelemetrySDKLanguage:
+		case string(semconv.TelemetrySDKLanguageKey):
 			s.telemetrySDKLanguage = v.Str()
-		case semconv.AttributeTelemetrySDKVersion:
+		case string(semconv.TelemetrySDKVersionKey):
 			s.telemetrySDKVersion = v.Str()
-		case semconv.AttributeTelemetryDistroName:
+		case string(semconv.TelemetryDistroNameKey):
 			s.telemetryDistroName = v.Str()
-		case semconv.AttributeTelemetryDistroVersion:
+		case string(semconv.TelemetryDistroVersionKey):
 			s.telemetryDistroVersion = v.Str()
-		case semconv25.AttributeDeploymentEnvironment:
+		case string(semconv25.DeploymentEnvironmentKey):
 			s.deploymentEnvironment = v.Str()
-		case semconv.AttributeDeploymentEnvironmentName:
+		case string(semconv.DeploymentEnvironmentNameKey):
 			s.deploymentEnvironmentName = v.Str()
 		}
 		return true
@@ -92,7 +92,10 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 // we duplicate the value and also send it with the old field name to make the alias work.
 func (s *resourceEnrichmentContext) setDeploymentEnvironment(resource pcommon.Resource) {
 	if s.deploymentEnvironmentName != "" && s.deploymentEnvironment == "" {
-		resource.Attributes().PutStr(semconv25.AttributeDeploymentEnvironment, s.deploymentEnvironmentName)
+		resource.Attributes().PutStr(
+			string(semconv25.DeploymentEnvironmentKey),
+			s.deploymentEnvironmentName,
+		)
 	}
 }
 
@@ -146,5 +149,8 @@ func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pco
 	// and k8s node name are set then host name is overridden as this is
 	// considered an invalid configuration/smell and k8s node name is
 	// given higher preference.
-	resource.Attributes().PutStr(semconv.AttributeHostName, s.k8sNodeName)
+	resource.Attributes().PutStr(
+		string(semconv.HostNameKey),
+		s.k8sNodeName,
+	)
 }
