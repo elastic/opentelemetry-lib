@@ -34,6 +34,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv27 "go.opentelemetry.io/otel/semconv/v1.27.0"
+	semconv37 "go.opentelemetry.io/otel/semconv/v1.37.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
@@ -1336,6 +1337,28 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				span.SetSpanID([8]byte{1})
 				span.Attributes().PutStr(string(semconv27.GenAISystemKey), "openai")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "genai",
+				elasticattr.SpanSubtype:             "openai",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+			},
+		},
+		{
+			name: "genai_with_provider_name",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				span.Attributes().PutStr(string(semconv37.GenAIProviderNameKey), "openai")
 				return span
 			}(),
 			config: config.Enabled().Span,
