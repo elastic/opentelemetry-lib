@@ -77,7 +77,7 @@ func TestCreateGroupingKey(t *testing.T) {
 }
 
 func readTestFile(t *testing.T, fileName string) string {
-	bytes, err := os.ReadFile(filepath.Join("testdata", fileName))
+	bytes, err := os.ReadFile(filepath.Join("testdata", "android", fileName))
 	require.NoError(t, err)
 	return string(bytes)
 }
