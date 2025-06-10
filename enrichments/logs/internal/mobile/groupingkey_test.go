@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCurateStacktrace(t *testing.T) {
+func TestCurateJavaStacktrace(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		stacktraces []string
@@ -34,24 +34,24 @@ func TestCurateStacktrace(t *testing.T) {
 	}{
 		{
 			name:        "standalone_stacktrace",
-			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt"), readTestFile(t, "stacktrace1_c.txt")},
-			curated:     readTestFile(t, "curated_stacktrace1.txt"),
+			stacktraces: []string{readJavaStacktraceFile(t, "stacktrace1_a.txt"), readJavaStacktraceFile(t, "stacktrace1_b.txt"), readJavaStacktraceFile(t, "stacktrace1_c.txt")},
+			curated:     readJavaStacktraceFile(t, "curated_stacktrace1.txt"),
 		},
 		{
 			name:        "stacktrace_with_cause",
-			stacktraces: []string{readTestFile(t, "stacktrace2_a.txt"), readTestFile(t, "stacktrace2_b.txt"), readTestFile(t, "stacktrace2_c.txt")},
-			curated:     readTestFile(t, "curated_stacktrace2.txt"),
+			stacktraces: []string{readJavaStacktraceFile(t, "stacktrace2_a.txt"), readJavaStacktraceFile(t, "stacktrace2_b.txt"), readJavaStacktraceFile(t, "stacktrace2_c.txt")},
+			curated:     readJavaStacktraceFile(t, "curated_stacktrace2.txt"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, stacktrace := range tc.stacktraces {
-				assert.Equal(t, tc.curated, curateStacktrace(stacktrace))
+				assert.Equal(t, tc.curated, curateJavaStacktrace(stacktrace))
 			}
 		})
 	}
 }
 
-func TestCreateGroupingKey(t *testing.T) {
+func TestCreateJavaStacktraceGroupingKey(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		stacktraces []string
@@ -59,25 +59,56 @@ func TestCreateGroupingKey(t *testing.T) {
 	}{
 		{
 			name:        "standalone_stacktrace",
-			stacktraces: []string{readTestFile(t, "stacktrace1_a.txt"), readTestFile(t, "stacktrace1_b.txt"), readTestFile(t, "stacktrace1_c.txt")},
+			stacktraces: []string{readJavaStacktraceFile(t, "stacktrace1_a.txt"), readJavaStacktraceFile(t, "stacktrace1_b.txt"), readJavaStacktraceFile(t, "stacktrace1_c.txt")},
 			expectedId:  "e3d876640dd47864",
 		},
 		{
 			name:        "stacktrace_with_cause",
-			stacktraces: []string{readTestFile(t, "stacktrace2_a.txt"), readTestFile(t, "stacktrace2_b.txt"), readTestFile(t, "stacktrace2_c.txt")},
+			stacktraces: []string{readJavaStacktraceFile(t, "stacktrace2_a.txt"), readJavaStacktraceFile(t, "stacktrace2_b.txt"), readJavaStacktraceFile(t, "stacktrace2_c.txt")},
 			expectedId:  "390d84a9a633fa73",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, stacktrace := range tc.stacktraces {
-				assert.Equal(t, tc.expectedId, CreateGroupingKey(stacktrace))
+				assert.Equal(t, tc.expectedId, CreateJavaStacktraceGroupingKey(stacktrace))
 			}
 		})
 	}
 }
 
-func readTestFile(t *testing.T, fileName string) string {
-	bytes, err := os.ReadFile(filepath.Join("testdata", "android", fileName))
+func TestCreateSwiftStacktraceGroupingKey(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		crashFile  string
+		expectedId string
+	}{
+		{
+			name:       "thread_0_crash",
+			crashFile:  "thread-0-crash.txt",
+			expectedId: "b032e62a8ac17471",
+		},
+		{
+			name:       "thread_8_crash",
+			crashFile:  "thread-8-crash.txt",
+			expectedId: "11af41fb7f4bc7ac",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			crashReport := readSwiftStacktraceFile(t, tc.crashFile)
+			actualId := CreateSwiftStacktraceGroupingKey(crashReport)
+			assert.Equal(t, tc.expectedId, actualId)
+		})
+	}
+}
+
+func readJavaStacktraceFile(t *testing.T, fileName string) string {
+	bytes, err := os.ReadFile(filepath.Join("testdata", "java", fileName))
+	require.NoError(t, err)
+	return string(bytes)
+}
+
+func readSwiftStacktraceFile(t *testing.T, fileName string) string {
+	bytes, err := os.ReadFile(filepath.Join("testdata", "swift", fileName))
 	require.NoError(t, err)
 	return string(bytes)
 }

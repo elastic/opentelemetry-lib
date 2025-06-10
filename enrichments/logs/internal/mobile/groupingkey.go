@@ -26,19 +26,23 @@ import (
 )
 
 var (
-	// Regex patterns for stack trace processing
+	// Regex patterns for java stack trace processing
 	errorOrCausePattern = regexp.MustCompile(`^((?:Caused\sby:\s[^:]+)|(?:[^\s][^:]+))(:\s.+)?$`)
 	callSitePattern     = regexp.MustCompile(`^\s+at\s.+(:\d+)\)$`)
 	unwantedPattern     = regexp.MustCompile(`\s+`)
 	allLinesPattern     = regexp.MustCompile(`(m?).+`)
+
+	// Regex patterns for swift stack trace processing
+	iosCrashedThreadPattern = regexp.MustCompile(`^Thread\s+(\d+)\s+Crashed:$`)
+	iosThreadPattern        = regexp.MustCompile(`^Thread\s+(\d+):$`)
 )
 
-func CreateGroupingKey(stacktrace string) string {
-	hash := xxhash.Sum64String(curateStacktrace(stacktrace))
+func CreateJavaStacktraceGroupingKey(stacktrace string) string {
+	hash := xxhash.Sum64String(curateJavaStacktrace(stacktrace))
 	return fmt.Sprintf("%016x", hash)
 }
 
-func curateStacktrace(stacktrace string) string {
+func curateJavaStacktrace(stacktrace string) string {
 	curatedLines := allLinesPattern.ReplaceAllStringFunc(stacktrace, func(s string) string {
 		if errorOrCausePattern.MatchString(s) {
 			return errorOrCausePattern.ReplaceAllString(s, "$1")
@@ -50,4 +54,66 @@ func curateStacktrace(stacktrace string) string {
 	})
 
 	return unwantedPattern.ReplaceAllString(curatedLines, "")
+}
+
+func CreateSwiftStacktraceGroupingKey(stacktrace string) string {
+	// Extract the crashed thread block
+	crashThreadContent := extractCrashedThread(stacktrace)
+
+	// Hash the crashed thread content using xxhash
+	hash := xxhash.Sum64String(crashThreadContent)
+	return fmt.Sprintf("%016x", hash)
+}
+
+func extractCrashedThread(stacktrace string) string {
+	lines := strings.Split(stacktrace, "\n")
+
+	var crashedThreadLines []string
+	var inCrashedThread bool
+
+	for i, line := range lines {
+		// Check if this line indicates the start of the crashed thread
+		if iosCrashedThreadPattern.MatchString(line) {
+			inCrashedThread = true
+			crashThreadMatch := iosCrashedThreadPattern.FindStringSubmatch(line)
+			crashThreadNum := crashThreadMatch[1]
+			crashThreadHeader := fmt.Sprintf("Thread %s Crashed:", crashThreadNum)
+			crashThreadVerbatim := fmt.Sprintf("Thread%sCrashed", crashThreadNum)
+			crashThreadFormatted := unwantedPattern.ReplaceAllString(crashThreadVerbatim, "")
+			crashThreadHeader = unwantedPattern.ReplaceAllString(crashThreadHeader, "")
+
+			// Start capturing the crashed thread, beginning with the header
+			crashGrepKey := fmt.Sprintf("%s:", crashThreadFormatted)
+			crashedThreadLines = append(crashedThreadLines, crashGrepKey)
+			continue
+		}
+
+		// Check if we've found the end of the crashed thread section
+		// End is marked by either a new thread section or an empty line followed by another section
+		if inCrashedThread && (iosThreadPattern.MatchString(line) ||
+			(len(strings.TrimSpace(line)) == 0 && i+1 < len(lines) && len(strings.TrimSpace(lines[i+1])) > 0 &&
+				!strings.HasPrefix(strings.TrimSpace(lines[i+1]), "0"))) {
+			break
+		}
+
+		// Add line to the crashed thread content if we're in the crashed thread section
+		if inCrashedThread && len(strings.TrimSpace(line)) > 0 {
+			// Format the line to remove unnecessary whitespace
+			formattedLine := unwantedPattern.ReplaceAllString(line, "")
+			crashLines := unwantedPattern.ReplaceAllString(formattedLine, "")
+			crashLines = strings.ReplaceAll(crashLines, ":", "")
+			crashLines = strings.ReplaceAll(crashLines, "+", "")
+			crashLines = strings.ReplaceAll(crashLines, "0x", "")
+			crashLines = strings.Join(strings.Fields(crashLines), "")
+			crashLines = strings.Trim(crashLines, "0123456789")
+
+			// Add the formatted line to our result
+			if len(crashLines) > 0 {
+				crashedThreadLines = append(crashedThreadLines, crashLines)
+			}
+		}
+	}
+
+	// Join all lines with a separator to create the final string for hashing
+	return strings.Join(crashedThreadLines, "")
 }

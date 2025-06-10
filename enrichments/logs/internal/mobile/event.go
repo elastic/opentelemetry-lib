@@ -54,7 +54,7 @@ func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 	if ok {
 		language, hasLanguage := resourceAttrs["telemetry.sdk.language"]
 		if hasLanguage && language == "java" {
-			logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateGroupingKey(stacktrace.AsString()))
+			logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateJavaStacktraceGroupingKey(stacktrace.AsString()))
 		}
 	}
 	logRecord.Attributes().PutStr(elasticattr.ErrorType, "crash")
