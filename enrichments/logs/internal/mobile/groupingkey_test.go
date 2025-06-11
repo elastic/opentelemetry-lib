@@ -76,6 +76,32 @@ func TestCreateJavaStacktraceGroupingKey(t *testing.T) {
 	}
 }
 
+func TestCurateSwiftStacktrace(t *testing.T) {
+	for _, tc := range []struct {
+		name          string
+		crashFile     string
+		expectedValue string
+	}{
+		{
+			name:          "thread_0_crash",
+			crashFile:     "thread-0-crash.txt",
+			expectedValue: readSwiftStacktraceFile(t, "curated-thread-0-crash.txt"),
+		},
+		{
+			name:          "thread_8_crash",
+			crashFile:     "thread-8-crash.txt",
+			expectedValue: readSwiftStacktraceFile(t, "curated-thread-8-crash.txt"),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			crashReport := readSwiftStacktraceFile(t, tc.crashFile)
+			curatedValue, err := curateSwiftStacktrace(crashReport)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedValue, curatedValue)
+		})
+	}
+}
+
 func TestCreateSwiftStacktraceGroupingKey(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
@@ -85,17 +111,18 @@ func TestCreateSwiftStacktraceGroupingKey(t *testing.T) {
 		{
 			name:       "thread_0_crash",
 			crashFile:  "thread-0-crash.txt",
-			expectedId: "b032e62a8ac17471",
+			expectedId: "d61515e9ce80cace",
 		},
 		{
 			name:       "thread_8_crash",
 			crashFile:  "thread-8-crash.txt",
-			expectedId: "11af41fb7f4bc7ac",
+			expectedId: "e81038d076b964b1",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			crashReport := readSwiftStacktraceFile(t, tc.crashFile)
-			actualId := CreateSwiftStacktraceGroupingKey(crashReport)
+			actualId, err := CreateSwiftStacktraceGroupingKey(crashReport)
+			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedId, actualId)
 		})
 	}
