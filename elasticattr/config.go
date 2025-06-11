@@ -15,32 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package config
+package elasticattr
 
-import (
-	"reflect"
-	"testing"
-
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/stretchr/testify/require"
-)
-
-func TestEnabled(t *testing.T) {
-	config := Enabled()
-	assertAllEnabled(t, reflect.ValueOf(config.Resource))
-	assertAllEnabled(t, reflect.ValueOf(config.Scope))
-	assertAllEnabled(t, reflect.ValueOf(config.Transaction))
-	assertAllEnabled(t, reflect.ValueOf(config.Span))
-	assertAllEnabled(t, reflect.ValueOf(config.SpanEvent))
-}
-
-func assertAllEnabled(t *testing.T, cfg reflect.Value) {
-	t.Helper()
-
-	for i := 0; i < cfg.NumField(); i++ {
-		rAttrCfg := cfg.Field(i).Interface()
-		attrCfg, ok := rAttrCfg.(elasticattr.AttributeConfig)
-		require.True(t, ok, "must be a type of AttributeConfig")
-		require.True(t, attrCfg.Enabled, "must be enabled")
-	}
+// AttributeConfig is the configuration options for each attribute.
+type AttributeConfig struct {
+	Enabled bool `mapstructure:"enabled"`
 }
