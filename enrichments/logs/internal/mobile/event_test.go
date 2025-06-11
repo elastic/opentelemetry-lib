@@ -32,8 +32,11 @@ import (
 func TestEnrichEvents(t *testing.T) {
 	now := time.Unix(3600, 0)
 	timestamp := pcommon.NewTimestampFromTime(now)
-	stacktrace := "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
-	stacktraceHash := "e25c4196dc720d91"
+	javaStacktrace := "Exception in thread \"main\" java.lang.RuntimeException: Test exception\n at com.example.GenerateTrace.methodB(GenerateTrace.java:13)\n at com.example.GenerateTrace.methodA(GenerateTrace.java:9)\n at com.example.GenerateTrace.main(GenerateTrace.java:5)"
+	javaStacktraceHash := "e25c4196dc720d91"
+
+	swiftStacktrace := readSwiftStacktraceFile(t, "thread-8-crash.txt")
+	swiftStacktraceHash := "e81038d076b964b1"
 
 	for _, tc := range []struct {
 		name               string
@@ -54,13 +57,13 @@ func TestEnrichEvents(t *testing.T) {
 				logRecord.Attributes().PutStr("event.name", "device.crash")
 				logRecord.Attributes().PutStr("exception.message", "Exception message")
 				logRecord.Attributes().PutStr("exception.type", "java.lang.RuntimeException")
-				logRecord.Attributes().PutStr("exception.stacktrace", stacktrace)
+				logRecord.Attributes().PutStr("exception.stacktrace", javaStacktrace)
 				return logRecord
 			},
 			expectedAttributes: map[string]any{
 				"processor.event":    "error",
 				"timestamp.us":       timestamp.AsTime().UnixMicro(),
-				"error.grouping_key": stacktraceHash,
+				"error.grouping_key": javaStacktraceHash,
 				"error.type":         "crash",
 				"event.kind":         "event",
 			},
@@ -77,13 +80,13 @@ func TestEnrichEvents(t *testing.T) {
 				logRecord.Attributes().PutStr("event.name", "device.crash")
 				logRecord.Attributes().PutStr("exception.message", "Exception message")
 				logRecord.Attributes().PutStr("exception.type", "java.lang.RuntimeException")
-				logRecord.Attributes().PutStr("exception.stacktrace", stacktrace)
+				logRecord.Attributes().PutStr("exception.stacktrace", javaStacktrace)
 				return logRecord
 			},
 			expectedAttributes: map[string]any{
 				"processor.event":    "error",
 				"timestamp.us":       timestamp.AsTime().UnixMicro(),
-				"error.grouping_key": stacktraceHash,
+				"error.grouping_key": javaStacktraceHash,
 				"error.type":         "crash",
 				"event.kind":         "event",
 			},
@@ -100,7 +103,7 @@ func TestEnrichEvents(t *testing.T) {
 				logRecord.Attributes().PutStr("event.name", "device.crash")
 				logRecord.Attributes().PutStr("exception.message", "Exception message")
 				logRecord.Attributes().PutStr("exception.type", "go.error")
-				logRecord.Attributes().PutStr("exception.stacktrace", stacktrace)
+				logRecord.Attributes().PutStr("exception.stacktrace", javaStacktrace)
 				return logRecord
 			},
 			expectedAttributes: map[string]any{
@@ -121,6 +124,28 @@ func TestEnrichEvents(t *testing.T) {
 			},
 			expectedAttributes: map[string]any{
 				"event.kind": "event",
+			},
+		},
+		{
+			name:      "crash_event_swift",
+			eventName: "device.crash",
+			resourceAttrs: map[string]any{
+				"telemetry.sdk.language": "swift",
+			},
+			input: func() plog.LogRecord {
+				logRecord := plog.NewLogRecord()
+				logRecord.SetTimestamp(timestamp)
+				logRecord.Attributes().PutStr("event.name", "device.crash")
+				logRecord.Attributes().PutStr("exception.type", "SIGTRAP")
+				logRecord.Attributes().PutStr("exception.stacktrace", swiftStacktrace)
+				return logRecord
+			},
+			expectedAttributes: map[string]any{
+				"processor.event":    "error",
+				"timestamp.us":       timestamp.AsTime().UnixMicro(),
+				"error.grouping_key": swiftStacktraceHash,
+				"error.type":         "crash",
+				"event.kind":         "event",
 			},
 		},
 	} {
