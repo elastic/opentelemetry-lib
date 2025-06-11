@@ -59,7 +59,7 @@ func curateJavaStacktrace(stacktrace string) string {
 }
 
 func CreateSwiftStacktraceGroupingKey(stacktrace string) (string, error) {
-	crashThreadContent, err := curateSwiftStacktrace(stacktrace)
+	crashThreadContent, err := findAndCurateSwiftStacktrace(stacktrace)
 
 	if err != nil {
 		return "", err
@@ -69,7 +69,7 @@ func CreateSwiftStacktraceGroupingKey(stacktrace string) (string, error) {
 	return fmt.Sprintf("%016x", hash), nil
 }
 
-func curateSwiftStacktrace(stacktrace string) (string, error) {
+func findAndCurateSwiftStacktrace(stacktrace string) (string, error) {
 	match := swiftCrashedThreadPattern.FindString(stacktrace)
 
 	if match == "" {

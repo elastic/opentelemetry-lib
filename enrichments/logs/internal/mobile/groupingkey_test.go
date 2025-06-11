@@ -95,7 +95,7 @@ func TestCurateSwiftStacktrace(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			crashReport := readSwiftStacktraceFile(t, tc.crashFile)
-			curatedValue, err := curateSwiftStacktrace(crashReport)
+			curatedValue, err := findAndCurateSwiftStacktrace(crashReport)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedValue, curatedValue)
 		})
