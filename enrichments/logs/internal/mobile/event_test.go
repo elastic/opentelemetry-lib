@@ -36,7 +36,7 @@ func TestEnrichEvents(t *testing.T) {
 	javaStacktraceHash := "e25c4196dc720d91"
 
 	swiftStacktrace := readSwiftStacktraceFile(t, "thread-8-crash.txt")
-	swiftStacktraceHash := "e81038d076b964b1"
+	swiftStacktraceHash := "873a0b5211c5aece"
 
 	for _, tc := range []struct {
 		name               string

@@ -33,7 +33,7 @@ var (
 	allLinesPattern     = regexp.MustCompile(`(m?).+`)
 
 	// Regex patterns for swift stack trace processing
-	swiftCrashedThreadPattern = regexp.MustCompile(`\nThread \d+ Crashed:.*\n(.+\n)+\n`)
+	swiftCrashedThreadPattern = regexp.MustCompile(`\nThread \d+ Crashed:.*\n((?:.+\n)+)\n`)
 
 	// Common patterns
 	unwantedPattern = regexp.MustCompile(`\s+`)
@@ -70,11 +70,11 @@ func CreateSwiftStacktraceGroupingKey(stacktrace string) (string, error) {
 }
 
 func findAndCurateSwiftStacktrace(stacktrace string) (string, error) {
-	match := swiftCrashedThreadPattern.FindString(stacktrace)
+	match := swiftCrashedThreadPattern.FindStringSubmatch(stacktrace)
 
-	if match == "" {
+	if match == nil {
 		return "", errors.New("no swift crashed thread found")
 	}
 
-	return unwantedPattern.ReplaceAllString(match, ""), nil
+	return unwantedPattern.ReplaceAllString(match[1], ""), nil
 }

@@ -111,12 +111,12 @@ func TestCreateSwiftStacktraceGroupingKey(t *testing.T) {
 		{
 			name:       "thread_0_crash",
 			crashFile:  "thread-0-crash.txt",
-			expectedId: "d61515e9ce80cace",
+			expectedId: "75cd46a9f1d832a8",
 		},
 		{
 			name:       "thread_8_crash",
 			crashFile:  "thread-8-crash.txt",
-			expectedId: "e81038d076b964b1",
+			expectedId: "873a0b5211c5aece",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
