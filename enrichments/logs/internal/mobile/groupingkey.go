@@ -30,12 +30,13 @@ var (
 	// Regex patterns for java stack trace processing
 	errorOrCausePattern = regexp.MustCompile(`^((?:Caused\sby:\s[^:]+)|(?:[^\s][^:]+))(:\s.+)?$`)
 	callSitePattern     = regexp.MustCompile(`^\s+at\s.+(:\d+)\)$`)
-	allLinesPattern     = regexp.MustCompile(`(m?).+`)
 
 	// Regex patterns for swift stack trace processing
 	swiftCrashedThreadPattern = regexp.MustCompile(`\nThread \d+ Crashed:.*\n((?:.+\n)+)\n`)
+	swiftCrashLinePattern     = regexp.MustCompile(`^\d+\s+[^\s]+\s+([^\s]+\s[^\s]+\s+\+)\s+[^\s]+$`)
 
 	// Common patterns
+	allLinesPattern = regexp.MustCompile(`(m?).+`)
 	unwantedPattern = regexp.MustCompile(`\s+`)
 )
 
@@ -76,5 +77,12 @@ func findAndCurateSwiftStacktrace(stacktrace string) (string, error) {
 		return "", errors.New("no swift crashed thread found")
 	}
 
-	return unwantedPattern.ReplaceAllString(match[1], ""), nil
+	curatedLines := allLinesPattern.ReplaceAllStringFunc(match[1], func(s string) string {
+		if swiftCrashLinePattern.MatchString(s) {
+			return strings.Replace(s, swiftCrashLinePattern.FindStringSubmatch(s)[1], "", 1)
+		}
+		return s
+	})
+
+	return unwantedPattern.ReplaceAllString(curatedLines, ""), nil
 }
