@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"

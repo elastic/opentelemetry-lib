@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 	"github.com/stretchr/testify/assert"
