@@ -19,17 +19,14 @@ package elastic
 
 import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
-	"go.opentelemetry.io/collector/pdata/pcommon"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-// EnrichScope derives and adds Elastic specific scope attributes.
-func EnrichScope(scope pcommon.InstrumentationScope, cfg config.Config) {
-	attrs := scope.Attributes()
-	if cfg.Scope.ServiceFrameworkName.Enabled {
-		if name := scope.Name(); name != "" {
-			attrs.PutStr(elasticattr.ServiceFrameworkName, name)
-			attrs.PutStr(elasticattr.ServiceFrameworkVersion, scope.Version())
+func EnrichLog(log plog.LogRecord, cfg config.Config) {
+	if cfg.Log.ProcessorEvent.Enabled {
+		if _, exists := log.Attributes().Get(elasticattr.ProcessorEvent); !exists {
+			log.Attributes().PutStr(elasticattr.ProcessorEvent, "log")
 		}
 	}
 }

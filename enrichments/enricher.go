@@ -15,12 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package trace
+package enrichments
 
 import (
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/internal/elastic"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/elastic"
 	"github.com/ua-parser/uap-go/uaparser"
+	"go.opentelemetry.io/collector/pdata/plog"
+	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
@@ -34,19 +36,11 @@ type Enricher struct {
 	Config config.Config
 }
 
-// NewEnricher creates a new instance of Enricher.
-func NewEnricher(cfg config.Config) *Enricher {
-	return &Enricher{
-		Config:          cfg,
-		userAgentParser: uaparser.NewFromSaved(),
-	}
-}
-
-// Enrich enriches the OTel traces with attributes required to power
+// EnrichTraces enriches the OTel traces with attributes required to power
 // functionalities in the Elastic UI. The traces are processed as per the
 // Elastic's definition of transactions and spans. The traces passed to
 // this function are mutated.
-func (e *Enricher) Enrich(pt ptrace.Traces) {
+func (e *Enricher) EnrichTraces(pt ptrace.Traces) {
 	resSpans := pt.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
 		resSpan := resSpans.At(i)
@@ -60,5 +54,48 @@ func (e *Enricher) Enrich(pt ptrace.Traces) {
 				elastic.EnrichSpan(spans.At(k), e.Config, e.userAgentParser)
 			}
 		}
+	}
+}
+
+// EnrichLogs enriches the OTel logs with attributes required to power
+// functionalities in the Elastic UI. The logs passed to this function are mutated.
+func (e *Enricher) EnrichLogs(pl plog.Logs) {
+	resLogs := pl.ResourceLogs()
+	for i := 0; i < resLogs.Len(); i++ {
+		resLog := resLogs.At(i)
+		elastic.EnrichResource(resLog.Resource(), e.Config)
+		scopeLogs := resLog.ScopeLogs()
+		for j := 0; j < scopeLogs.Len(); j++ {
+			scopeSpan := scopeLogs.At(j)
+			elastic.EnrichScope(scopeSpan.Scope(), e.Config)
+			logRecords := scopeSpan.LogRecords()
+			for k := 0; k < logRecords.Len(); k++ {
+				elastic.EnrichLog(logRecords.At(k), e.Config)
+			}
+		}
+	}
+}
+
+// EnrichMetrics enriches the OTel metrics with attributes required to power
+// functionalities in the Elastic UI. The metrics passed to this function are mutated.
+func (e *Enricher) EnrichMetrics(pl pmetric.Metrics) {
+	resMetrics := pl.ResourceMetrics()
+	for i := 0; i < resMetrics.Len(); i++ {
+		resMetric := resMetrics.At(i)
+		elastic.EnrichMetric(resMetric, e.Config)
+		elastic.EnrichResource(resMetric.Resource(), e.Config)
+		scopeMetics := resMetric.ScopeMetrics()
+		for j := 0; j < scopeMetics.Len(); j++ {
+			scopeMetric := scopeMetics.At(j)
+			elastic.EnrichScope(scopeMetric.Scope(), e.Config)
+		}
+	}
+}
+
+// NewEnricher creates a new instance of Enricher.
+func NewEnricher(cfg config.Config) *Enricher {
+	return &Enricher{
+		Config:          cfg,
+		userAgentParser: uaparser.NewFromSaved(),
 	}
 }

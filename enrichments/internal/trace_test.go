@@ -15,14 +15,15 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package trace
+package elastic
 
 import (
 	"fmt"
 	"path/filepath"
 	"testing"
 
-	"github.com/elastic/opentelemetry-lib/enrichments/trace/config"
+	"github.com/elastic/opentelemetry-lib/enrichments"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -32,12 +33,12 @@ func BenchmarkEnrich(b *testing.B) {
 	traceFile := filepath.Join("testdata", "trace.yaml")
 	traces, err := golden.ReadTraces(traceFile)
 	require.NoError(b, err)
-	enricher := NewEnricher(config.Config{})
+	enricher := enrichments.NewEnricher(config.Config{})
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		enricher.Enrich(traces)
+		enricher.EnrichTraces(traces)
 	}
 }
 

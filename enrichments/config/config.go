@@ -24,6 +24,8 @@ type Config struct {
 	Transaction ElasticTransactionConfig `mapstructure:"elastic_transaction"`
 	Span        ElasticSpanConfig        `mapstructure:"elastic_span"`
 	SpanEvent   SpanEventConfig          `mapstructure:"span_event"`
+	Log         ElasticLogConfig         `mapstructure:"elastic_log"`
+	Metric      ElasticMetricConfig      `mapstructure:"elastic_metric"`
 }
 
 // ResourceConfig configures the enrichment of resource attributes.
@@ -95,6 +97,16 @@ type SpanEventConfig struct {
 	ErrorExceptionHandled AttributeConfig `mapstructure:"error_exception_handled"`
 	ErrorGroupingKey      AttributeConfig `mapstructure:"error_grouping_key"`
 	ErrorGroupingName     AttributeConfig `mapstructure:"error_grouping_name"`
+}
+
+// ElasticLogConfig configures the enrichment attributes for logs
+type ElasticLogConfig struct {
+	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
+}
+
+// ElasticMetricConfig configures the enrichment attributes for metrics
+type ElasticMetricConfig struct {
+	ProcessorEvent AttributeConfig `mapstructure:"processor_event"`
 }
 
 // AttributeConfig is the configuration options for each attribute.
