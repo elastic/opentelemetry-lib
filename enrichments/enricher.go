@@ -70,8 +70,7 @@ func (e *Enricher) EnrichLogs(pl plog.Logs) {
 			elastic.EnrichScope(scopeSpan.Scope(), e.Config)
 			logRecords := scopeSpan.LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
-				// TODO: Implement log enrichment
-				//elastic.enrichLog(logRecords.At(k), e.Config, e.userAgentParser)
+				elastic.EnrichLog(logRecords.At(k), e.Config)
 			}
 		}
 	}
@@ -83,16 +82,12 @@ func (e *Enricher) EnrichMetrics(pl pmetric.Metrics) {
 	resMetrics := pl.ResourceMetrics()
 	for i := 0; i < resMetrics.Len(); i++ {
 		resMetric := resMetrics.At(i)
+		elastic.EnrichMetric(resMetric, e.Config)
 		elastic.EnrichResource(resMetric.Resource(), e.Config)
 		scopeMetics := resMetric.ScopeMetrics()
 		for j := 0; j < scopeMetics.Len(); j++ {
 			scopeMetric := scopeMetics.At(j)
 			elastic.EnrichScope(scopeMetric.Scope(), e.Config)
-			metrics := scopeMetric.Metrics()
-			for k := 0; k < metrics.Len(); k++ {
-				// TODO: Implement metric enrichment
-				//elastic.enrichLog(metrics.At(k), e.Config, e.userAgentParser)
-			}
 		}
 	}
 }
