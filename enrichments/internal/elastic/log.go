@@ -20,13 +20,35 @@ package elastic
 import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/elastic/mobile"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-func EnrichLog(log plog.LogRecord, cfg config.Config) {
+func EnrichLog(resourceAttrs map[string]any, log plog.LogRecord, cfg config.Config) {
 	if cfg.Log.ProcessorEvent.Enabled {
 		if _, exists := log.Attributes().Get(elasticattr.ProcessorEvent); !exists {
 			log.Attributes().PutStr(elasticattr.ProcessorEvent, "log")
 		}
 	}
+	eventName, ok := getEventName(log)
+	if ok {
+		ctx := mobile.EventContext{
+			ResourceAttributes: resourceAttrs,
+			EventName:          eventName,
+		}
+		mobile.EnrichLogEvent(ctx, log)
+	}
+}
+
+// getEventName returns the event name from the log record.
+// If the event name is not set, it returns an empty string.
+func getEventName(logRecord plog.LogRecord) (string, bool) {
+	if logRecord.EventName() != "" {
+		return logRecord.EventName(), true
+	}
+	attributeValue, ok := logRecord.Attributes().Get("event.name")
+	if ok {
+		return attributeValue.AsString(), true
+	}
+	return "", false
 }

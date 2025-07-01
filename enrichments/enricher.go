@@ -63,14 +63,16 @@ func (e *Enricher) EnrichLogs(pl plog.Logs) {
 	resLogs := pl.ResourceLogs()
 	for i := 0; i < resLogs.Len(); i++ {
 		resLog := resLogs.At(i)
-		elastic.EnrichResource(resLog.Resource(), e.Config.Resource)
+		resource := resLog.Resource()
+		elastic.EnrichResource(resource, e.Config.Resource)
+		resourceAttrs := resource.Attributes().AsRaw()
 		scopeLogs := resLog.ScopeLogs()
 		for j := 0; j < scopeLogs.Len(); j++ {
 			scopeSpan := scopeLogs.At(j)
 			elastic.EnrichScope(scopeSpan.Scope(), e.Config)
 			logRecords := scopeSpan.LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
-				elastic.EnrichLog(logRecords.At(k), e.Config)
+				elastic.EnrichLog(resourceAttrs, logRecords.At(k), e.Config)
 			}
 		}
 	}

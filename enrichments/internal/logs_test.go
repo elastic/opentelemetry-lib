@@ -15,12 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package logs
+package elastic
 
 import (
 	"path/filepath"
 	"testing"
 
+	"github.com/elastic/opentelemetry-lib/enrichments"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/stretchr/testify/assert"
@@ -37,14 +39,15 @@ func TestEnrichResourceLog(t *testing.T) {
 	// This is needed because the yaml unmarshalling is not yet aware of this new field
 	logRecords.At(2).SetEventName("field.name")
 
-	enricher := NewEnricher()
-	enricher.Enrich(logs)
+	enricher := enrichments.NewEnricher(config.Enabled())
+	enricher.EnrichLogs(logs)
 
 	t.Run("resource_enrichment", func(t *testing.T) {
 		resourceAttributes := resourceLogs.Resource().Attributes()
 		expectedResourceAttributes := map[string]any{
 			"service.name":           "my.service",
 			"agent.name":             "android/java",
+			"agent.version":          "unknown",
 			"telemetry.sdk.name":     "android",
 			"telemetry.sdk.language": "java",
 		}
