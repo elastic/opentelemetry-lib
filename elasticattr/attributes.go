@@ -17,8 +17,6 @@
 
 package elasticattr
 
-import "go.opentelemetry.io/collector/pdata/pcommon"
-
 const (
 	// resource s
 	AgentName    = "agent.name"
@@ -60,7 +58,3 @@ const (
 	ErrorGroupingName     = "error.grouping_name"
 	ErrorType             = "error.type"
 )
-
-func GetTimestampUs(ts pcommon.Timestamp) int64 {
-	return int64(ts) / 1000
-}

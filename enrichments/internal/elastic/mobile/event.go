@@ -23,6 +23,7 @@ import (
 	"io"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
@@ -46,7 +47,7 @@ func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 		timestamp = logRecord.ObservedTimestamp()
 	}
 	logRecord.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
-	logRecord.Attributes().PutInt(elasticattr.TimestampUs, elasticattr.GetTimestampUs(timestamp))
+	logRecord.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(timestamp))
 	if id, err := newUniqueID(); err == nil {
 		logRecord.Attributes().PutStr(elasticattr.ErrorID, id)
 	}
@@ -78,4 +79,8 @@ func newUniqueID() (string, error) {
 	hex.Encode(buf, u[:])
 
 	return string(buf), nil
+}
+
+func getTimestampUs(ts pcommon.Timestamp) int64 {
+	return int64(ts) / 1000
 }
