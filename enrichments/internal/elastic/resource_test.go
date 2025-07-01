@@ -15,12 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package resource
+package elastic
 
 import (
 	"testing"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -32,7 +33,7 @@ func TestResourceEnrich(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		input         pcommon.Resource
-		config        ResourceConfig
+		config        config.ResourceConfig
 		enrichedAttrs map[string]any
 	}{
 		{
@@ -43,7 +44,7 @@ func TestResourceEnrich(t *testing.T) {
 		{
 			name:   "empty",
 			input:  pcommon.NewResource(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "otlp",
 				elasticattr.AgentVersion: "unknown",
@@ -56,7 +57,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor",
 				elasticattr.AgentVersion: "unknown",
@@ -70,7 +71,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor/unknown/elastic",
 				elasticattr.AgentVersion: "unknown",
@@ -85,7 +86,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor/cpp/elastic",
 				elasticattr.AgentVersion: "unknown",
@@ -98,7 +99,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "cpp")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "otlp/cpp",
 				elasticattr.AgentVersion: "unknown",
@@ -112,7 +113,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetrySDKLanguageKey), "cpp")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor/cpp",
 				elasticattr.AgentVersion: "unknown",
@@ -126,7 +127,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetrySDKVersionKey), "9.999.9")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor",
 				elasticattr.AgentVersion: "9.999.9",
@@ -141,7 +142,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetryDistroNameKey), "elastic")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor/unknown/elastic",
 				elasticattr.AgentVersion: "unknown",
@@ -157,7 +158,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.TelemetryDistroVersionKey), "1.2.3")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				elasticattr.AgentName:    "customflavor/unknown/elastic",
 				elasticattr.AgentVersion: "1.2.3",
@@ -171,7 +172,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.K8SNodeNameKey), "k8s-node")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				string(semconv.HostNameKey):    "k8s-node",
 				string(semconv.K8SNodeNameKey): "k8s-node",
@@ -186,7 +187,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.K8SNodeNameKey), "k8s-node")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				string(semconv.HostNameKey):    "k8s-node",
 				string(semconv.K8SNodeNameKey): "k8s-node",
@@ -202,7 +203,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv25.DeploymentEnvironmentKey), "prod")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				string(semconv25.DeploymentEnvironmentKey): "prod",
 				elasticattr.AgentName:                      "otlp",
@@ -217,7 +218,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv.DeploymentEnvironmentNameKey), "prod")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				// To satisfy aliases defined in ES, we duplicate the value for both fields.
 				string(semconv25.DeploymentEnvironmentKey):   "prod",
@@ -235,7 +236,7 @@ func TestResourceEnrich(t *testing.T) {
 				res.Attributes().PutStr(string(semconv25.DeploymentEnvironmentKey), "test")
 				return res
 			}(),
-			config: EnabledConfig(),
+			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
 				// If both are set, we don't touch those values and take them as they are.
 				string(semconv25.DeploymentEnvironmentKey):   "test",

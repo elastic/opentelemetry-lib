@@ -15,28 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package resource
+package elastic
 
 import (
-	"reflect"
-	"testing"
-
 	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/stretchr/testify/require"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"go.opentelemetry.io/collector/pdata/plog"
 )
 
-func TestEnabled(t *testing.T) {
-	config := EnabledConfig()
-	assertAllEnabled(t, reflect.ValueOf(config))
-}
-
-func assertAllEnabled(t *testing.T, cfg reflect.Value) {
-	t.Helper()
-
-	for i := 0; i < cfg.NumField(); i++ {
-		rAttrCfg := cfg.Field(i).Interface()
-		attrCfg, ok := rAttrCfg.(elasticattr.AttributeConfig)
-		require.True(t, ok, "must be a type of AttributeConfig")
-		require.True(t, attrCfg.Enabled, "must be enabled")
+func EnrichLog(log plog.LogRecord, cfg config.Config) {
+	if cfg.Log.ProcessorEvent.Enabled {
+		if _, exists := log.Attributes().Get(elasticattr.ProcessorEvent); !exists {
+			log.Attributes().PutStr(elasticattr.ProcessorEvent, "log")
+		}
 	}
 }

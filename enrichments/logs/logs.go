@@ -18,8 +18,8 @@
 package logs
 
 import (
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/common/resource"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/elastic"
 	"github.com/elastic/opentelemetry-lib/enrichments/logs/internal/mobile"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
@@ -33,8 +33,8 @@ func NewEnricher() *Enricher {
 
 func (e *Enricher) Enrich(logs plog.Logs) {
 	resourceLogs := logs.ResourceLogs()
-	resourceConfig := resource.ResourceConfig{
-		AgentName: elasticattr.AttributeConfig{
+	resourceConfig := config.ResourceConfig{
+		AgentName: config.AttributeConfig{
 			Enabled: true,
 		},
 	}
@@ -42,7 +42,7 @@ func (e *Enricher) Enrich(logs plog.Logs) {
 	for i := 0; i < resourceLogs.Len(); i++ {
 		resourceLog := resourceLogs.At(i)
 		logsResource := resourceLog.Resource()
-		resource.EnrichResource(logsResource, resourceConfig)
+		elastic.EnrichResource(logsResource, resourceConfig)
 		resourceAttrs := logsResource.Attributes().AsRaw()
 		scopeLogs := resourceLog.ScopeLogs()
 		for j := 0; j < scopeLogs.Len(); j++ {
