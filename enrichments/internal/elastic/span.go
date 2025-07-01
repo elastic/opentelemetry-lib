@@ -749,10 +749,6 @@ func getHostPort(
 	return ""
 }
 
-func getTimestampUs(ts pcommon.Timestamp) int64 {
-	return int64(ts) / 1000
-}
-
 var standardStatusCodeResults = [...]string{
 	"HTTP 1xx",
 	"HTTP 2xx",
@@ -772,4 +768,8 @@ func newUniqueID() (string, error) {
 	hex.Encode(buf, u[:])
 
 	return string(buf), nil
+}
+
+func getTimestampUs(ts pcommon.Timestamp) int64 {
+	return int64(ts) / 1000
 }

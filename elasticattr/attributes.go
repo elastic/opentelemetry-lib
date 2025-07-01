@@ -41,6 +41,7 @@ const (
 	SpanType                       = "span.type"
 	SpanSubtype                    = "span.subtype"
 	EventOutcome                   = "event.outcome"
+	EventKind                      = "event.kind"
 	SuccessCount                   = "event.success_count"
 	ServiceTargetType              = "service.target.type"
 	ServiceTargetName              = "service.target.name"
@@ -55,4 +56,5 @@ const (
 	ErrorExceptionHandled = "error.exception.handled"
 	ErrorGroupingKey      = "error.grouping_key"
 	ErrorGroupingName     = "error.grouping_name"
+	ErrorType             = "error.type"
 )

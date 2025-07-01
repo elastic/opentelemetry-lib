@@ -44,7 +44,7 @@ func (e *Enricher) EnrichTraces(pt ptrace.Traces) {
 	resSpans := pt.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
 		resSpan := resSpans.At(i)
-		elastic.EnrichResource(resSpan.Resource(), e.Config)
+		elastic.EnrichResource(resSpan.Resource(), e.Config.Resource)
 		scopeSpans := resSpan.ScopeSpans()
 		for j := 0; j < scopeSpans.Len(); j++ {
 			scopeSpan := scopeSpans.At(j)
@@ -63,14 +63,16 @@ func (e *Enricher) EnrichLogs(pl plog.Logs) {
 	resLogs := pl.ResourceLogs()
 	for i := 0; i < resLogs.Len(); i++ {
 		resLog := resLogs.At(i)
-		elastic.EnrichResource(resLog.Resource(), e.Config)
+		resource := resLog.Resource()
+		elastic.EnrichResource(resource, e.Config.Resource)
+		resourceAttrs := resource.Attributes().AsRaw()
 		scopeLogs := resLog.ScopeLogs()
 		for j := 0; j < scopeLogs.Len(); j++ {
 			scopeSpan := scopeLogs.At(j)
 			elastic.EnrichScope(scopeSpan.Scope(), e.Config)
 			logRecords := scopeSpan.LogRecords()
 			for k := 0; k < logRecords.Len(); k++ {
-				elastic.EnrichLog(logRecords.At(k), e.Config)
+				elastic.EnrichLog(resourceAttrs, logRecords.At(k), e.Config)
 			}
 		}
 	}
@@ -83,7 +85,7 @@ func (e *Enricher) EnrichMetrics(pl pmetric.Metrics) {
 	for i := 0; i < resMetrics.Len(); i++ {
 		resMetric := resMetrics.At(i)
 		elastic.EnrichMetric(resMetric, e.Config)
-		elastic.EnrichResource(resMetric.Resource(), e.Config)
+		elastic.EnrichResource(resMetric.Resource(), e.Config.Resource)
 		scopeMetics := resMetric.ScopeMetrics()
 		for j := 0; j < scopeMetics.Len(); j++ {
 			scopeMetric := scopeMetics.At(j)
