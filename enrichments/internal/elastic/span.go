@@ -43,7 +43,7 @@ import (
 
 // defaultRepresentativeCount is the representative count to use for adjusting
 // sampled spans when a value could not be found from tracestate. Our default is
-// to assume no sampling.
+// to assume sampling all spans.
 const defaultRepresentativeCount = 1.0
 
 // EnrichSpan adds Elastic specific attributes to the OTel span.
