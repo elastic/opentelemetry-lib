@@ -10,6 +10,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden v0.131.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest v0.131.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.131.0
 	github.com/stretchr/testify v1.10.0
 	github.com/ua-parser/uap-go v0.0.0-20250213224047-9c035f085b90
 	go.opentelemetry.io/collector/component v1.37.0
