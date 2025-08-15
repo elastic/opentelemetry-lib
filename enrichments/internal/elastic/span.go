@@ -28,7 +28,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
@@ -728,29 +727,6 @@ func isElasticTransaction(span ptrace.Span) bool {
 		return true
 	}
 	return false
-}
-
-// parses string format `<key>=val<seperator>`
-func getValueForKeyInString(str string, key string, separator rune, assignChar rune) string {
-	for {
-		str = strings.TrimSpace(str)
-		if str == "" {
-			break
-		}
-		kv := str
-		if sepIdx := strings.IndexRune(str, separator); sepIdx != -1 {
-			kv = strings.TrimSpace(str[:sepIdx])
-			str = str[sepIdx+1:]
-		} else {
-			str = ""
-		}
-		equal := strings.IndexRune(kv, assignChar)
-		if equal != -1 && kv[:equal] == key {
-			return kv[equal+1:]
-		}
-	}
-
-	return ""
 }
 
 func getHostPort(
