@@ -663,7 +663,7 @@ func (s *spanEventEnrichmentContext) enrich(
 // with a difference that representative count can also include
 // dynamically calculated representivity for non-probabilistic sampling.
 // In addition, the representative count defaults to 1 if the adjusted
-// count is UNKNOWN or the th-value is invalid.
+// count is UNKNOWN or the t-value is invalid.
 //
 // Def: https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/#converting-threshold-to-an-adjusted-count-sampling-rate
 //
