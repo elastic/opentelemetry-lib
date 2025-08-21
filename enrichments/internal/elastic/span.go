@@ -28,10 +28,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/ptrace"
@@ -40,6 +40,11 @@ import (
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
+
+// defaultRepresentativeCount is the representative count to use for adjusting
+// sampled spans when a value could not be found from tracestate. Our default is
+// to assume sampling all spans.
+const defaultRepresentativeCount = 1.0
 
 // EnrichSpan adds Elastic specific attributes to the OTel span.
 // These attributes are derived from the base attributes and appended to
@@ -658,20 +663,39 @@ func (s *spanEventEnrichmentContext) enrich(
 // with a difference that representative count can also include
 // dynamically calculated representivity for non-probabilistic sampling.
 // In addition, the representative count defaults to 1 if the adjusted
-// count is UNKNOWN or the p-value is invalid.
+// count is UNKNOWN or the t-value is invalid.
+//
+// Def: https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/#converting-threshold-to-an-adjusted-count-sampling-rate
+//
+// The count is calculated by using t-value:
+// https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/#rejection-threshold-t
+//
+// For compatibility, older calculation is also supported.
 //
 // Def: https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/#adjusted-count)
 //
 // The count is calculated by using p-value:
 // https://opentelemetry.io/docs/reference/specification/trace/tracestate-probability-sampling/#p-value
 func getRepresentativeCount(tracestate string) float64 {
-	var p uint64
-	otValue := getValueForKeyInString(tracestate, "ot", ',', '=')
-	if otValue != "" {
-		pValue := getValueForKeyInString(otValue, "p", ';', ':')
+	w3cts, err := sampling.NewW3CTraceState(tracestate)
+	if err != nil || w3cts.OTelValue() == nil {
+		return defaultRepresentativeCount
+	}
 
-		if pValue != "" {
-			p, _ = strconv.ParseUint(pValue, 10, 6)
+	otts := w3cts.OTelValue()
+	// Use t-value if provided.
+	if th, ok := otts.TValueThreshold(); ok {
+		// Small optimization for always-sampled case since it's commonly used.
+		if th.Unsigned() == 0 {
+			return defaultRepresentativeCount
+		}
+		return th.AdjustedCount()
+	}
+
+	var p uint64
+	for _, kv := range otts.ExtraValues() {
+		if kv.Key == "p" && kv.Value != "" {
+			p, _ = strconv.ParseUint(kv.Value, 10, 6)
 		}
 	}
 
@@ -703,29 +727,6 @@ func isElasticTransaction(span ptrace.Span) bool {
 		return true
 	}
 	return false
-}
-
-// parses string format `<key>=val<seperator>`
-func getValueForKeyInString(str string, key string, separator rune, assignChar rune) string {
-	for {
-		str = strings.TrimSpace(str)
-		if str == "" {
-			break
-		}
-		kv := str
-		if sepIdx := strings.IndexRune(str, separator); sepIdx != -1 {
-			kv = strings.TrimSpace(str[:sepIdx])
-			str = str[sepIdx+1:]
-		} else {
-			str = ""
-		}
-		equal := strings.IndexRune(kv, assignChar)
-		if equal != -1 && kv[:equal] == key {
-			return kv[equal+1:]
-		}
-	}
-
-	return ""
 }
 
 func getHostPort(

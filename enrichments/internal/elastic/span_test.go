@@ -92,7 +92,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			name: "with_pvalue",
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
-				span.TraceState().FromRaw("ot=p:8;")
+				span.TraceState().FromRaw("ot=p:8")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -107,6 +107,98 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(256),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
+		{
+			name: "with_tvalue (ratio 1.0)",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.TraceState().FromRaw("ot=th:0")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "",
+				elasticattr.TransactionName:                "",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
+		{
+			name: "with_tvalue (ratio 0.5)",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.TraceState().FromRaw("ot=th:8")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "",
+				elasticattr.TransactionName:                "",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(2),
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(2),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
+		{
+			name: "with_tvalue (ratio 0.25)",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.TraceState().FromRaw("ot=th:c")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "",
+				elasticattr.TransactionName:                "",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(4),
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(4),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
+		{
+			name: "with_tvalue and p",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.TraceState().FromRaw("ot=th:c;p:8")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "",
+				elasticattr.TransactionName:                "",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(4),
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(4),
 				elasticattr.TransactionResult:              "Success",
 				elasticattr.TransactionType:                "unknown",
 			},
