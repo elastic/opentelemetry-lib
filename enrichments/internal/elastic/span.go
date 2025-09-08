@@ -37,6 +37,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv27 "go.opentelemetry.io/otel/semconv/v1.27.0"
+	semconv37 "go.opentelemetry.io/otel/semconv/v1.37.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 )
@@ -197,7 +198,7 @@ func (s *spanEnrichmentContext) Enrich(
 		case string(semconv25.DBSystemKey):
 			s.isDB = true
 			s.dbSystem = v.Str()
-		case string(semconv27.GenAISystemKey):
+		case string(semconv27.GenAISystemKey), string(semconv37.GenAIProviderNameKey):
 			s.isGenAi = true
 			s.genAiSystem = v.Str()
 		case string(semconv27.UserAgentOriginalKey):
