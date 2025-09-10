@@ -75,13 +75,11 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	// agent.name and version are set by classic Elastic APM Agents - if the value is present, we take it
 	// otherwise the setAgent[Name|Version] functions are called to derive the values
 	if cfg.AgentName.Enabled {
-		s.setAgentName(resource)
 		if _, exists := resource.Attributes().Get(elasticattr.AgentName); !exists {
 			s.setAgentName(resource)
 		}
 	}
 	if cfg.AgentVersion.Enabled {
-		s.setAgentVersion(resource)
 		if _, exists := resource.Attributes().Get(elasticattr.AgentVersion); !exists {
 			s.setAgentVersion(resource)
 		}
