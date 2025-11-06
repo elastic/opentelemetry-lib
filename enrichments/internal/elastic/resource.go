@@ -20,11 +20,12 @@ package elastic
 import (
 	"fmt"
 
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
+
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
@@ -45,6 +46,9 @@ type resourceEnrichmentContext struct {
 
 	deploymentEnvironment     string
 	deploymentEnvironmentName string
+
+	serviceInstanceID string
+	containerID       string
 }
 
 func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config.ResourceConfig) {
@@ -68,6 +72,10 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 			s.deploymentEnvironment = v.Str()
 		case string(semconv.DeploymentEnvironmentNameKey):
 			s.deploymentEnvironmentName = v.Str()
+		case string(semconv25.ServiceInstanceIDKey):
+			s.serviceInstanceID = v.Str()
+		case string(semconv.ContainerIDKey):
+			s.containerID = v.Str()
 		}
 		return true
 	})
@@ -90,6 +98,10 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	}
 	if cfg.DeploymentEnvironment.Enabled {
 		s.setDeploymentEnvironment(resource)
+	}
+
+	if cfg.ServiceInstanceID.Enabled {
+		s.setServiceInstanceID(resource)
 	}
 }
 
@@ -160,4 +172,24 @@ func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pco
 		string(semconv.HostNameKey),
 		s.k8sNodeName,
 	)
+}
+
+// setServiceInstanceID sets service.instance.id from container.id or host.name
+// if service.instance.id is not already set. This follows the existing APM logic for
+// `service.node.name`.
+func (s *resourceEnrichmentContext) setServiceInstanceID(resource pcommon.Resource) {
+	if s.serviceInstanceID != "" {
+		return
+	}
+
+	switch {
+	case s.containerID != "":
+		s.serviceInstanceID = s.containerID
+	case s.hostName != "":
+		s.serviceInstanceID = s.hostName
+	default:
+		// no instance id could be derived
+		return
+	}
+	resource.Attributes().PutStr(string(semconv25.ServiceInstanceIDKey), s.serviceInstanceID)
 }

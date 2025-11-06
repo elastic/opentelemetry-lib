@@ -20,13 +20,14 @@ package elastic
 import (
 	"testing"
 
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	semconv25 "go.opentelemetry.io/otel/semconv/v1.25.0"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
+
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 )
 
 func TestResourceEnrich(t *testing.T) {
@@ -174,10 +175,11 @@ func TestResourceEnrich(t *testing.T) {
 			}(),
 			config: config.Enabled().Resource,
 			enrichedAttrs: map[string]any{
-				string(semconv.HostNameKey):    "k8s-node",
-				string(semconv.K8SNodeNameKey): "k8s-node",
-				elasticattr.AgentName:          "otlp",
-				elasticattr.AgentVersion:       "unknown",
+				string(semconv.HostNameKey):            "k8s-node",
+				string(semconv.K8SNodeNameKey):         "k8s-node",
+				elasticattr.AgentName:                  "otlp",
+				elasticattr.AgentVersion:               "unknown",
+				string(semconv25.ServiceInstanceIDKey): string("test-host"),
 			},
 		},
 		{
@@ -243,6 +245,58 @@ func TestResourceEnrich(t *testing.T) {
 				string(semconv.DeploymentEnvironmentNameKey): "prod",
 				elasticattr.AgentName:                        "otlp",
 				elasticattr.AgentVersion:                     "unknown",
+			},
+		},
+		{
+			name: "service_instance_id_derived_from_container_id",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(string(semconv.ServiceInstanceIDKey), "")
+				res.Attributes().PutStr(string(semconv25.ContainerIDKey), "container-id")
+				res.Attributes().PutStr(string(semconv25.HostNameKey), "k8s-node")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				string(semconv25.ServiceInstanceIDKey): "container-id",
+				string(semconv.ContainerIDKey):         "container-id",
+				string(semconv.HostNameKey):            "k8s-node",
+				elasticattr.AgentName:                  "otlp",
+				elasticattr.AgentVersion:               "unknown",
+			},
+		},
+		{
+			name: "service_instance_id_derived_from_host_name",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(string(semconv.ServiceInstanceIDKey), "")
+				res.Attributes().PutStr(string(semconv25.HostNameKey), "k8s-node")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				string(semconv25.ServiceInstanceIDKey): "k8s-node",
+				string(semconv.HostNameKey):            "k8s-node",
+				elasticattr.AgentName:                  "otlp",
+				elasticattr.AgentVersion:               "unknown",
+			},
+		},
+		{
+			name: "service_instance_id_already_set",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(string(semconv.ServiceInstanceIDKey), "node-name")
+				res.Attributes().PutStr(string(semconv25.ContainerIDKey), "container-id")
+				res.Attributes().PutStr(string(semconv25.HostNameKey), "k8s-node")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				string(semconv25.ServiceInstanceIDKey): "node-name",
+				string(semconv.ContainerIDKey):         "container-id",
+				string(semconv.HostNameKey):            "k8s-node",
+				elasticattr.AgentName:                  "otlp",
+				elasticattr.AgentVersion:               "unknown",
 			},
 		},
 	} {
