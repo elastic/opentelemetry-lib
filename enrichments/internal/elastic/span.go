@@ -29,8 +29,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/pcommon"
@@ -40,6 +38,9 @@ import (
 	semconv37 "go.opentelemetry.io/otel/semconv/v1.37.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
+
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 )
 
 // defaultRepresentativeCount is the representative count to use for adjusting
@@ -444,9 +445,14 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) (spanType s
 		}
 	}
 
-	span.Attributes().PutStr(elasticattr.SpanType, spanType)
+	// do not overwrite existing span.type and span.subtype attributes
+	if existingSpanType, _ := span.Attributes().Get(elasticattr.SpanType); existingSpanType.Str() == "" {
+		span.Attributes().PutStr(elasticattr.SpanType, spanType)
+	}
 	if spanSubtype != "" {
-		span.Attributes().PutStr(elasticattr.SpanSubtype, spanSubtype)
+		if existingSpanSubtype, _ := span.Attributes().Get(elasticattr.SpanSubtype); existingSpanSubtype.Str() == "" {
+			span.Attributes().PutStr(elasticattr.SpanSubtype, spanSubtype)
+		}
 	}
 
 	return spanType, spanSubtype
@@ -494,9 +500,15 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 		}
 	}
 
+	// set either target.type or target.name if at least one is available
 	if targetType != "" || targetName != "" {
-		span.Attributes().PutStr(elasticattr.ServiceTargetType, targetType)
-		span.Attributes().PutStr(elasticattr.ServiceTargetName, targetName)
+		// do not overwrite existing target.type and target.name attributes
+		if existingTargetType, _ := span.Attributes().Get(elasticattr.ServiceTargetType); existingTargetType.Str() == "" {
+			span.Attributes().PutStr(elasticattr.ServiceTargetType, targetType)
+		}
+		if existingTargetName, _ := span.Attributes().Get(elasticattr.ServiceTargetName); existingTargetName.Str() == "" {
+			span.Attributes().PutStr(elasticattr.ServiceTargetName, targetName)
+		}
 	}
 }
 
@@ -536,7 +548,10 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 
 	if destnResource != "" {
-		span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, destnResource)
+		// do not overwrite existing span.destination.service.resource attribute
+		if existingDestnResource, _ := span.Attributes().Get(elasticattr.SpanDestinationServiceResource); existingDestnResource.Str() == "" {
+			span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, destnResource)
+		}
 	}
 }
 

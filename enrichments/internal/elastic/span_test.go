@@ -24,8 +24,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/pdatatest/ptracetest"
 	"github.com/stretchr/testify/assert"
@@ -37,6 +35,9 @@ import (
 	semconv37 "go.opentelemetry.io/otel/semconv/v1.37.0"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
+
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 )
 
 // Tests the enrichment logic for elastic's transaction definition.
@@ -932,6 +933,39 @@ func TestElasticSpanEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "http_span_with_existing_attributes_are_preserved",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutInt(
+					string(semconv25.HTTPResponseStatusCodeKey),
+					http.StatusOK,
+				)
+				span.Attributes().PutStr(elasticattr.SpanType, "external-test")
+				span.Attributes().PutStr(elasticattr.SpanSubtype, "http-test")
+				span.Attributes().PutStr(elasticattr.ServiceTargetName, "api.example.com")
+				span.Attributes().PutStr(elasticattr.ServiceTargetType, "http-test")
+				span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, "api.example.com:443")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                       "testspan",
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanType:                       "external-test",
+				elasticattr.SpanSubtype:                    "http-test",
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetType:              "http-test",
+				elasticattr.ServiceTargetName:              "api.example.com",
+				elasticattr.SpanDestinationServiceResource: "api.example.com:443",
+			},
+		},
+		{
 			name: "http_span_full_url",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
@@ -1057,6 +1091,39 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+			},
+		},
+		{
+			name: "rpc_span_grpc_with_existing_attributes_are_preserved",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutInt(
+					string(semconv25.RPCGRPCStatusCodeKey),
+					int64(codes.OK),
+				)
+				span.Attributes().PutStr(elasticattr.SpanType, "external-test")
+				span.Attributes().PutStr(elasticattr.SpanSubtype, "grpc-test")
+				span.Attributes().PutStr(elasticattr.ServiceTargetName, "myservice.EchoService")
+				span.Attributes().PutStr(elasticattr.ServiceTargetType, "grpc-test")
+				span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, "api.example.com:443")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                       "testspan",
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanType:                       "external-test",
+				elasticattr.SpanSubtype:                    "grpc-test",
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetType:              "grpc-test",
+				elasticattr.ServiceTargetName:              "myservice.EchoService",
+				elasticattr.SpanDestinationServiceResource: "api.example.com:443",
 			},
 		},
 		{
@@ -1188,6 +1255,36 @@ func TestElasticSpanEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "messaging_with_existing_attributes_are_preserved",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "kafka")
+				span.Attributes().PutStr(elasticattr.SpanType, "messaging-test")
+				span.Attributes().PutStr(elasticattr.SpanSubtype, "kafka-test")
+				span.Attributes().PutStr(elasticattr.ServiceTargetName, "user-events")
+				span.Attributes().PutStr(elasticattr.ServiceTargetType, "kafka-test")
+				span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, "broker.com:443")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                       "testspan",
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanType:                       "messaging-test",
+				elasticattr.SpanSubtype:                    "kafka-test",
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetType:              "kafka-test",
+				elasticattr.ServiceTargetName:              "user-events",
+				elasticattr.SpanDestinationServiceResource: "broker.com:443",
+			},
+		},
+		{
 			name: "messaging_destination",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
@@ -1263,6 +1360,40 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "elasticsearch",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+			},
+		},
+		{
+			name: "db_with_existing_attributes_are_preserved",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(
+					string(semconv25.URLFullKey),
+					"https://localhost:5432",
+				)
+				span.Attributes().PutStr(string(semconv25.DBSystemKey), "postgresql")
+				span.Attributes().PutStr(elasticattr.SpanType, "db")
+				span.Attributes().PutStr(elasticattr.SpanSubtype, "postgresql")
+				span.Attributes().PutStr(elasticattr.ServiceTargetName, "customers")
+				span.Attributes().PutStr(elasticattr.ServiceTargetType, "postgresql")
+				span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, "postgresql/testdb")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                       "testspan",
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanType:                       "db",
+				elasticattr.SpanSubtype:                    "postgresql",
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetType:              "postgresql",
+				elasticattr.ServiceTargetName:              "customers",
+				elasticattr.SpanDestinationServiceResource: "postgresql/testdb",
 			},
 		},
 		{
@@ -1372,6 +1503,36 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
+			},
+		},
+		{
+			name: "genai_with_existing_attributes_are_preserved",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				span.Attributes().PutStr(string(semconv37.GenAIProviderNameKey), "openai")
+				span.Attributes().PutStr(elasticattr.SpanType, "genai")
+				span.Attributes().PutStr(elasticattr.SpanSubtype, "openai-test")
+				span.Attributes().PutStr(elasticattr.ServiceTargetName, "openai-api")
+				span.Attributes().PutStr(elasticattr.ServiceTargetType, "genai")
+				span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, "api.openai.com:443")
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                       "testspan",
+				elasticattr.ProcessorEvent:                 "span",
+				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanType:                       "genai",
+				elasticattr.SpanSubtype:                    "openai-test",
+				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetType:              "genai",
+				elasticattr.ServiceTargetName:              "openai-api",
+				elasticattr.SpanDestinationServiceResource: "api.openai.com:443",
 			},
 		},
 		{
