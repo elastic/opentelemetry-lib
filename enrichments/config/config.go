@@ -34,6 +34,7 @@ type ResourceConfig struct {
 	AgentVersion          AttributeConfig `mapstructure:"agent_version"`
 	OverrideHostName      AttributeConfig `mapstructure:"override_host_name"`
 	DeploymentEnvironment AttributeConfig `mapstructure:"deployment_environment"`
+	ServiceInstanceID     AttributeConfig `mapstructure:"service_instance_id"`
 }
 
 // ScopeConfig configures the enrichment of scope attributes.
@@ -122,6 +123,7 @@ func Enabled() Config {
 			AgentVersion:          AttributeConfig{Enabled: true},
 			OverrideHostName:      AttributeConfig{Enabled: true},
 			DeploymentEnvironment: AttributeConfig{Enabled: true},
+			ServiceInstanceID:     AttributeConfig{Enabled: true},
 		},
 		Scope: ScopeConfig{
 			ServiceFrameworkName:    AttributeConfig{Enabled: true},
