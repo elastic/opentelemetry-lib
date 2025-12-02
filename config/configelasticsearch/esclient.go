@@ -102,10 +102,10 @@ func (cl *clientLogger) ResponseBodyEnabled() bool {
 // user_agent should be added with the confighttp client
 func (cfg *ClientConfig) ToClient(
 	ctx context.Context,
-	host component.Host,
+	extensions map[component.ID]component.Component,
 	telemetry component.TelemetrySettings,
 ) (*elasticsearch.Client, error) {
-	httpClient, err := cfg.ClientConfig.ToClient(ctx, host, telemetry)
+	httpClient, err := cfg.ClientConfig.ToClient(ctx, extensions, telemetry)
 	if err != nil {
 		return nil, err
 	}

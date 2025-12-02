@@ -97,7 +97,7 @@ func TestConfig(t *testing.T) {
 			assert.NoError(t, xconfmap.Validate(cfg))
 			assert.Equal(t, tt.expected, &cfg)
 
-			_, err = cfg.ToClient(context.Background(), componenttest.NewNopHost(), componenttest.NewNopTelemetrySettings())
+			_, err = cfg.ToClient(context.Background(), nil, componenttest.NewNopTelemetrySettings())
 			require.NoError(t, err)
 		})
 	}
