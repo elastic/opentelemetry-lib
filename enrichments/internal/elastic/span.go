@@ -41,6 +41,7 @@ import (
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 )
 
 // defaultRepresentativeCount is the representative count to use for adjusting
@@ -84,6 +85,7 @@ type spanEnrichmentContext struct {
 	messagingDestinationName string
 	genAiSystem              string
 	typeValue                string
+	transactionType          string
 
 	// The inferred* attributes are derived from a base attribute
 	userAgentOriginal        string
@@ -210,6 +212,8 @@ func (s *spanEnrichmentContext) Enrich(
 			s.userAgentVersion = v.Str()
 		case "type":
 			s.typeValue = v.Str()
+		case elasticattr.TransactionType:
+			s.transactionType = v.Str()
 		}
 		return true
 	})
@@ -244,35 +248,35 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	span ptrace.Span,
 	cfg config.ElasticTransactionConfig,
 ) {
-	if cfg.TimestampUs.Enabled {
+	if cfg.TimestampUs.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TimestampUs) {
 		span.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
-	if cfg.Sampled.Enabled {
+	if cfg.Sampled.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionSampled) {
 		span.Attributes().PutBool(elasticattr.TransactionSampled, s.getSampled())
 	}
-	if cfg.ID.Enabled {
+	if cfg.ID.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionID) {
 		span.Attributes().PutStr(elasticattr.TransactionID, span.SpanID().String())
 	}
-	if cfg.Root.Enabled {
+	if cfg.Root.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionRoot) {
 		span.Attributes().PutBool(elasticattr.TransactionRoot, isTraceRoot(span))
 	}
-	if cfg.Name.Enabled {
+	if cfg.Name.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionName) {
 		span.Attributes().PutStr(elasticattr.TransactionName, span.Name())
 	}
-	if cfg.ProcessorEvent.Enabled {
+	if cfg.ProcessorEvent.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.ProcessorEvent) {
 		span.Attributes().PutStr(elasticattr.ProcessorEvent, "transaction")
 	}
-	if cfg.RepresentativeCount.Enabled {
+	if cfg.RepresentativeCount.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionRepresentativeCount) {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
 		span.Attributes().PutDouble(elasticattr.TransactionRepresentativeCount, repCount)
 	}
-	if cfg.DurationUs.Enabled {
+	if cfg.DurationUs.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionDurationUs) {
 		span.Attributes().PutInt(elasticattr.TransactionDurationUs, getDurationUs(span))
 	}
-	if cfg.Type.Enabled {
+	if cfg.Type.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionType) {
 		span.Attributes().PutStr(elasticattr.TransactionType, s.getTxnType())
 	}
-	if cfg.Result.Enabled {
+	if cfg.Result.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TransactionResult) {
 		s.setTxnResult(span)
 	}
 	if cfg.EventOutcome.Enabled {
@@ -294,13 +298,13 @@ func (s *spanEnrichmentContext) enrichSpan(
 ) {
 	var spanType, spanSubtype string
 
-	if cfg.TimestampUs.Enabled {
+	if cfg.TimestampUs.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.TimestampUs) {
 		span.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
-	if cfg.Name.Enabled {
+	if cfg.Name.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.SpanName) {
 		span.Attributes().PutStr(elasticattr.SpanName, span.Name())
 	}
-	if cfg.RepresentativeCount.Enabled {
+	if cfg.RepresentativeCount.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.SpanRepresentativeCount) {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
 		span.Attributes().PutDouble(elasticattr.SpanRepresentativeCount, repCount)
 	}
@@ -310,7 +314,7 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.EventOutcome.Enabled {
 		s.setEventOutcome(span)
 	}
-	if cfg.DurationUs.Enabled {
+	if cfg.DurationUs.Enabled && attribute.IsEmpty(span.Attributes(), elasticattr.SpanDurationUs) {
 		span.Attributes().PutInt(elasticattr.SpanDurationUs, getDurationUs(span))
 	}
 	if cfg.ServiceTarget.Enabled {
@@ -322,14 +326,18 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.InferredSpans.Enabled {
 		s.setInferredSpans(span)
 	}
-	if cfg.ProcessorEvent.Enabled && !isExitRootSpan {
+	if cfg.ProcessorEvent.Enabled && !isExitRootSpan &&
+		attribute.IsEmpty(span.Attributes(), elasticattr.ProcessorEvent) {
 		span.Attributes().PutStr(elasticattr.ProcessorEvent, "span")
 	}
 	if cfg.UserAgent.Enabled {
 		s.setUserAgentIfRequired(span)
 	}
 
-	if isExitRootSpan && transactionTypeEnabled && s.typeValue == "" {
+	// The transaction type should not be updated if it was originally provided (s.transactionType is not empty)
+	// Prior enrichment logic may have set this value by using `s.getTxnType()`, in this
+	// case it is okay to update the transaction type with a more specific value.
+	if isExitRootSpan && transactionTypeEnabled && s.typeValue == "" && s.transactionType == "" {
 		if spanType != "" {
 			transactionType := spanType
 			if spanSubtype != "" {
@@ -414,8 +422,13 @@ func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 		outcome = "failure"
 		successCount = 0
 	}
-	span.Attributes().PutStr(elasticattr.EventOutcome, outcome)
-	span.Attributes().PutInt(elasticattr.SuccessCount, int64(successCount))
+
+	if attribute.IsEmpty(span.Attributes(), elasticattr.EventOutcome) {
+		span.Attributes().PutStr(elasticattr.EventOutcome, outcome)
+	}
+	if attribute.IsEmpty(span.Attributes(), elasticattr.SuccessCount) {
+		span.Attributes().PutInt(elasticattr.SuccessCount, int64(successCount))
+	}
 }
 
 func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) (spanType string, spanSubtype string) {
@@ -445,12 +458,11 @@ func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) (spanType s
 		}
 	}
 
-	// do not overwrite existing span.type and span.subtype attributes
-	if existingSpanType, _ := span.Attributes().Get(elasticattr.SpanType); existingSpanType.Str() == "" {
+	if attribute.IsEmpty(span.Attributes(), elasticattr.SpanType) {
 		span.Attributes().PutStr(elasticattr.SpanType, spanType)
 	}
 	if spanSubtype != "" {
-		if existingSpanSubtype, _ := span.Attributes().Get(elasticattr.SpanSubtype); existingSpanSubtype.Str() == "" {
+		if attribute.IsEmpty(span.Attributes(), elasticattr.SpanSubtype) {
 			span.Attributes().PutStr(elasticattr.SpanSubtype, spanSubtype)
 		}
 	}
@@ -502,11 +514,10 @@ func (s *spanEnrichmentContext) setServiceTarget(span ptrace.Span) {
 
 	// set either target.type or target.name if at least one is available
 	if targetType != "" || targetName != "" {
-		// do not overwrite existing target.type and target.name attributes
-		if existingTargetType, _ := span.Attributes().Get(elasticattr.ServiceTargetType); existingTargetType.Str() == "" {
+		if attribute.IsEmpty(span.Attributes(), elasticattr.ServiceTargetType) {
 			span.Attributes().PutStr(elasticattr.ServiceTargetType, targetType)
 		}
-		if existingTargetName, _ := span.Attributes().Get(elasticattr.ServiceTargetName); existingTargetName.Str() == "" {
+		if attribute.IsEmpty(span.Attributes(), elasticattr.ServiceTargetName) {
 			span.Attributes().PutStr(elasticattr.ServiceTargetName, targetName)
 		}
 	}
@@ -548,14 +559,17 @@ func (s *spanEnrichmentContext) setDestinationService(span ptrace.Span) {
 	}
 
 	if destnResource != "" {
-		// do not overwrite existing span.destination.service.resource attribute
-		if existingDestnResource, _ := span.Attributes().Get(elasticattr.SpanDestinationServiceResource); existingDestnResource.Str() == "" {
+		if attribute.IsEmpty(span.Attributes(), elasticattr.SpanDestinationServiceResource) {
 			span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, destnResource)
 		}
 	}
 }
 
 func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
+	if !attribute.IsEmpty(span.Attributes(), elasticattr.ChildIDs) {
+		return
+	}
+
 	spanLinks := span.Links()
 	childIDs := pcommon.NewSlice()
 	spanLinks.RemoveIf(func(spanLink ptrace.SpanLink) (remove bool) {
@@ -580,13 +594,15 @@ func (s *spanEnrichmentContext) setInferredSpans(span ptrace.Span) {
 }
 
 func (s *spanEnrichmentContext) setUserAgentIfRequired(span ptrace.Span) {
-	if s.userAgentName == "" && s.inferredUserAgentName != "" {
+	if s.userAgentName == "" && s.inferredUserAgentName != "" &&
+		attribute.IsEmpty(span.Attributes(), string(semconv27.UserAgentNameKey)) {
 		span.Attributes().PutStr(
 			string(semconv27.UserAgentNameKey),
 			s.inferredUserAgentName,
 		)
 	}
-	if s.userAgentVersion == "" && s.inferredUserAgentVersion != "" {
+	if s.userAgentVersion == "" && s.inferredUserAgentVersion != "" &&
+		attribute.IsEmpty(span.Attributes(), string(semconv27.UserAgentVersionKey)) {
 		span.Attributes().PutStr(
 			string(semconv27.UserAgentVersionKey),
 			s.inferredUserAgentVersion,
@@ -624,10 +640,10 @@ func (s *spanEventEnrichmentContext) enrich(
 	}
 
 	// Enrich span event attributes.
-	if cfg.TimestampUs.Enabled {
+	if cfg.TimestampUs.Enabled && attribute.IsEmpty(se.Attributes(), elasticattr.TimestampUs) {
 		se.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(se.Timestamp()))
 	}
-	if cfg.ProcessorEvent.Enabled && s.exception {
+	if cfg.ProcessorEvent.Enabled && s.exception && attribute.IsEmpty(se.Attributes(), elasticattr.ProcessorEvent) {
 		se.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
 	}
 	if s.exceptionType == "" && s.exceptionMessage == "" {
@@ -636,15 +652,15 @@ func (s *spanEventEnrichmentContext) enrich(
 	}
 
 	// Span event represents exception
-	if cfg.ErrorID.Enabled {
+	if cfg.ErrorID.Enabled && attribute.IsEmpty(se.Attributes(), elasticattr.ErrorID) {
 		if id, err := newUniqueID(); err == nil {
 			se.Attributes().PutStr(elasticattr.ErrorID, id)
 		}
 	}
-	if cfg.ErrorExceptionHandled.Enabled {
+	if cfg.ErrorExceptionHandled.Enabled && attribute.IsEmpty(se.Attributes(), elasticattr.ErrorExceptionHandled) {
 		se.Attributes().PutBool(elasticattr.ErrorExceptionHandled, !s.exceptionEscaped)
 	}
-	if cfg.ErrorGroupingKey.Enabled {
+	if cfg.ErrorGroupingKey.Enabled && attribute.IsEmpty(se.Attributes(), elasticattr.ErrorGroupingKey) {
 		// See https://github.com/elastic/apm-data/issues/299
 		hash := md5.New()
 		// ignoring errors in hashing
@@ -655,18 +671,16 @@ func (s *spanEventEnrichmentContext) enrich(
 		}
 		se.Attributes().PutStr(elasticattr.ErrorGroupingKey, hex.EncodeToString(hash.Sum(nil)))
 	}
-	if cfg.ErrorGroupingName.Enabled {
-		if s.exceptionMessage != "" {
-			se.Attributes().PutStr(elasticattr.ErrorGroupingName, s.exceptionMessage)
-		}
+	if cfg.ErrorGroupingName.Enabled && s.exceptionMessage != "" && attribute.IsEmpty(se.Attributes(), elasticattr.ErrorGroupingName) {
+		se.Attributes().PutStr(elasticattr.ErrorGroupingName, s.exceptionMessage)
 	}
 
 	// Transaction type and sampled are added as span event enrichment only for errors
 	if parentCtx.isTransaction && s.exception {
-		if cfg.TransactionSampled.Enabled {
+		if cfg.TransactionSampled.Enabled && attribute.IsEmpty(se.Attributes(), elasticattr.TransactionSampled) {
 			se.Attributes().PutBool(elasticattr.TransactionSampled, parentCtx.getSampled())
 		}
-		if cfg.TransactionType.Enabled {
+		if cfg.TransactionType.Enabled && attribute.IsEmpty(se.Attributes(), elasticattr.TransactionType) {
 			se.Attributes().PutStr(elasticattr.TransactionType, parentCtx.getTxnType())
 		}
 	}

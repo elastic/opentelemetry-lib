@@ -465,6 +465,59 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			}(),
 		},
 		{
+			name: "inferred_spans_with_existing_child_ids",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.SetSpanID([8]byte{1})
+				// Set existing child.ids attribute
+				existingChildIDs := span.Attributes().PutEmptySlice(elasticattr.ChildIDs)
+				existingChildIDs.AppendEmpty().SetStr("existing-child-id-1")
+				existingChildIDs.AppendEmpty().SetStr("existing-child-id-2")
+
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+
+				childLink2 := span.Links().AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+				elasticattr.ChildIDs:                       []any{"existing-child-id-1", "existing-child-id-2"},
+			},
+			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
+				spanLinks := ptrace.NewSpanLinkSlice()
+				// span links should remain since child.ids were not overwritten
+				normalLink := spanLinks.AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+				childLink := spanLinks.AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+				childLink2 := spanLinks.AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return &spanLinks
+			}(),
+		},
+		{
 			name: "user_agent_parse_name_version",
 			input: func() ptrace.Span {
 				span := getElasticTxn()
@@ -644,6 +697,85 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "outgoing_http_root_span_with_existing_transaction_type",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr(string(semconv27.HTTPRequestMethodKey), "GET")
+				span.Attributes().PutStr(string(semconv27.URLFullKey), "http://localhost:8080")
+				span.Attributes().PutInt(string(semconv27.HTTPResponseStatusCodeKey), 200)
+				span.Attributes().PutStr(string(semconv27.NetworkProtocolVersionKey), "1.1")
+				span.Attributes().PutStr(elasticattr.TransactionType, "existing-transaction-type")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "external",
+				elasticattr.SpanSubtype:                    "http",
+				elasticattr.SpanDestinationServiceResource: "localhost:8080",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "localhost:8080",
+				elasticattr.ServiceTargetType:              "http",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				// transaction.type should not be updated
+				elasticattr.TransactionType:         "existing-transaction-type",
+				elasticattr.TransactionSampled:      true,
+				elasticattr.TransactionRoot:         true,
+				elasticattr.SpanDurationUs:          int64(0),
+				elasticattr.SpanRepresentativeCount: float64(1),
+			},
+		},
+		{
+			name: "outgoing_http_root_span_with_user_provided_type_attribute",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr(string(semconv27.HTTPRequestMethodKey), "GET")
+				span.Attributes().PutStr(string(semconv27.URLFullKey), "http://localhost:8080")
+				span.Attributes().PutInt(string(semconv27.HTTPResponseStatusCodeKey), 200)
+				span.Attributes().PutStr(string(semconv27.NetworkProtocolVersionKey), "1.1")
+				// User provided "type" attribute (not transaction.type directly)
+				span.Attributes().PutStr("type", "user-provided-type")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "external",
+				elasticattr.SpanSubtype:                    "http",
+				elasticattr.SpanDestinationServiceResource: "localhost:8080",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "localhost:8080",
+				elasticattr.ServiceTargetType:              "http",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				// transaction.type should be set from "type" attribute, not overridden by exit root span logic
+				elasticattr.TransactionType:         "user-provided-type",
+				elasticattr.TransactionSampled:      true,
+				elasticattr.TransactionRoot:         true,
+				elasticattr.SpanDurationUs:          int64(0),
+				elasticattr.SpanRepresentativeCount: float64(1),
+			},
+		},
+		{
 			name: "db_root_span",
 			input: func() ptrace.Span {
 				span := ptrace.NewSpan()
@@ -678,6 +810,42 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.TransactionRoot:                true,
 				elasticattr.SpanDurationUs:                 int64(0),
 				elasticattr.SpanRepresentativeCount:        float64(1),
+			},
+		},
+		{
+			name: "db_root_span_transaction_type_enrichment",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetName("rootClientSpan")
+				span.SetSpanID([8]byte{1})
+				span.SetKind(ptrace.SpanKindClient)
+				span.Attributes().PutStr(string(semconv25.DBSystemKey), "postgresql")
+				span.Attributes().PutStr(string(semconv25.DBNameKey), "myDb")
+				return span
+			}(),
+			config: config.Enabled(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(0),
+				elasticattr.TransactionName:                "rootClientSpan",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.SpanType:                       "db",
+				elasticattr.SpanSubtype:                    "postgresql",
+				elasticattr.SpanDestinationServiceResource: "postgresql",
+				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.ServiceTargetName:              "myDb",
+				elasticattr.ServiceTargetType:              "postgresql",
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionDurationUs:          int64(0),
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionResult:              "Success",
+				// enrichment sets transaction.type value
+				elasticattr.TransactionType:         "db.postgresql",
+				elasticattr.TransactionSampled:      true,
+				elasticattr.TransactionRoot:         true,
+				elasticattr.SpanDurationUs:          int64(0),
+				elasticattr.SpanRepresentativeCount: float64(1),
 			},
 		},
 		{
@@ -1462,6 +1630,55 @@ func TestElasticSpanEnrich(t *testing.T) {
 			}(),
 		},
 		{
+			name: "inferred_spans_with_existing_child_ids",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				// set existing child.ids attribute
+				existingChildIDs := span.Attributes().PutEmptySlice(elasticattr.ChildIDs)
+				existingChildIDs.AppendEmpty().SetStr("existing-child-id-1")
+				existingChildIDs.AppendEmpty().SetStr("existing-child-id-2")
+
+				normalLink := span.Links().AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+
+				childLink := span.Links().AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+
+				childLink2 := span.Links().AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "unknown",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+				elasticattr.ChildIDs:                []any{"existing-child-id-1", "existing-child-id-2"},
+			},
+			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
+				spanLinks := ptrace.NewSpanLinkSlice()
+				// links should remain since child.ids was not overwritten
+				normalLink := spanLinks.AppendEmpty()
+				normalLink.SetSpanID([8]byte{2})
+				childLink := spanLinks.AppendEmpty()
+				childLink.SetSpanID([8]byte{3})
+				childLink.Attributes().PutBool("is_child", true)
+				childLink2 := spanLinks.AppendEmpty()
+				childLink2.SetSpanID([8]byte{4})
+				childLink2.Attributes().PutBool("elastic.is_child", true)
+				return &spanLinks
+			}(),
+		},
+		{
 			name: "genai_with_system",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
@@ -1613,6 +1830,84 @@ func TestElasticSpanEnrich(t *testing.T) {
 				string(semconv27.UserAgentVersionKey): "51.0.2704",
 			},
 		},
+		{
+			name: "span_existing_attributes_not_overridden",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.Attributes().PutInt(elasticattr.TimestampUs, 1234567890)
+				span.Attributes().PutStr(elasticattr.SpanName, "existing-span-name")
+				span.Attributes().PutStr(elasticattr.ProcessorEvent, "existing-event")
+				span.Attributes().PutDouble(elasticattr.SpanRepresentativeCount, 99.5)
+				span.Attributes().PutInt(elasticattr.SpanDurationUs, 999999)
+				span.Attributes().PutStr(elasticattr.SpanType, "existing-type")
+				span.Attributes().PutStr(elasticattr.SpanSubtype, "existing-subtype")
+				span.Attributes().PutStr(elasticattr.ServiceTargetType, "existing-target-type")
+				span.Attributes().PutStr(elasticattr.ServiceTargetName, "existing-target-name")
+				span.Attributes().PutStr(elasticattr.SpanDestinationServiceResource, "existing-destination")
+				span.Attributes().PutStr(elasticattr.EventOutcome, "existing-outcome")
+				span.Attributes().PutInt(elasticattr.SuccessCount, 99)
+				// attributes needed for enrichment logic to run
+				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutInt(string(semconv25.HTTPResponseStatusCodeKey), http.StatusOK)
+				return span
+			}(),
+			config: config.Enabled().Span,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(1234567890),
+				elasticattr.SpanName:                       "existing-span-name",
+				elasticattr.ProcessorEvent:                 "existing-event",
+				elasticattr.SpanRepresentativeCount:        float64(99.5),
+				elasticattr.SpanDurationUs:                 int64(999999),
+				elasticattr.SpanType:                       "existing-type",
+				elasticattr.SpanSubtype:                    "existing-subtype",
+				elasticattr.ServiceTargetType:              "existing-target-type",
+				elasticattr.ServiceTargetName:              "existing-target-name",
+				elasticattr.SpanDestinationServiceResource: "existing-destination",
+				elasticattr.EventOutcome:                   "existing-outcome",
+				elasticattr.SuccessCount:                   int64(99),
+			},
+		},
+		{
+			name: "transaction_existing_attributes_not_overridden",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.SetSpanID([8]byte{1})
+				span.SetStartTimestamp(startTs)
+				span.SetEndTimestamp(endTs)
+				span.SetName("testtxn")
+				span.Attributes().PutInt(elasticattr.TimestampUs, 1234567890)
+				span.Attributes().PutBool(elasticattr.TransactionSampled, false)
+				span.Attributes().PutStr(elasticattr.TransactionID, "existing-txn-id")
+				span.Attributes().PutBool(elasticattr.TransactionRoot, false)
+				span.Attributes().PutStr(elasticattr.TransactionName, "existing-txn-name")
+				span.Attributes().PutStr(elasticattr.ProcessorEvent, "existing-event")
+				span.Attributes().PutDouble(elasticattr.TransactionRepresentativeCount, 99.5)
+				span.Attributes().PutInt(elasticattr.TransactionDurationUs, 999999)
+				span.Attributes().PutStr(elasticattr.TransactionType, "existing-type")
+				span.Attributes().PutStr(elasticattr.TransactionResult, "existing-result")
+				span.Attributes().PutStr(elasticattr.EventOutcome, "existing-outcome")
+				span.Attributes().PutInt(elasticattr.SuccessCount, 99)
+				// Add attributes needed for enrichment logic to run
+				span.Attributes().PutInt(string(semconv25.HTTPStatusCodeKey), http.StatusOK)
+				return span
+			}(),
+			config: config.ElasticSpanConfig{},
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    int64(1234567890),
+				elasticattr.TransactionSampled:             false,
+				elasticattr.TransactionID:                  "existing-txn-id",
+				elasticattr.TransactionRoot:                false,
+				elasticattr.TransactionName:                "existing-txn-name",
+				elasticattr.ProcessorEvent:                 "existing-event",
+				elasticattr.TransactionRepresentativeCount: float64(99.5),
+				elasticattr.TransactionDurationUs:          int64(999999),
+				elasticattr.TransactionType:                "existing-type",
+				elasticattr.TransactionResult:              "existing-result",
+				elasticattr.EventOutcome:                   "existing-outcome",
+				elasticattr.SuccessCount:                   int64(99),
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
@@ -1629,9 +1924,16 @@ func TestElasticSpanEnrich(t *testing.T) {
 				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
 			}
 
-			EnrichSpan(tc.input, config.Config{
+			enrichConfig := config.Config{
 				Span: tc.config,
-			}, uaparser.NewFromSaved())
+			}
+			// For transaction test case, use Transaction config instead
+			if tc.name == "transaction_existing_attributes_not_overridden" {
+				enrichConfig = config.Config{
+					Transaction: config.Enabled().Transaction,
+				}
+			}
+			EnrichSpan(tc.input, enrichConfig, uaparser.NewFromSaved())
 			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
 	}

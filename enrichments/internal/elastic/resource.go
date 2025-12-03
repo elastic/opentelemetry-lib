@@ -26,6 +26,7 @@ import (
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
@@ -82,15 +83,11 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 
 	// agent.name and version are set by classic Elastic APM Agents - if the value is present, we take it
 	// otherwise the setAgent[Name|Version] functions are called to derive the values
-	if cfg.AgentName.Enabled {
-		if _, exists := resource.Attributes().Get(elasticattr.AgentName); !exists {
-			s.setAgentName(resource)
-		}
+	if cfg.AgentName.Enabled && attribute.IsEmpty(resource.Attributes(), elasticattr.AgentName) {
+		s.setAgentName(resource)
 	}
-	if cfg.AgentVersion.Enabled {
-		if _, exists := resource.Attributes().Get(elasticattr.AgentVersion); !exists {
-			s.setAgentVersion(resource)
-		}
+	if cfg.AgentVersion.Enabled && attribute.IsEmpty(resource.Attributes(), elasticattr.AgentVersion) {
+		s.setAgentVersion(resource)
 	}
 
 	if cfg.OverrideHostName.Enabled {
@@ -100,7 +97,7 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 		s.setDeploymentEnvironment(resource)
 	}
 
-	if cfg.ServiceInstanceID.Enabled {
+	if cfg.ServiceInstanceID.Enabled && attribute.IsEmpty(resource.Attributes(), string(semconv25.ServiceInstanceIDKey)) {
 		s.setServiceInstanceID(resource)
 	}
 }
@@ -174,14 +171,9 @@ func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pco
 	)
 }
 
-// setServiceInstanceID sets service.instance.id from container.id or host.name
-// if service.instance.id is not already set. This follows the existing APM logic for
-// `service.node.name`.
+// setServiceInstanceID sets service.instance.id from container.id or host.name.
+// This follows the existing APM logic for `service.node.name`.
 func (s *resourceEnrichmentContext) setServiceInstanceID(resource pcommon.Resource) {
-	if s.serviceInstanceID != "" {
-		return
-	}
-
 	switch {
 	case s.containerID != "":
 		s.serviceInstanceID = s.containerID
