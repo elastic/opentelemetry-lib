@@ -746,7 +746,15 @@ func isTraceRoot(span ptrace.Span) bool {
 
 func isElasticTransaction(span ptrace.Span) bool {
 	flags := tracepb.SpanFlags(span.Flags())
+
+	// Events may have already been defined as an elastic transaction.
+	// check the processor.event value to avoid incorrectly classifying
+	// a span.
+	processorEvent, _ := span.Attributes().Get(elasticattr.ProcessorEvent)
+
 	switch {
+	case processorEvent.Str() == "transaction":
+		return true
 	case isTraceRoot(span):
 		return true
 	case (flags & tracepb.SpanFlags_SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK) == 0:

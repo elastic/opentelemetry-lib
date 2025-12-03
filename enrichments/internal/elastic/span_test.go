@@ -230,6 +230,31 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			},
 		},
 		{
+			name: "http_status_ok_processor_event_set",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				span.Attributes().PutInt(string(semconv25.HTTPStatusCodeKey), http.StatusOK)
+				span.Attributes().PutStr(elasticattr.ProcessorEvent, "transaction")
+				return span
+			}(),
+			config: config.Enabled().Transaction,
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "HTTP 2xx",
+				elasticattr.TransactionType:                "request",
+			},
+		},
+		{
 			name: "http_status_1xx",
 			input: func() ptrace.Span {
 				span := getElasticTxn()
@@ -2146,7 +2171,18 @@ func TestIsElasticTransaction(t *testing.T) {
 			}(),
 			isTxn: false,
 		},
+		{
+			name: "elastic transaction type is already defined",
+			input: func() ptrace.Span {
+				span := ptrace.NewSpan()
+				span.Attributes().PutStr(elasticattr.ProcessorEvent, "transaction")
+				return span
+			}(),
+			isTxn: true,
+		},
 	} {
-		assert.Equal(t, tc.isTxn, isElasticTransaction(tc.input))
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.isTxn, isElasticTransaction(tc.input))
+		})
 	}
 }
