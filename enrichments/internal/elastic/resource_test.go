@@ -299,6 +299,32 @@ func TestResourceEnrich(t *testing.T) {
 				elasticattr.AgentVersion:               "unknown",
 			},
 		},
+		{
+			name: "all_existing_attributes_preserved",
+			input: func() pcommon.Resource {
+				res := pcommon.NewResource()
+				res.Attributes().PutStr(elasticattr.AgentName, "existing-agent-name")
+				res.Attributes().PutStr(elasticattr.AgentVersion, "existing-agent-version")
+				res.Attributes().PutStr(string(semconv25.ServiceInstanceIDKey), "existing-service-instance-id")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKNameKey), "customflavor")
+				res.Attributes().PutStr(string(semconv.TelemetrySDKVersionKey), "9.999.9")
+				res.Attributes().PutStr(string(semconv25.ContainerIDKey), "container-id")
+				res.Attributes().PutStr(string(semconv.HostNameKey), "host-name")
+				return res
+			}(),
+			config: config.Enabled().Resource,
+			enrichedAttrs: map[string]any{
+				// existing attributes are preserved (not overwritten)
+				elasticattr.AgentName:                  "existing-agent-name",
+				elasticattr.AgentVersion:               "existing-agent-version",
+				string(semconv25.ServiceInstanceIDKey): "existing-service-instance-id",
+				// source attributes remain unchanged
+				string(semconv.TelemetrySDKNameKey):    "customflavor",
+				string(semconv.TelemetrySDKVersionKey): "9.999.9",
+				string(semconv25.ContainerIDKey):       "container-id",
+				string(semconv.HostNameKey):            "host-name",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Merge existing resource attrs with the attrs added

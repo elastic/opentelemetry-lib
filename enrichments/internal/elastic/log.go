@@ -20,15 +20,14 @@ package elastic
 import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 	"github.com/elastic/opentelemetry-lib/enrichments/internal/elastic/mobile"
 	"go.opentelemetry.io/collector/pdata/plog"
 )
 
 func EnrichLog(resourceAttrs map[string]any, log plog.LogRecord, cfg config.Config) {
-	if cfg.Log.ProcessorEvent.Enabled {
-		if _, exists := log.Attributes().Get(elasticattr.ProcessorEvent); !exists {
-			log.Attributes().PutStr(elasticattr.ProcessorEvent, "log")
-		}
+	if cfg.Log.ProcessorEvent.Enabled && attribute.IsEmpty(log.Attributes(), elasticattr.ProcessorEvent) {
+		log.Attributes().PutStr(elasticattr.ProcessorEvent, "log")
 	}
 	eventName, ok := getEventName(log)
 	if ok {

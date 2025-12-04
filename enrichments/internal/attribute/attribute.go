@@ -15,17 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package elastic
+package attribute
 
 import (
-	"github.com/elastic/opentelemetry-lib/elasticattr"
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
-	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
-	"go.opentelemetry.io/collector/pdata/pmetric"
+	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
-func EnrichMetric(metric pmetric.ResourceMetrics, cfg config.Config) {
-	if cfg.Metric.ProcessorEvent.Enabled && attribute.IsEmpty(metric.Resource().Attributes(), elasticattr.ProcessorEvent) {
-		metric.Resource().Attributes().PutStr(elasticattr.ProcessorEvent, "metric")
+// IsEmpty returns true if the attribute does not exist or is empty.
+// For string attributes, returns true if the attribute does not exist or is empty.
+// For slice attributes, returns true if the attribute does not exist or has length 0.
+// For other types, returns true if the attribute does not exist.
+func IsEmpty(attrs pcommon.Map, key string) bool {
+	value, exists := attrs.Get(key)
+	if !exists {
+		return true
+	}
+
+	switch value.Type() {
+	case pcommon.ValueTypeStr:
+		return value.Str() == ""
+	case pcommon.ValueTypeSlice:
+		return value.Slice().Len() == 0
+	default:
+		return false
 	}
 }
