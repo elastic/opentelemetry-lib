@@ -36,9 +36,7 @@ type EventContext struct {
 }
 
 func EnrichLogEvent(ctx EventContext, logRecord plog.LogRecord) {
-	if attribute.IsEmpty(logRecord.Attributes(), elasticattr.EventKind) {
-		logRecord.Attributes().PutStr(elasticattr.EventKind, "event")
-	}
+	attribute.PutStr(logRecord.Attributes(), elasticattr.EventKind, "event")
 
 	if ctx.EventName == "device.crash" {
 		enrichCrashEvent(logRecord, ctx.ResourceAttributes)
@@ -50,16 +48,10 @@ func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 	if timestamp == 0 {
 		timestamp = logRecord.ObservedTimestamp()
 	}
-	if attribute.IsEmpty(logRecord.Attributes(), elasticattr.ProcessorEvent) {
-		logRecord.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
-	}
-	if attribute.IsEmpty(logRecord.Attributes(), elasticattr.TimestampUs) {
-		logRecord.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(timestamp))
-	}
-	if attribute.IsEmpty(logRecord.Attributes(), elasticattr.ErrorID) {
-		if id, err := newUniqueID(); err == nil {
-			logRecord.Attributes().PutStr(elasticattr.ErrorID, id)
-		}
+	attribute.PutStr(logRecord.Attributes(), elasticattr.ProcessorEvent, "error")
+	attribute.PutInt(logRecord.Attributes(), elasticattr.TimestampUs, getTimestampUs(timestamp))
+	if id, err := newUniqueID(); err == nil {
+		attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorID, id)
 	}
 	stacktrace, ok := logRecord.Attributes().Get("exception.stacktrace")
 	if ok {
@@ -67,21 +59,15 @@ func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 		if hasLanguage {
 			switch language {
 			case "java":
-				if attribute.IsEmpty(logRecord.Attributes(), elasticattr.ErrorGroupingKey) {
-					logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateJavaStacktraceGroupingKey(stacktrace.AsString()))
-				}
+				attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorGroupingKey, CreateJavaStacktraceGroupingKey(stacktrace.AsString()))
 			case "swift":
-				if attribute.IsEmpty(logRecord.Attributes(), elasticattr.ErrorGroupingKey) {
-					if key, err := CreateSwiftStacktraceGroupingKey(stacktrace.AsString()); err == nil {
-						logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, key)
-					}
+				if key, err := CreateSwiftStacktraceGroupingKey(stacktrace.AsString()); err == nil {
+					attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorGroupingKey, key)
 				}
 			}
 		}
 	}
-	if attribute.IsEmpty(logRecord.Attributes(), elasticattr.ErrorType) {
-		logRecord.Attributes().PutStr(elasticattr.ErrorType, "crash")
-	}
+	attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorType, "crash")
 }
 
 func newUniqueID() (string, error) {

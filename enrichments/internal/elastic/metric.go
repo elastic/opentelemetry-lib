@@ -25,7 +25,7 @@ import (
 )
 
 func EnrichMetric(metric pmetric.ResourceMetrics, cfg config.Config) {
-	if cfg.Metric.ProcessorEvent.Enabled && attribute.IsEmpty(metric.Resource().Attributes(), elasticattr.ProcessorEvent) {
-		metric.Resource().Attributes().PutStr(elasticattr.ProcessorEvent, "metric")
+	if cfg.Metric.ProcessorEvent.Enabled {
+		attribute.PutStr(metric.Resource().Attributes(), elasticattr.ProcessorEvent, "metric")
 	}
 }

@@ -21,22 +21,34 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
-// IsEmpty returns true if the attribute does not exist or is empty.
-// For string attributes, returns true if the attribute does not exist or is empty.
-// For slice attributes, returns true if the attribute does not exist or has length 0.
-// For other types, returns true if the attribute does not exist.
-func IsEmpty(attrs pcommon.Map, key string) bool {
-	value, exists := attrs.Get(key)
-	if !exists {
-		return true
+// PutStr wrapper around the attribute map `PutStr` method
+// that only inserts the entry if no key-value exists.
+func PutStr(attrs pcommon.Map, key string, value string) {
+	if _, ok := attrs.Get(key); !ok {
+		attrs.PutStr(key, value)
 	}
+}
 
-	switch value.Type() {
-	case pcommon.ValueTypeStr:
-		return value.Str() == ""
-	case pcommon.ValueTypeSlice:
-		return value.Slice().Len() == 0
-	default:
-		return false
+// PutInt wrapper around the attribute map `PutInt` method
+// that only inserts the entry if no key-value exists
+func PutInt(attrs pcommon.Map, key string, value int64) {
+	if _, ok := attrs.Get(key); !ok {
+		attrs.PutInt(key, value)
+	}
+}
+
+// PutDouble wrapper around the attribute map `PutDouble` method
+// that only inserts the entry if no key-value exists
+func PutDouble(attrs pcommon.Map, key string, value float64) {
+	if _, ok := attrs.Get(key); !ok {
+		attrs.PutDouble(key, value)
+	}
+}
+
+// PutBool wrapper around the attribute map `PutBool` method
+// that only inserts the entry if no key-value exists
+func PutBool(attrs pcommon.Map, key string, value bool) {
+	if _, ok := attrs.Get(key); !ok {
+		attrs.PutBool(key, value)
 	}
 }

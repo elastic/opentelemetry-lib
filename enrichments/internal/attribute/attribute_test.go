@@ -23,116 +23,93 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
-func TestIsEmpty(t *testing.T) {
+func TestPutStr(t *testing.T) {
+	var (
+		key = "test_key"
+
+		oldStr    = "old_str_value"
+		oldInt    = int64(123)
+		oldDouble = 2.71
+		oldBool   = false
+
+		newStr    = "test_str_value"
+		newInt    = int64(42)
+		newDouble = 3.14
+		newBool   = true
+	)
+
 	tests := []struct {
 		name     string
-		setup    func(pcommon.Map)
-		key      string
-		expected bool
+		value    any
+		exists   bool
+		expected any
 	}{
-		{
-			name:     "attribute does not exist",
-			setup:    func(attrs pcommon.Map) {},
-			key:      "nonexistent",
-			expected: true,
-		},
-		{
-			name: "string attribute is empty",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutStr("key", "")
-			},
-			key:      "key",
-			expected: true,
-		},
-		{
-			name: "string attribute is not empty",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutStr("key", "value")
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name: "int attribute exists",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutInt("key", 42)
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name: "int attribute with zero value exists",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutInt("key", 0)
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name: "bool attribute exists",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutBool("key", true)
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name: "bool attribute with false value exists",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutBool("key", false)
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name: "double attribute exists",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutDouble("key", 3.14)
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name: "double attribute with zero value exists",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutDouble("key", 0.0)
-			},
-			key:      "key",
-			expected: false,
-		},
-		{
-			name:     "slice attribute does not exist",
-			setup:    func(attrs pcommon.Map) {},
-			key:      "key",
-			expected: true,
-		},
-		{
-			name: "slice attribute is empty",
-			setup: func(attrs pcommon.Map) {
-				attrs.PutEmptySlice("key")
-			},
-			key:      "key",
-			expected: true,
-		},
-		{
-			name: "slice attribute is not empty",
-			setup: func(attrs pcommon.Map) {
-				slice := attrs.PutEmptySlice("key")
-				slice.AppendEmpty().SetStr("value1")
-				slice.AppendEmpty().SetStr("value2")
-			},
-			key:      "key",
-			expected: false,
-		},
+		{name: "PutStr attr does not exist", value: newStr, exists: false, expected: newStr},
+		{name: "PutStr attr exists", value: newStr, exists: true, expected: oldStr},
+		{name: "PutInt attr does not exist", value: newInt, exists: false, expected: newInt},
+		{name: "PutInt attr exists", value: newInt, exists: true, expected: oldInt},
+		{name: "PutDouble attr does not exist", value: newDouble, exists: false, expected: newDouble},
+		{name: "PutDouble attr exists", value: newDouble, exists: true, expected: oldDouble},
+		{name: "PutBool attr does not exist", value: newBool, exists: false, expected: newBool},
+		{name: "PutBool attr exists", value: newBool, exists: true, expected: oldBool},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup map based on the value type and if a prior value should exists
 			attrs := pcommon.NewMap()
-			tt.setup(attrs)
-			result := IsEmpty(attrs, tt.key)
-			if result != tt.expected {
-				t.Errorf("IsEmpty() = %v, expected %v", result, tt.expected)
+			if tt.exists {
+				switch v := tt.value.(type) {
+				case string:
+					attrs.PutStr(key, oldStr)
+				case int64:
+					attrs.PutInt(key, oldInt)
+				case float64:
+					attrs.PutDouble(key, oldDouble)
+				case bool:
+					attrs.PutBool(key, oldBool)
+				default:
+					t.Fatalf("unexpected value type: %T", v)
+				}
+			}
+
+			// Attempt to add attribute based on value type
+			switch v := tt.value.(type) {
+			case string:
+				PutStr(attrs, key, v)
+			case int64:
+				PutInt(attrs, key, v)
+			case float64:
+				PutDouble(attrs, key, v)
+			case bool:
+				PutBool(attrs, key, v)
+			default:
+				t.Fatalf("unexpected value type: %T", v)
+			}
+
+			// Read value from map
+			val, exists := attrs.Get(key)
+			if !exists {
+				t.Error("expected attribute to exist")
+			}
+
+			// Validate the read value
+			var actualValue any
+			switch val.Type() {
+			case pcommon.ValueTypeStr:
+				actualValue = val.Str()
+			case pcommon.ValueTypeInt:
+				actualValue = val.Int()
+			case pcommon.ValueTypeDouble:
+				actualValue = val.Double()
+			case pcommon.ValueTypeBool:
+				actualValue = val.Bool()
+			default:
+				t.Fatalf("unexpected value type: %v", val.Type())
+			}
+
+			if actualValue != tt.expected {
+				t.Errorf("value = %v, expected %v", actualValue, tt.expected)
 			}
 		})
 	}

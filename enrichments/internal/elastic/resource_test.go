@@ -251,7 +251,6 @@ func TestResourceEnrich(t *testing.T) {
 			name: "service_instance_id_derived_from_container_id",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(string(semconv.ServiceInstanceIDKey), "")
 				res.Attributes().PutStr(string(semconv25.ContainerIDKey), "container-id")
 				res.Attributes().PutStr(string(semconv25.HostNameKey), "k8s-node")
 				return res
@@ -269,7 +268,6 @@ func TestResourceEnrich(t *testing.T) {
 			name: "service_instance_id_derived_from_host_name",
 			input: func() pcommon.Resource {
 				res := pcommon.NewResource()
-				res.Attributes().PutStr(string(semconv.ServiceInstanceIDKey), "")
 				res.Attributes().PutStr(string(semconv25.HostNameKey), "k8s-node")
 				return res
 			}(),

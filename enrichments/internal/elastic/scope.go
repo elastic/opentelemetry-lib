@@ -29,12 +29,8 @@ func EnrichScope(scope pcommon.InstrumentationScope, cfg config.Config) {
 	attrs := scope.Attributes()
 	if cfg.Scope.ServiceFrameworkName.Enabled {
 		if name := scope.Name(); name != "" {
-			if attribute.IsEmpty(attrs, elasticattr.ServiceFrameworkName) {
-				attrs.PutStr(elasticattr.ServiceFrameworkName, name)
-			}
-			if attribute.IsEmpty(attrs, elasticattr.ServiceFrameworkVersion) {
-				attrs.PutStr(elasticattr.ServiceFrameworkVersion, scope.Version())
-			}
+			attribute.PutStr(attrs, elasticattr.ServiceFrameworkName, name)
+			attribute.PutStr(attrs, elasticattr.ServiceFrameworkVersion, scope.Version())
 		}
 	}
 }
