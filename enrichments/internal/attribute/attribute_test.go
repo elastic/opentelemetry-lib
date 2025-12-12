@@ -23,7 +23,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
-func TestPutStr(t *testing.T) {
+func TestPut(t *testing.T) {
 	var (
 		key = "test_key"
 
