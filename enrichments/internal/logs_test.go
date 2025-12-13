@@ -20,13 +20,17 @@ package elastic
 import (
 	"path/filepath"
 	"testing"
+	"time"
 
-	"github.com/elastic/opentelemetry-lib/enrichments"
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
 	"github.com/google/go-cmp/cmp"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/pkg/golden"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pdata/pcommon"
+
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments"
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
 )
 
 func TestEnrichResourceLog(t *testing.T) {
@@ -81,4 +85,43 @@ func TestEnrichResourceLog(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("existing_attributes_not_overridden", func(t *testing.T) {
+		// Create a new log record with existing attributes
+		logRecord := logRecords.AppendEmpty()
+		logRecord.SetEventName("device.crash")
+		logRecord.SetTimestamp(pcommon.NewTimestampFromTime(time.Unix(12345, 0)))
+		logRecord.Attributes().PutStr("exception.stacktrace", "test stacktrace")
+
+		// Set existing attributes that enrichment would normally set
+		existingAttrs := map[string]any{
+			elasticattr.EventKind:        "existing-event-kind",
+			elasticattr.ProcessorEvent:   "existing-processor-event",
+			elasticattr.TimestampUs:      int64(12345),
+			elasticattr.ErrorID:          "existing-error-id",
+			elasticattr.ErrorType:        "existing-error-type",
+			elasticattr.ErrorGroupingKey: "existing-grouping-key",
+		}
+
+		for k, v := range existingAttrs {
+			logRecord.Attributes().PutEmpty(k).FromRaw(v)
+		}
+
+		// Store original attributes
+		originalAttrs := logRecord.Attributes().AsRaw()
+
+		// Enrich the log
+		enricher := enrichments.NewEnricher(config.Enabled())
+		enricher.EnrichLogs(logs)
+
+		// Verify existing attributes are preserved
+		for k, expectedValue := range existingAttrs {
+			actualValue, ok := logRecord.Attributes().Get(k)
+			assert.True(t, ok, "attribute %s should exist", k)
+			assert.Equal(t, expectedValue, actualValue.AsRaw(), "attribute %s should not be overridden", k)
+		}
+
+		// Verify the original attributes map is unchanged
+		assert.Empty(t, cmp.Diff(originalAttrs, logRecord.Attributes().AsRaw()))
+	})
 }

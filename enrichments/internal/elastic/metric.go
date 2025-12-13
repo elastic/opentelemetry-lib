@@ -20,13 +20,12 @@ package elastic
 import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 )
 
 func EnrichMetric(metric pmetric.ResourceMetrics, cfg config.Config) {
 	if cfg.Metric.ProcessorEvent.Enabled {
-		if _, exists := metric.Resource().Attributes().Get(elasticattr.ProcessorEvent); !exists {
-			metric.Resource().Attributes().PutStr(elasticattr.ProcessorEvent, "metric")
-		}
+		attribute.PutStr(metric.Resource().Attributes(), elasticattr.ProcessorEvent, "metric")
 	}
 }

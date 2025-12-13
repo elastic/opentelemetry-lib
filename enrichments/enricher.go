@@ -18,12 +18,13 @@
 package enrichments
 
 import (
-	"github.com/elastic/opentelemetry-lib/enrichments/config"
-	"github.com/elastic/opentelemetry-lib/enrichments/internal/elastic"
 	"github.com/ua-parser/uap-go/uaparser"
 	"go.opentelemetry.io/collector/pdata/plog"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.opentelemetry.io/collector/pdata/ptrace"
+
+	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/elastic"
 )
 
 // Enricher enriches the OTel traces with attributes required to power
@@ -40,6 +41,7 @@ type Enricher struct {
 // functionalities in the Elastic UI. The traces are processed as per the
 // Elastic's definition of transactions and spans. The traces passed to
 // this function are mutated.
+// Any existing attributes will not be enriched or modified.
 func (e *Enricher) EnrichTraces(pt ptrace.Traces) {
 	resSpans := pt.ResourceSpans()
 	for i := 0; i < resSpans.Len(); i++ {
@@ -59,6 +61,7 @@ func (e *Enricher) EnrichTraces(pt ptrace.Traces) {
 
 // EnrichLogs enriches the OTel logs with attributes required to power
 // functionalities in the Elastic UI. The logs passed to this function are mutated.
+// Any existing attributes will not be enriched or modified.
 func (e *Enricher) EnrichLogs(pl plog.Logs) {
 	resLogs := pl.ResourceLogs()
 	for i := 0; i < resLogs.Len(); i++ {
@@ -80,6 +83,7 @@ func (e *Enricher) EnrichLogs(pl plog.Logs) {
 
 // EnrichMetrics enriches the OTel metrics with attributes required to power
 // functionalities in the Elastic UI. The metrics passed to this function are mutated.
+// Any existing attributes will not be enriched or modified.
 func (e *Enricher) EnrichMetrics(pl pmetric.Metrics) {
 	resMetrics := pl.ResourceMetrics()
 	for i := 0; i < resMetrics.Len(); i++ {
