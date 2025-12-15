@@ -26,6 +26,7 @@ import (
 
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 )
 
 // EnrichResource derives and adds Elastic specific resource attributes.
@@ -83,14 +84,10 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 	// agent.name and version are set by classic Elastic APM Agents - if the value is present, we take it
 	// otherwise the setAgent[Name|Version] functions are called to derive the values
 	if cfg.AgentName.Enabled {
-		if _, exists := resource.Attributes().Get(elasticattr.AgentName); !exists {
-			s.setAgentName(resource)
-		}
+		s.setAgentName(resource)
 	}
 	if cfg.AgentVersion.Enabled {
-		if _, exists := resource.Attributes().Get(elasticattr.AgentVersion); !exists {
-			s.setAgentVersion(resource)
-		}
+		s.setAgentVersion(resource)
 	}
 
 	if cfg.OverrideHostName.Enabled {
@@ -111,7 +108,8 @@ func (s *resourceEnrichmentContext) Enrich(resource pcommon.Resource, cfg config
 // we duplicate the value and also send it with the old field name to make the alias work.
 func (s *resourceEnrichmentContext) setDeploymentEnvironment(resource pcommon.Resource) {
 	if s.deploymentEnvironmentName != "" && s.deploymentEnvironment == "" {
-		resource.Attributes().PutStr(
+		attribute.PutStr(
+			resource.Attributes(),
 			string(semconv25.DeploymentEnvironmentKey),
 			s.deploymentEnvironmentName,
 		)
@@ -142,7 +140,7 @@ func (s *resourceEnrichmentContext) setAgentName(resource pcommon.Resource) {
 			s.telemetrySDKLanguage,
 		)
 	}
-	resource.Attributes().PutStr(elasticattr.AgentName, agentName)
+	attribute.PutStr(resource.Attributes(), elasticattr.AgentName, agentName)
 }
 
 func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
@@ -157,7 +155,7 @@ func (s *resourceEnrichmentContext) setAgentVersion(resource pcommon.Resource) {
 	case s.telemetrySDKVersion != "":
 		agentVersion = s.telemetrySDKVersion
 	}
-	resource.Attributes().PutStr(elasticattr.AgentVersion, agentVersion)
+	attribute.PutStr(resource.Attributes(), elasticattr.AgentVersion, agentVersion)
 }
 
 func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pcommon.Resource) {
@@ -174,14 +172,9 @@ func (s *resourceEnrichmentContext) overrideHostNameWithK8sNodeName(resource pco
 	)
 }
 
-// setServiceInstanceID sets service.instance.id from container.id or host.name
-// if service.instance.id is not already set. This follows the existing APM logic for
-// `service.node.name`.
+// setServiceInstanceID sets service.instance.id from container.id or host.name.
+// This follows the existing APM logic for `service.node.name`.
 func (s *resourceEnrichmentContext) setServiceInstanceID(resource pcommon.Resource) {
-	if s.serviceInstanceID != "" {
-		return
-	}
-
 	switch {
 	case s.containerID != "":
 		s.serviceInstanceID = s.containerID
@@ -191,5 +184,5 @@ func (s *resourceEnrichmentContext) setServiceInstanceID(resource pcommon.Resour
 		// no instance id could be derived
 		return
 	}
-	resource.Attributes().PutStr(string(semconv25.ServiceInstanceIDKey), s.serviceInstanceID)
+	attribute.PutStr(resource.Attributes(), string(semconv25.ServiceInstanceIDKey), s.serviceInstanceID)
 }

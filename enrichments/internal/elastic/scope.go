@@ -20,6 +20,7 @@ package elastic
 import (
 	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"github.com/elastic/opentelemetry-lib/enrichments/config"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 )
 
@@ -28,8 +29,8 @@ func EnrichScope(scope pcommon.InstrumentationScope, cfg config.Config) {
 	attrs := scope.Attributes()
 	if cfg.Scope.ServiceFrameworkName.Enabled {
 		if name := scope.Name(); name != "" {
-			attrs.PutStr(elasticattr.ServiceFrameworkName, name)
-			attrs.PutStr(elasticattr.ServiceFrameworkVersion, scope.Version())
+			attribute.PutStr(attrs, elasticattr.ServiceFrameworkName, name)
+			attribute.PutStr(attrs, elasticattr.ServiceFrameworkVersion, scope.Version())
 		}
 	}
 }

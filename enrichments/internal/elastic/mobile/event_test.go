@@ -148,6 +148,67 @@ func TestEnrichEvents(t *testing.T) {
 				"event.kind":         "event",
 			},
 		},
+		{
+			name:      "crash_event_all_attributes_present",
+			eventName: "device.crash",
+			resourceAttrs: map[string]any{
+				"telemetry.sdk.language": "java",
+			},
+			input: func() plog.LogRecord {
+				logRecord := plog.NewLogRecord()
+				logRecord.SetTimestamp(timestamp)
+				logRecord.Attributes().PutStr("event.name", "device.crash")
+				logRecord.Attributes().PutStr("exception.stacktrace", javaStacktrace)
+				// Set all attributes that enrichment would normally set
+				logRecord.Attributes().PutStr("event.kind", "existing-event-kind")
+				logRecord.Attributes().PutStr("processor.event", "existing-processor-event")
+				logRecord.Attributes().PutInt("timestamp.us", int64(99999))
+				logRecord.Attributes().PutStr("error.id", "0123456789abcdef0123456789abcdef")
+				logRecord.Attributes().PutStr("error.type", "existing-error-type")
+				logRecord.Attributes().PutStr("error.grouping_key", "existing-grouping-key")
+				return logRecord
+			},
+			expectedAttributes: map[string]any{
+				"event.name":           "device.crash",
+				"exception.stacktrace": javaStacktrace,
+				// existing attributes that are not overridden
+				"event.kind":         "existing-event-kind",
+				"processor.event":    "existing-processor-event",
+				"timestamp.us":       int64(99999),
+				"error.id":           "0123456789abcdef0123456789abcdef",
+				"error.type":         "existing-error-type",
+				"error.grouping_key": "existing-grouping-key",
+			},
+		},
+		{
+			name:      "crash_event_some_attributes_missing",
+			eventName: "device.crash",
+			resourceAttrs: map[string]any{
+				"telemetry.sdk.language": "java",
+			},
+			input: func() plog.LogRecord {
+				logRecord := plog.NewLogRecord()
+				logRecord.SetTimestamp(timestamp)
+				logRecord.Attributes().PutStr("event.name", "device.crash")
+				logRecord.Attributes().PutStr("exception.stacktrace", javaStacktrace)
+				logRecord.Attributes().PutStr("event.kind", "existing-event-kind")
+				logRecord.Attributes().PutStr("processor.event", "existing-processor-event")
+				// timestamp.us, error.id, error.type, and error.grouping_key are missing
+				return logRecord
+			},
+			expectedAttributes: map[string]any{
+				// Input attributes
+				"event.name":           "device.crash",
+				"exception.stacktrace": javaStacktrace,
+				// existing attributes that are not overridden
+				"event.kind":      "existing-event-kind",
+				"processor.event": "existing-processor-event",
+				// attributes that are added by enrichment
+				"timestamp.us":       timestamp.AsTime().UnixMicro(),
+				"error.grouping_key": javaStacktraceHash,
+				"error.type":         "crash",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			inputLogRecord := tc.input()

@@ -22,9 +22,11 @@ import (
 	"encoding/hex"
 	"io"
 
-	"github.com/elastic/opentelemetry-lib/elasticattr"
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog"
+
+	"github.com/elastic/opentelemetry-lib/elasticattr"
+	"github.com/elastic/opentelemetry-lib/enrichments/internal/attribute"
 )
 
 // EventContext contains contextual information for log event enrichment
@@ -34,7 +36,7 @@ type EventContext struct {
 }
 
 func EnrichLogEvent(ctx EventContext, logRecord plog.LogRecord) {
-	logRecord.Attributes().PutStr(elasticattr.EventKind, "event")
+	attribute.PutStr(logRecord.Attributes(), elasticattr.EventKind, "event")
 
 	if ctx.EventName == "device.crash" {
 		enrichCrashEvent(logRecord, ctx.ResourceAttributes)
@@ -46,10 +48,10 @@ func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 	if timestamp == 0 {
 		timestamp = logRecord.ObservedTimestamp()
 	}
-	logRecord.Attributes().PutStr(elasticattr.ProcessorEvent, "error")
-	logRecord.Attributes().PutInt(elasticattr.TimestampUs, getTimestampUs(timestamp))
+	attribute.PutStr(logRecord.Attributes(), elasticattr.ProcessorEvent, "error")
+	attribute.PutInt(logRecord.Attributes(), elasticattr.TimestampUs, getTimestampUs(timestamp))
 	if id, err := newUniqueID(); err == nil {
-		logRecord.Attributes().PutStr(elasticattr.ErrorID, id)
+		attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorID, id)
 	}
 	stacktrace, ok := logRecord.Attributes().Get("exception.stacktrace")
 	if ok {
@@ -57,15 +59,15 @@ func enrichCrashEvent(logRecord plog.LogRecord, resourceAttrs map[string]any) {
 		if hasLanguage {
 			switch language {
 			case "java":
-				logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, CreateJavaStacktraceGroupingKey(stacktrace.AsString()))
+				attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorGroupingKey, CreateJavaStacktraceGroupingKey(stacktrace.AsString()))
 			case "swift":
 				if key, err := CreateSwiftStacktraceGroupingKey(stacktrace.AsString()); err == nil {
-					logRecord.Attributes().PutStr(elasticattr.ErrorGroupingKey, key)
+					attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorGroupingKey, key)
 				}
 			}
 		}
 	}
-	logRecord.Attributes().PutStr(elasticattr.ErrorType, "crash")
+	attribute.PutStr(logRecord.Attributes(), elasticattr.ErrorType, "crash")
 }
 
 func newUniqueID() (string, error) {

@@ -66,6 +66,22 @@ func TestScopeEnrich(t *testing.T) {
 				elasticattr.ServiceFrameworkVersion: "v1.0.0",
 			},
 		},
+		{
+			name: "existing_attributes_not_overridden",
+			input: func() pcommon.InstrumentationScope {
+				scope := pcommon.NewInstrumentationScope()
+				scope.SetName("test")
+				scope.SetVersion("v1.0.0")
+				scope.Attributes().PutStr(elasticattr.ServiceFrameworkName, "existing-framework-name")
+				scope.Attributes().PutStr(elasticattr.ServiceFrameworkVersion, "existing-framework-version")
+				return scope
+			}(),
+			config: config.Enabled().Scope,
+			enrichedAttrs: map[string]any{
+				elasticattr.ServiceFrameworkName:    "existing-framework-name",
+				elasticattr.ServiceFrameworkVersion: "existing-framework-version",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			// Merge existing resource attrs with the attrs added
