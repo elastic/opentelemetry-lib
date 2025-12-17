@@ -62,6 +62,8 @@ type ElasticTransactionConfig struct {
 	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
 	InferredSpans       AttributeConfig `mapstructure:"inferred_spans"`
 	UserAgent           AttributeConfig `mapstructure:"user_agent"`
+	RemoveMessaging     AttributeConfig `mapstructure:"remove_messaging"`
+	MessageQueueName    AttributeConfig `mapstructure:"message_queue_name"`
 }
 
 // ElasticSpanConfig configures the enrichment attributes for the spans
@@ -71,9 +73,11 @@ type ElasticSpanConfig struct {
 	// resolution timestamps in Elasticsearch. For more details see:
 	// https://github.com/elastic/opentelemetry-dev/issues/374.
 	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
+	ID                  AttributeConfig `mapstructure:"id"`
 	Name                AttributeConfig `mapstructure:"name"`
 	ProcessorEvent      AttributeConfig `mapstructure:"processor_event"`
 	RepresentativeCount AttributeConfig `mapstructure:"representative_count"`
+	Action              AttributeConfig `mapstructure:"action"`
 	TypeSubtype         AttributeConfig `mapstructure:"type_subtype"`
 	DurationUs          AttributeConfig `mapstructure:"duration_us"`
 	EventOutcome        AttributeConfig `mapstructure:"event_outcome"`
@@ -81,6 +85,8 @@ type ElasticSpanConfig struct {
 	DestinationService  AttributeConfig `mapstructure:"destination_service"`
 	InferredSpans       AttributeConfig `mapstructure:"inferred_spans"`
 	UserAgent           AttributeConfig `mapstructure:"user_agent"`
+	RemoveMessaging     AttributeConfig `mapstructure:"remove_messaging"`
+	MessageQueueName    AttributeConfig `mapstructure:"message_queue_name"`
 }
 
 // SpanEventConfig configures enrichment attributes for the span events.
@@ -143,11 +149,15 @@ func Enabled() Config {
 			RepresentativeCount: AttributeConfig{Enabled: true},
 			InferredSpans:       AttributeConfig{Enabled: true},
 			UserAgent:           AttributeConfig{Enabled: true},
+			RemoveMessaging:     AttributeConfig{Enabled: true},
+			MessageQueueName:    AttributeConfig{Enabled: true},
 		},
 		Span: ElasticSpanConfig{
 			TimestampUs:         AttributeConfig{Enabled: true},
+			ID:                  AttributeConfig{Enabled: true},
 			Name:                AttributeConfig{Enabled: true},
 			ProcessorEvent:      AttributeConfig{Enabled: true},
+			Action:              AttributeConfig{Enabled: true},
 			TypeSubtype:         AttributeConfig{Enabled: true},
 			DurationUs:          AttributeConfig{Enabled: true},
 			EventOutcome:        AttributeConfig{Enabled: true},
@@ -156,6 +166,8 @@ func Enabled() Config {
 			RepresentativeCount: AttributeConfig{Enabled: true},
 			InferredSpans:       AttributeConfig{Enabled: true},
 			UserAgent:           AttributeConfig{Enabled: true},
+			RemoveMessaging:     AttributeConfig{Enabled: true},
+			MessageQueueName:    AttributeConfig{Enabled: true},
 		},
 		SpanEvent: SpanEventConfig{
 			TimestampUs:           AttributeConfig{Enabled: true},

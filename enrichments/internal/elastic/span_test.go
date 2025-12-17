@@ -75,6 +75,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -103,6 +104,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(256),
@@ -126,6 +128,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -149,6 +152,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(2),
@@ -172,6 +176,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(4),
@@ -195,6 +200,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(4),
@@ -219,6 +225,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -244,6 +251,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -274,6 +282,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -303,6 +312,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -333,6 +343,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -363,6 +374,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -388,6 +400,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -413,6 +426,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -430,6 +444,8 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				span.SetName("testtxn")
 				span.SetSpanID([8]byte{1})
 				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "kafka")
+				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "receive")
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "t1")
 				return span
 			}(),
 			config: config.Enabled().Transaction,
@@ -438,6 +454,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -446,6 +463,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.TransactionResult:              "Success",
 				elasticattr.TransactionType:                "messaging",
+				elasticattr.TransactionMessageQueueName:    "t1",
 			},
 		},
 		{
@@ -472,6 +490,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -518,6 +537,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -556,6 +576,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -586,6 +607,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -612,6 +634,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "",
+				elasticattr.SpanID:                         "",
 				elasticattr.TransactionName:                "",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -641,6 +664,7 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionSampled:             true,
 				elasticattr.TransactionRoot:                true,
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionName:                "testtxn",
 				elasticattr.ProcessorEvent:                 "transaction",
 				elasticattr.TransactionRepresentativeCount: float64(1),
@@ -659,6 +683,13 @@ func TestElasticTransactionEnrich(t *testing.T) {
 			// Merge with the expected attributes and override the span links.
 			for k, v := range tc.enrichedAttrs {
 				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Remove messaging attributes if RemoveMessaging is enabled
+			if tc.config.RemoveMessaging.Enabled {
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingSystemKey))
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingOperationKey))
+				expectedSpan.Attributes().Remove(string(semconv37.MessagingOperationNameKey))
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingDestinationNameKey))
 			}
 			// Override span links
 			if tc.expectedSpanLinks != nil {
@@ -711,6 +742,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "localhost:8080",
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "HTTP 2xx",
@@ -749,6 +781,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "localhost:8080",
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "HTTP 2xx",
@@ -789,6 +822,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "localhost:8080",
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "HTTP 2xx",
@@ -827,6 +861,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "myDb",
 				elasticattr.ServiceTargetType:              "mssql",
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "Success",
@@ -862,6 +897,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "myDb",
 				elasticattr.ServiceTargetType:              "postgresql",
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "Success",
@@ -883,9 +919,11 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 
 				span.Attributes().PutStr(string(semconv25.ServerAddressKey), "myServer")
 				span.Attributes().PutStr(string(semconv25.ServerPortKey), "1234")
+				// these messaging attrs will be removed
 				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "rabbitmq")
-				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "T")
 				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "publish")
+				// this attr will be mapped to elastic attr
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "T")
 				span.Attributes().PutStr(string(semconv25.MessagingClientIDKey), "a")
 				return span
 			}(),
@@ -898,6 +936,8 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanSubtype:                    "rabbitmq",
 				elasticattr.SpanDestinationServiceResource: "rabbitmq/T",
 				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.SpanID:                         "0100000000000000",
+				elasticattr.SpanAction:                     "publish",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "T",
@@ -911,6 +951,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.TransactionRoot:                true,
 				elasticattr.SpanDurationUs:                 int64(0),
 				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.TransactionMessageQueueName:    "T",
 			},
 		},
 		// This one is a non root span representing a dependency. The test asserts that such spans are not
@@ -927,8 +968,8 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				span.Attributes().PutStr(string(semconv25.ServerAddressKey), "myServer")
 				span.Attributes().PutStr(string(semconv25.ServerPortKey), "1234")
 				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "rabbitmq")
-				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "T")
 				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "publish")
+				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "T")
 				span.Attributes().PutStr(string(semconv25.MessagingClientIDKey), "a")
 				return span
 			}(),
@@ -940,12 +981,15 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanSubtype:                    "rabbitmq",
 				elasticattr.SpanDestinationServiceResource: "rabbitmq/T",
 				elasticattr.SpanName:                       "rootClientSpan",
+				elasticattr.SpanID:                         "0100000000000000",
+				elasticattr.SpanAction:                     "publish",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "T",
 				elasticattr.ServiceTargetType:              "rabbitmq",
 				elasticattr.SpanDurationUs:                 int64(0),
 				elasticattr.SpanRepresentativeCount:        float64(1),
+				elasticattr.SpanMessageQueueName:           "T",
 			},
 		},
 		{
@@ -976,6 +1020,7 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "localhost:8080",
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.TransactionDurationUs:          int64(0),
 				elasticattr.TransactionRepresentativeCount: float64(1),
 				elasticattr.TransactionResult:              "HTTP 2xx",
@@ -994,6 +1039,13 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 			// Merge with the expected attributes and override the span links.
 			for k, v := range tc.enrichedAttrs {
 				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
+			}
+			// Remove messaging attributes if RemoveMessaging is enabled
+			if tc.config.Transaction.RemoveMessaging.Enabled || tc.config.Span.RemoveMessaging.Enabled {
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingSystemKey))
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingOperationKey))
+				expectedSpan.Attributes().Remove(string(semconv37.MessagingOperationNameKey))
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingDestinationNameKey))
 			}
 			// Override span links
 			if tc.expectedSpanLinks != nil {
@@ -1046,6 +1098,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          int64(0),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "",
 			},
 		},
 		{
@@ -1072,6 +1125,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          int64(0),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "",
 			},
 		},
 		{
@@ -1095,6 +1149,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.ServiceTargetType:              "",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1123,6 +1178,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1156,6 +1212,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http-test",
 				elasticattr.ServiceTargetName:              "api.example.com",
 				elasticattr.SpanDestinationServiceResource: "api.example.com:443",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1190,6 +1247,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "www.foo.bar:443",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1224,6 +1282,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "www.foo.bar:443",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1256,6 +1315,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "www.foo.bar:443",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1284,6 +1344,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1317,6 +1378,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc-test",
 				elasticattr.ServiceTargetName:              "myservice.EchoService",
 				elasticattr.SpanDestinationServiceResource: "api.example.com:443",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1342,6 +1404,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "xmlrpc",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1368,6 +1431,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "external",
 				elasticattr.ServiceTargetName:              "service.Test",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1394,6 +1458,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "external",
 				elasticattr.ServiceTargetName:              "service.Test",
 				elasticattr.SpanDestinationServiceResource: "10.2.20.18:8081",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1420,6 +1485,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "external",
 				elasticattr.ServiceTargetName:              "service.Test",
 				elasticattr.SpanDestinationServiceResource: "10.2.20.18:8081",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1428,7 +1494,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				// these messaging attrs will be removed
 				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "kafka")
+				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "receive")
 				return span
 			}(),
 			config: config.Enabled().Span,
@@ -1439,6 +1507,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging",
 				elasticattr.SpanSubtype:                    "kafka",
+				elasticattr.SpanID:                         "",
+				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
@@ -1451,9 +1521,12 @@ func TestElasticSpanEnrich(t *testing.T) {
 			name: "messaging_with_existing_attributes_are_preserved",
 			input: func() ptrace.Span {
 				span := getElasticSpan()
+				span.SetSpanID([8]byte{1})
 				span.SetName("testspan")
 				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				// these messaging attrs will be removed
 				span.Attributes().PutStr(string(semconv25.MessagingSystemKey), "kafka")
+				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "receive")
 				span.Attributes().PutStr(elasticattr.SpanType, "messaging-test")
 				span.Attributes().PutStr(elasticattr.SpanSubtype, "kafka-test")
 				span.Attributes().PutStr(elasticattr.ServiceTargetName, "user-events")
@@ -1469,6 +1542,8 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging-test",
 				elasticattr.SpanSubtype:                    "kafka-test",
+				elasticattr.SpanID:                         "0100000000000000",
+				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
@@ -1483,6 +1558,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span := getElasticSpan()
 				span.SetName("testspan")
 				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
+				span.Attributes().PutStr(string(semconv37.MessagingOperationNameKey), "receive")
 				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "t1")
 				return span
 			}(),
@@ -1493,12 +1569,15 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging",
+				elasticattr.SpanID:                         "",
+				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetType:              "messaging",
 				elasticattr.ServiceTargetName:              "t1",
 				elasticattr.SpanDestinationServiceResource: "testsvc/t1",
+				elasticattr.SpanMessageQueueName:           "t1",
 			},
 		},
 		{
@@ -1508,6 +1587,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.SetName("testspan")
 				span.Attributes().PutStr(string(semconv25.PeerServiceKey), "testsvc")
 				span.Attributes().PutBool(string(semconv25.MessagingDestinationTemporaryKey), true)
+				span.Attributes().PutStr(string(semconv25.MessagingOperationKey), "receive")
 				span.Attributes().PutStr(string(semconv25.MessagingDestinationNameKey), "t1")
 				return span
 			}(),
@@ -1518,12 +1598,15 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging",
+				elasticattr.SpanID:                         "",
+				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetType:              "messaging",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc/t1",
+				elasticattr.SpanMessageQueueName:           "t1",
 			},
 		},
 		{
@@ -1553,6 +1636,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "elasticsearch",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1587,6 +1671,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "postgresql",
 				elasticattr.ServiceTargetName:              "customers",
 				elasticattr.SpanDestinationServiceResource: "postgresql/testdb",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1615,6 +1700,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "cassandra",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1646,6 +1732,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
 				elasticattr.ChildIDs:                []any{"0300000000000000", "0400000000000000"},
+				elasticattr.SpanID:                  "0100000000000000",
 			},
 			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
 				spanLinks := ptrace.NewSpanLinkSlice()
@@ -1688,6 +1775,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
 				elasticattr.ChildIDs:                []any{"existing-child-id-1", "existing-child-id-2"},
+				elasticattr.SpanID:                  "0100000000000000",
 			},
 			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
 				spanLinks := ptrace.NewSpanLinkSlice()
@@ -1723,6 +1811,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "0100000000000000",
 			},
 		},
 		{
@@ -1745,6 +1834,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "0100000000000000",
 			},
 		},
 		{
@@ -1775,6 +1865,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "genai",
 				elasticattr.ServiceTargetName:              "openai-api",
 				elasticattr.SpanDestinationServiceResource: "api.openai.com:443",
+				elasticattr.SpanID:                         "0100000000000000",
 			},
 		},
 		{
@@ -1802,6 +1893,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc",
 				elasticattr.ServiceTargetName:              "myService",
 				elasticattr.SpanDestinationServiceResource: "myService",
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1825,6 +1917,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SuccessCount:              int64(1),
 				string(semconv27.UserAgentNameKey):    "Mobile Safari",
 				string(semconv27.UserAgentVersionKey): "13.1.1",
+				elasticattr.SpanID:                    "0100000000000000",
 			},
 		},
 		{
@@ -1853,6 +1946,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				// If user_agent.{name, version} are already set then don't override them.
 				string(semconv27.UserAgentNameKey):    "Chrome",
 				string(semconv27.UserAgentVersionKey): "51.0.2704",
+				elasticattr.SpanID:                    "0100000000000000",
 			},
 		},
 		{
@@ -1891,6 +1985,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDestinationServiceResource: "existing-destination",
 				elasticattr.EventOutcome:                   "existing-outcome",
 				elasticattr.SuccessCount:                   int64(99),
+				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1904,6 +1999,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				span.Attributes().PutInt(elasticattr.TimestampUs, 1234567890)
 				span.Attributes().PutBool(elasticattr.TransactionSampled, false)
 				span.Attributes().PutStr(elasticattr.TransactionID, "existing-txn-id")
+				span.Attributes().PutStr(elasticattr.SpanID, "existing-txn-id")
 				span.Attributes().PutBool(elasticattr.TransactionRoot, false)
 				span.Attributes().PutStr(elasticattr.TransactionName, "existing-txn-name")
 				span.Attributes().PutStr(elasticattr.ProcessorEvent, "existing-event")
@@ -1922,6 +2018,7 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.TimestampUs:                    int64(1234567890),
 				elasticattr.TransactionSampled:             false,
 				elasticattr.TransactionID:                  "existing-txn-id",
+				elasticattr.SpanID:                         "existing-txn-id",
 				elasticattr.TransactionRoot:                false,
 				elasticattr.TransactionName:                "existing-txn-name",
 				elasticattr.ProcessorEvent:                 "existing-event",
@@ -1942,13 +2039,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			for k, v := range tc.enrichedAttrs {
 				expectedSpan.Attributes().PutEmpty(k).FromRaw(v)
 			}
-			// Override span links
-			if tc.expectedSpanLinks != nil {
-				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
-			} else {
-				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
-			}
-
 			enrichConfig := config.Config{
 				Span: tc.config,
 			}
@@ -1958,6 +2048,20 @@ func TestElasticSpanEnrich(t *testing.T) {
 					Transaction: config.Enabled().Transaction,
 				}
 			}
+			// Remove messaging attributes if RemoveMessaging is enabled
+			if enrichConfig.Transaction.RemoveMessaging.Enabled || enrichConfig.Span.RemoveMessaging.Enabled {
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingSystemKey))
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingOperationKey))
+				expectedSpan.Attributes().Remove(string(semconv37.MessagingOperationNameKey))
+				expectedSpan.Attributes().Remove(string(semconv25.MessagingDestinationNameKey))
+			}
+			// Override span links
+			if tc.expectedSpanLinks != nil {
+				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
+			} else {
+				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
+			}
+
 			EnrichSpan(tc.input, enrichConfig, uaparser.NewFromSaved())
 			assert.NoError(t, ptracetest.CompareSpan(expectedSpan, tc.input))
 		})
