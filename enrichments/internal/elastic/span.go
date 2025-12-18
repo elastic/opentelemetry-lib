@@ -81,6 +81,7 @@ type spanEnrichmentContext struct {
 	grpcStatus               string
 	dbName                   string
 	dbSystem                 string
+	messagingOperation       string
 	messagingSystem          string
 	messagingDestinationName string
 	genAiSystem              string
@@ -144,8 +145,10 @@ func (s *spanEnrichmentContext) Enrich(
 		case string(semconv25.MessagingDestinationNameKey):
 			s.isMessaging = true
 			s.messagingDestinationName = v.Str()
-		case string(semconv25.MessagingOperationKey):
+		case string(semconv25.MessagingOperationKey),
+			string(semconv37.MessagingOperationNameKey):
 			s.isMessaging = true
+			s.messagingOperation = v.Str()
 		case string(semconv25.MessagingSystemKey):
 			s.isMessaging = true
 			s.messagingSystem = v.Str()
@@ -255,7 +258,12 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		attribute.PutBool(span.Attributes(), elasticattr.TransactionSampled, s.getSampled())
 	}
 	if cfg.ID.Enabled {
-		attribute.PutStr(span.Attributes(), elasticattr.TransactionID, span.SpanID().String())
+		transactionID := span.SpanID().String()
+		attribute.PutStr(span.Attributes(), elasticattr.TransactionID, transactionID)
+		// transactions are expected to always have span.id set to the transaction.id value.
+		// https://github.com/elastic/apm-data/blob/v1.19.5/input/elasticapm/internal/modeldecoder/v2/decoder.go#L1377-L1379
+		// https://github.com/elastic/apm-data/blob/v1.19.5/input/otlp/traces.go#L185-L194
+		attribute.PutStr(span.Attributes(), elasticattr.SpanID, transactionID)
 	}
 	if cfg.Root.Enabled {
 		attribute.PutBool(span.Attributes(), elasticattr.TransactionRoot, isTraceRoot(span))
@@ -288,6 +296,12 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.UserAgent.Enabled {
 		s.setUserAgentIfRequired(span)
 	}
+	if cfg.MessageQueueName.Enabled {
+		s.setMessageQueue(span)
+	}
+	if cfg.RemoveMessaging.Enabled {
+		s.removeMessagingAttrs(span)
+	}
 }
 
 func (s *spanEnrichmentContext) enrichSpan(
@@ -301,12 +315,18 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.TimestampUs.Enabled {
 		attribute.PutInt(span.Attributes(), elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
+	if cfg.ID.Enabled {
+		attribute.PutStr(span.Attributes(), elasticattr.SpanID, span.SpanID().String())
+	}
 	if cfg.Name.Enabled {
 		attribute.PutStr(span.Attributes(), elasticattr.SpanName, span.Name())
 	}
 	if cfg.RepresentativeCount.Enabled {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
 		attribute.PutDouble(span.Attributes(), elasticattr.SpanRepresentativeCount, repCount)
+	}
+	if cfg.Action.Enabled {
+		s.setSpanAction(span)
 	}
 	if cfg.TypeSubtype.Enabled {
 		spanType, spanSubtype = s.setSpanTypeSubtype(span)
@@ -331,6 +351,12 @@ func (s *spanEnrichmentContext) enrichSpan(
 	}
 	if cfg.UserAgent.Enabled {
 		s.setUserAgentIfRequired(span)
+	}
+	if cfg.MessageQueueName.Enabled {
+		s.setMessageQueue(span)
+	}
+	if cfg.RemoveMessaging.Enabled {
+		s.removeMessagingAttrs(span)
 	}
 
 	// The transaction type should not be updated if it was originally provided (s.transactionType is not empty)
@@ -424,6 +450,40 @@ func (s *spanEnrichmentContext) setEventOutcome(span ptrace.Span) {
 
 	attribute.PutStr(span.Attributes(), elasticattr.EventOutcome, outcome)
 	attribute.PutInt(span.Attributes(), elasticattr.SuccessCount, int64(successCount))
+}
+
+func (s *spanEnrichmentContext) setSpanAction(span ptrace.Span) {
+	if s.messagingOperation != "" {
+		attribute.PutStr(span.Attributes(), elasticattr.SpanAction, s.messagingOperation)
+	}
+}
+
+func (s *spanEnrichmentContext) setMessageQueue(span ptrace.Span) {
+	messageQueueNameKey := elasticattr.SpanMessageQueueName
+	if s.isTransaction {
+		messageQueueNameKey = elasticattr.TransactionMessageQueueName
+	}
+
+	if s.messagingDestinationName != "" {
+		attribute.PutStr(span.Attributes(), messageQueueNameKey, s.messagingDestinationName)
+	}
+}
+
+// removeMessagingAttrs removes messaging semconv attributes from the span here during processing
+// to avoid having to either map or remove during export time.
+//
+// Note: The elasticapmintake receiver maps extra attributes to semconv for messaging spans here:
+// https://github.com/elastic/opentelemetry-collector-components/blob/1da3fff6d82232de8982a9fe46da72354e6ba51c/receiver/elasticapmintakereceiver/internal/mappers/intakeV2ToSemConv.go#L127-L129.
+// This creates results in elastic and semconv attribute mapping that is specific to messaging spans
+// that is not consistent for all span types (http, grpc, db, etc.).
+// This is another reason the attributes are deleted here to avoid special handling at export time.
+func (s *spanEnrichmentContext) removeMessagingAttrs(span ptrace.Span) {
+	if s.isMessaging {
+		span.Attributes().Remove(string(semconv25.MessagingOperationKey))
+		span.Attributes().Remove(string(semconv37.MessagingOperationNameKey))
+		span.Attributes().Remove(string(semconv25.MessagingSystemKey))
+		span.Attributes().Remove(string(semconv25.MessagingDestinationNameKey))
+	}
 }
 
 func (s *spanEnrichmentContext) setSpanTypeSubtype(span ptrace.Span) (spanType string, spanSubtype string) {
