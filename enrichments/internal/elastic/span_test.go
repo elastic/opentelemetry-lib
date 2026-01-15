@@ -675,6 +675,91 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionType:                "mobile",
 			},
 		},
+		{
+			name: "clear_span_id_enabled",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				return span
+			}(),
+			config: func() config.ElasticTransactionConfig {
+				cfg := config.Enabled().Transaction
+				cfg.ClearSpanID = config.AttributeConfig{Enabled: true}
+				return cfg
+			}(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
+		{
+			name: "clear_span_name_enabled",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				return span
+			}(),
+			config: func() config.ElasticTransactionConfig {
+				cfg := config.Enabled().Transaction
+				cfg.ClearSpanName = config.AttributeConfig{Enabled: true}
+				return cfg
+			}(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
+		{
+			name: "clear_span_id_and_name_enabled",
+			input: func() ptrace.Span {
+				span := getElasticTxn()
+				span.SetName("testtxn")
+				return span
+			}(),
+			config: func() config.ElasticTransactionConfig {
+				cfg := config.Enabled().Transaction
+				cfg.ClearSpanID = config.AttributeConfig{Enabled: true}
+				cfg.ClearSpanName = config.AttributeConfig{Enabled: true}
+				return cfg
+			}(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
+				elasticattr.TransactionSampled:             true,
+				elasticattr.TransactionRoot:                true,
+				elasticattr.TransactionID:                  "0100000000000000",
+				elasticattr.SpanID:                         "0100000000000000",
+				elasticattr.TransactionName:                "testtxn",
+				elasticattr.ProcessorEvent:                 "transaction",
+				elasticattr.TransactionRepresentativeCount: float64(1),
+				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:                   "success",
+				elasticattr.SuccessCount:                   int64(1),
+				elasticattr.TransactionResult:              "Success",
+				elasticattr.TransactionType:                "unknown",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
@@ -696,6 +781,14 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
 			} else {
 				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
+			}
+			// Clear span ID if ID and ClearSpanID are both enabled
+			if tc.config.ID.Enabled && tc.config.ClearSpanID.Enabled {
+				expectedSpan.SetSpanID(pcommon.SpanID{})
+			}
+			// Clear span name if Name and ClearSpanName are both enabled
+			if tc.config.Name.Enabled && tc.config.ClearSpanName.Enabled {
+				expectedSpan.SetName("")
 			}
 
 			EnrichSpan(tc.input, config.Config{
@@ -2030,6 +2123,82 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SuccessCount:                   int64(99),
 			},
 		},
+		{
+			name: "clear_span_id_enabled",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				return span
+			}(),
+			config: func() config.ElasticSpanConfig {
+				cfg := config.Enabled().Span
+				cfg.ClearSpanID = config.AttributeConfig{Enabled: true}
+				return cfg
+			}(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "unknown",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "0100000000000000",
+			},
+		},
+		{
+			name: "clear_span_name_enabled",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				return span
+			}(),
+			config: func() config.ElasticSpanConfig {
+				cfg := config.Enabled().Span
+				cfg.ClearSpanName = config.AttributeConfig{Enabled: true}
+				return cfg
+			}(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "unknown",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "0100000000000000",
+			},
+		},
+		{
+			name: "clear_span_id_and_name_enabled",
+			input: func() ptrace.Span {
+				span := getElasticSpan()
+				span.SetName("testspan")
+				span.SetSpanID([8]byte{1})
+				return span
+			}(),
+			config: func() config.ElasticSpanConfig {
+				cfg := config.Enabled().Span
+				cfg.ClearSpanID = config.AttributeConfig{Enabled: true}
+				cfg.ClearSpanName = config.AttributeConfig{Enabled: true}
+				return cfg
+			}(),
+			enrichedAttrs: map[string]any{
+				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
+				elasticattr.SpanName:                "testspan",
+				elasticattr.ProcessorEvent:          "span",
+				elasticattr.SpanRepresentativeCount: float64(1),
+				elasticattr.SpanType:                "unknown",
+				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
+				elasticattr.EventOutcome:            "success",
+				elasticattr.SuccessCount:            int64(1),
+				elasticattr.SpanID:                  "0100000000000000",
+			},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()
@@ -2060,6 +2229,14 @@ func TestElasticSpanEnrich(t *testing.T) {
 				tc.expectedSpanLinks.CopyTo(expectedSpan.Links())
 			} else {
 				expectedSpan.Links().RemoveIf(func(_ ptrace.SpanLink) bool { return true })
+			}
+			// Clear span ID if ID and ClearSpanID are both enabled
+			if tc.config.ID.Enabled && tc.config.ClearSpanID.Enabled {
+				expectedSpan.SetSpanID(pcommon.SpanID{})
+			}
+			// Clear span name if Name and ClearSpanName are both enabled
+			if tc.config.Name.Enabled && tc.config.ClearSpanName.Enabled {
+				expectedSpan.SetName("")
 			}
 
 			EnrichSpan(tc.input, enrichConfig, uaparser.NewFromSaved())
