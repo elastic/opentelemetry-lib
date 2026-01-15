@@ -36,10 +36,22 @@ func TestEnabled(t *testing.T) {
 func assertAllEnabled(t *testing.T, cfg reflect.Value) {
 	t.Helper()
 
+	// Fields that are intentionally disabled by default
+	disabledByDefault := map[string]bool{
+		"ClearSpanID":   true,
+		"ClearSpanName": true,
+	}
+
 	for i := 0; i < cfg.NumField(); i++ {
+		fieldName := cfg.Type().Field(i).Name
 		rAttrCfg := cfg.Field(i).Interface()
 		attrCfg, ok := rAttrCfg.(AttributeConfig)
 		require.True(t, ok, "must be a type of AttributeConfig")
-		require.True(t, attrCfg.Enabled, "must be enabled")
+
+		if disabledByDefault[fieldName] {
+			require.False(t, attrCfg.Enabled, "%s must be disabled by default", fieldName)
+		} else {
+			require.True(t, attrCfg.Enabled, "%s must be enabled", fieldName)
+		}
 	}
 }
