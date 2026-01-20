@@ -53,14 +53,14 @@ type ElasticTransactionConfig struct {
 	Sampled     AttributeConfig `mapstructure:"sampled"`
 	ID          AttributeConfig `mapstructure:"id"`
 	// ClearSpanID sets the span ID to an empty value so that the
-	// ID is only represented by the `span.ID` attribute.
+	// ID is only represented by the `transaction.id` attribute.
 	// Applicable only when ID is enabled.
 	// Disabled by default.
 	ClearSpanID AttributeConfig `mapstructure:"clear_span_id"`
 	Root        AttributeConfig `mapstructure:"root"`
 	Name        AttributeConfig `mapstructure:"name"`
 	// ClearSpanName sets the span name to an empty value so that the
-	// name is only represented by the `span.name` attribute.
+	// name is only represented by the `transaction.name` attribute.
 	// Applicable only when Name is enabled.
 	// Disabled by default.
 	ClearSpanName       AttributeConfig `mapstructure:"clear_span_name"`
@@ -85,7 +85,7 @@ type ElasticSpanConfig struct {
 	TimestampUs AttributeConfig `mapstructure:"timestamp_us"`
 	ID          AttributeConfig `mapstructure:"id"`
 	// ClearSpanID sets the span ID to an empty value so that the
-	// ID is only represented by the `transaction.ID` attribute.
+	// ID is only represented by the `span.id` attribute.
 	// Applicable only when ID is enabled.
 	// Disabled by default.
 	ClearSpanID         AttributeConfig `mapstructure:"clear_span_id"`
@@ -103,7 +103,7 @@ type ElasticSpanConfig struct {
 	RemoveMessaging     AttributeConfig `mapstructure:"remove_messaging"`
 	MessageQueueName    AttributeConfig `mapstructure:"message_queue_name"`
 	// ClearSpanName sets the span name to an empty value so that the
-	// name is only represented by the `transaction.name` attribute.
+	// name is only represented by the `span.name` attribute.
 	// Applicable only when Name is enabled.
 	// Disabled by default.
 	ClearSpanName AttributeConfig `mapstructure:"clear_span_name"`
