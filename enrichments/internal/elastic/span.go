@@ -321,18 +321,6 @@ func (s *spanEnrichmentContext) enrichSpan(
 	if cfg.TimestampUs.Enabled {
 		attribute.PutInt(span.Attributes(), elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
 	}
-	if cfg.ID.Enabled {
-		attribute.PutStr(span.Attributes(), elasticattr.SpanID, span.SpanID().String())
-		if cfg.ClearSpanID.Enabled {
-			span.SetSpanID(pcommon.SpanID{})
-		}
-	}
-	if cfg.Name.Enabled {
-		attribute.PutStr(span.Attributes(), elasticattr.SpanName, span.Name())
-		if cfg.ClearSpanName.Enabled {
-			span.SetName("")
-		}
-	}
 	if cfg.RepresentativeCount.Enabled {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())
 		attribute.PutDouble(span.Attributes(), elasticattr.SpanRepresentativeCount, repCount)

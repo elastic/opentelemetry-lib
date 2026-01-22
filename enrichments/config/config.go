@@ -82,14 +82,7 @@ type ElasticSpanConfig struct {
 	// TimestampUs is a temporary attribute to enable higher
 	// resolution timestamps in Elasticsearch. For more details see:
 	// https://github.com/elastic/opentelemetry-dev/issues/374.
-	TimestampUs AttributeConfig `mapstructure:"timestamp_us"`
-	ID          AttributeConfig `mapstructure:"id"`
-	// ClearSpanID sets the span ID to an empty value so that the
-	// ID is only represented by the `span.id` attribute.
-	// Applicable only when ID is enabled.
-	// Disabled by default.
-	ClearSpanID         AttributeConfig `mapstructure:"clear_span_id"`
-	Name                AttributeConfig `mapstructure:"name"`
+	TimestampUs         AttributeConfig `mapstructure:"timestamp_us"`
 	ProcessorEvent      AttributeConfig `mapstructure:"processor_event"`
 	RepresentativeCount AttributeConfig `mapstructure:"representative_count"`
 	Action              AttributeConfig `mapstructure:"action"`
@@ -102,11 +95,6 @@ type ElasticSpanConfig struct {
 	UserAgent           AttributeConfig `mapstructure:"user_agent"`
 	RemoveMessaging     AttributeConfig `mapstructure:"remove_messaging"`
 	MessageQueueName    AttributeConfig `mapstructure:"message_queue_name"`
-	// ClearSpanName sets the span name to an empty value so that the
-	// name is only represented by the `span.name` attribute.
-	// Applicable only when Name is enabled.
-	// Disabled by default.
-	ClearSpanName AttributeConfig `mapstructure:"clear_span_name"`
 }
 
 // SpanEventConfig configures enrichment attributes for the span events.
@@ -174,8 +162,6 @@ func Enabled() Config {
 		},
 		Span: ElasticSpanConfig{
 			TimestampUs:         AttributeConfig{Enabled: true},
-			ID:                  AttributeConfig{Enabled: true},
-			Name:                AttributeConfig{Enabled: true},
 			ProcessorEvent:      AttributeConfig{Enabled: true},
 			Action:              AttributeConfig{Enabled: true},
 			TypeSubtype:         AttributeConfig{Enabled: true},
