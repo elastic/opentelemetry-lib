@@ -264,12 +264,18 @@ func (s *spanEnrichmentContext) enrichTransaction(
 		// https://github.com/elastic/apm-data/blob/v1.19.5/input/elasticapm/internal/modeldecoder/v2/decoder.go#L1377-L1379
 		// https://github.com/elastic/apm-data/blob/v1.19.5/input/otlp/traces.go#L185-L194
 		attribute.PutStr(span.Attributes(), elasticattr.SpanID, transactionID)
+		if cfg.ClearSpanID.Enabled {
+			span.SetSpanID(pcommon.SpanID{})
+		}
 	}
 	if cfg.Root.Enabled {
 		attribute.PutBool(span.Attributes(), elasticattr.TransactionRoot, isTraceRoot(span))
 	}
 	if cfg.Name.Enabled {
 		attribute.PutStr(span.Attributes(), elasticattr.TransactionName, span.Name())
+		if cfg.ClearSpanName.Enabled {
+			span.SetName("")
+		}
 	}
 	if cfg.ProcessorEvent.Enabled {
 		attribute.PutStr(span.Attributes(), elasticattr.ProcessorEvent, "transaction")
@@ -314,12 +320,6 @@ func (s *spanEnrichmentContext) enrichSpan(
 
 	if cfg.TimestampUs.Enabled {
 		attribute.PutInt(span.Attributes(), elasticattr.TimestampUs, getTimestampUs(span.StartTimestamp()))
-	}
-	if cfg.ID.Enabled {
-		attribute.PutStr(span.Attributes(), elasticattr.SpanID, span.SpanID().String())
-	}
-	if cfg.Name.Enabled {
-		attribute.PutStr(span.Attributes(), elasticattr.SpanName, span.Name())
 	}
 	if cfg.RepresentativeCount.Enabled {
 		repCount := getRepresentativeCount(span.TraceState().AsRaw())

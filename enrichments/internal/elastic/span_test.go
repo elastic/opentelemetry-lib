@@ -736,7 +736,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "external",
 				elasticattr.SpanSubtype:                    "http",
 				elasticattr.SpanDestinationServiceResource: "localhost:8080",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "localhost:8080",
@@ -775,7 +774,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "external",
 				elasticattr.SpanSubtype:                    "http",
 				elasticattr.SpanDestinationServiceResource: "localhost:8080",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "localhost:8080",
@@ -816,7 +814,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "external",
 				elasticattr.SpanSubtype:                    "http",
 				elasticattr.SpanDestinationServiceResource: "localhost:8080",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "localhost:8080",
@@ -855,7 +852,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "db",
 				elasticattr.SpanSubtype:                    "mssql",
 				elasticattr.SpanDestinationServiceResource: "mssql",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "myDb",
@@ -891,7 +887,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "db",
 				elasticattr.SpanSubtype:                    "postgresql",
 				elasticattr.SpanDestinationServiceResource: "postgresql",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "myDb",
@@ -935,7 +930,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "messaging",
 				elasticattr.SpanSubtype:                    "rabbitmq",
 				elasticattr.SpanDestinationServiceResource: "rabbitmq/T",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.SpanAction:                     "publish",
 				elasticattr.EventOutcome:                   "success",
@@ -980,8 +974,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "messaging",
 				elasticattr.SpanSubtype:                    "rabbitmq",
 				elasticattr.SpanDestinationServiceResource: "rabbitmq/T",
-				elasticattr.SpanName:                       "rootClientSpan",
-				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.SpanAction:                     "publish",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
@@ -1014,7 +1006,6 @@ func TestRootSpanAsDependencyEnrich(t *testing.T) {
 				elasticattr.SpanType:                       "external",
 				elasticattr.SpanSubtype:                    "http",
 				elasticattr.SpanDestinationServiceResource: "localhost:8080",
-				elasticattr.SpanName:                       "rootClientSpan",
 				elasticattr.EventOutcome:                   "success",
 				elasticattr.SuccessCount:                   int64(1),
 				elasticattr.ServiceTargetName:              "localhost:8080",
@@ -1091,14 +1082,12 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             int64(0),
-				elasticattr.SpanName:                "",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "unknown",
 				elasticattr.SpanDurationUs:          int64(0),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
-				elasticattr.SpanID:                  "",
 			},
 		},
 		{
@@ -1117,7 +1106,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             int64(0),
-				elasticattr.SpanName:                "",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "app",
@@ -1125,7 +1113,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          int64(0),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
-				elasticattr.SpanID:                  "",
 			},
 		},
 		{
@@ -1139,7 +1126,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "unknown",
@@ -1149,7 +1135,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.ServiceTargetType:              "",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1167,7 +1152,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1178,7 +1162,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1201,7 +1184,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external-test",
@@ -1212,7 +1194,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http-test",
 				elasticattr.ServiceTargetName:              "api.example.com",
 				elasticattr.SpanDestinationServiceResource: "api.example.com:443",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1236,7 +1217,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1247,7 +1227,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "www.foo.bar:443",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1271,7 +1250,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1282,7 +1260,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "www.foo.bar:443",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1304,7 +1281,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1315,7 +1291,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "http",
 				elasticattr.ServiceTargetName:              "www.foo.bar:443",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1333,7 +1308,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1344,7 +1318,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1367,7 +1340,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external-test",
@@ -1378,7 +1350,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc-test",
 				elasticattr.ServiceTargetName:              "myservice.EchoService",
 				elasticattr.SpanDestinationServiceResource: "api.example.com:443",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1393,7 +1364,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1404,7 +1374,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "xmlrpc",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1421,7 +1390,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1431,7 +1399,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "external",
 				elasticattr.ServiceTargetName:              "service.Test",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1448,7 +1415,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1458,7 +1424,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "external",
 				elasticattr.ServiceTargetName:              "service.Test",
 				elasticattr.SpanDestinationServiceResource: "10.2.20.18:8081",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1475,7 +1440,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1485,7 +1449,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "external",
 				elasticattr.ServiceTargetName:              "service.Test",
 				elasticattr.SpanDestinationServiceResource: "10.2.20.18:8081",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1502,12 +1465,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging",
 				elasticattr.SpanSubtype:                    "kafka",
-				elasticattr.SpanID:                         "",
 				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
@@ -1537,12 +1498,10 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging-test",
 				elasticattr.SpanSubtype:                    "kafka-test",
-				elasticattr.SpanID:                         "0100000000000000",
 				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
@@ -1565,11 +1524,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging",
-				elasticattr.SpanID:                         "",
 				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
@@ -1594,11 +1551,9 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "messaging",
-				elasticattr.SpanID:                         "",
 				elasticattr.SpanAction:                     "receive",
 				elasticattr.SpanDurationUs:                 expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:                   "success",
@@ -1625,7 +1580,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "db",
@@ -1636,7 +1590,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "elasticsearch",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1660,7 +1613,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "db",
@@ -1671,7 +1623,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "postgresql",
 				elasticattr.ServiceTargetName:              "customers",
 				elasticattr.SpanDestinationServiceResource: "postgresql/testdb",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1689,7 +1640,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "db",
@@ -1700,7 +1650,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "cassandra",
 				elasticattr.ServiceTargetName:              "testsvc",
 				elasticattr.SpanDestinationServiceResource: "testsvc",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1724,7 +1673,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                "testspan",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "unknown",
@@ -1732,7 +1680,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
 				elasticattr.ChildIDs:                []any{"0300000000000000", "0400000000000000"},
-				elasticattr.SpanID:                  "0100000000000000",
 			},
 			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
 				spanLinks := ptrace.NewSpanLinkSlice()
@@ -1767,7 +1714,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                "testspan",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "unknown",
@@ -1775,7 +1721,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
 				elasticattr.ChildIDs:                []any{"existing-child-id-1", "existing-child-id-2"},
-				elasticattr.SpanID:                  "0100000000000000",
 			},
 			expectedSpanLinks: func() *ptrace.SpanLinkSlice {
 				spanLinks := ptrace.NewSpanLinkSlice()
@@ -1803,7 +1748,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                "testspan",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "genai",
@@ -1811,7 +1755,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
-				elasticattr.SpanID:                  "0100000000000000",
 			},
 		},
 		{
@@ -1826,7 +1769,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                "testspan",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "genai",
@@ -1834,7 +1776,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDurationUs:          expectedDuration.Microseconds(),
 				elasticattr.EventOutcome:            "success",
 				elasticattr.SuccessCount:            int64(1),
-				elasticattr.SpanID:                  "0100000000000000",
 			},
 		},
 		{
@@ -1854,7 +1795,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "genai",
@@ -1865,7 +1805,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "genai",
 				elasticattr.ServiceTargetName:              "openai-api",
 				elasticattr.SpanDestinationServiceResource: "api.openai.com:443",
-				elasticattr.SpanID:                         "0100000000000000",
 			},
 		},
 		{
@@ -1882,7 +1821,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                       "testspan",
 				elasticattr.ProcessorEvent:                 "span",
 				elasticattr.SpanRepresentativeCount:        float64(1),
 				elasticattr.SpanType:                       "external",
@@ -1893,7 +1831,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.ServiceTargetType:              "grpc",
 				elasticattr.ServiceTargetName:              "myService",
 				elasticattr.SpanDestinationServiceResource: "myService",
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
@@ -1908,7 +1845,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:               startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                  "testspan",
 				elasticattr.ProcessorEvent:            "span",
 				elasticattr.SpanRepresentativeCount:   float64(1),
 				elasticattr.SpanType:                  "unknown",
@@ -1917,7 +1853,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SuccessCount:              int64(1),
 				string(semconv27.UserAgentNameKey):    "Mobile Safari",
 				string(semconv27.UserAgentVersionKey): "13.1.1",
-				elasticattr.SpanID:                    "0100000000000000",
 			},
 		},
 		{
@@ -1936,7 +1871,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 			config: config.Enabled().Span,
 			enrichedAttrs: map[string]any{
 				elasticattr.TimestampUs:             startTs.AsTime().UnixMicro(),
-				elasticattr.SpanName:                "testspan",
 				elasticattr.ProcessorEvent:          "span",
 				elasticattr.SpanRepresentativeCount: float64(1),
 				elasticattr.SpanType:                "unknown",
@@ -1946,7 +1880,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				// If user_agent.{name, version} are already set then don't override them.
 				string(semconv27.UserAgentNameKey):    "Chrome",
 				string(semconv27.UserAgentVersionKey): "51.0.2704",
-				elasticattr.SpanID:                    "0100000000000000",
 			},
 		},
 		{
@@ -1985,7 +1918,6 @@ func TestElasticSpanEnrich(t *testing.T) {
 				elasticattr.SpanDestinationServiceResource: "existing-destination",
 				elasticattr.EventOutcome:                   "existing-outcome",
 				elasticattr.SuccessCount:                   int64(99),
-				elasticattr.SpanID:                         "",
 			},
 		},
 		{
