@@ -260,12 +260,7 @@ func (s *spanEnrichmentContext) enrichTransaction(
 	if cfg.ID.Enabled {
 		transactionID := span.SpanID().String()
 		attribute.PutStr(span.Attributes(), elasticattr.TransactionID, transactionID)
-		if cfg.SpanID.Enabled {
-			// transactions are expected to always have span.id set to the transaction.id value.
-			// https://github.com/elastic/apm-data/blob/v1.19.5/input/elasticapm/internal/modeldecoder/v2/decoder.go#L1377-L1379
-			// https://github.com/elastic/apm-data/blob/v1.19.5/input/otlp/traces.go#L185-L194
-			attribute.PutStr(span.Attributes(), elasticattr.SpanID, transactionID)
-		}
+
 		if cfg.ClearSpanID.Enabled {
 			span.SetSpanID(pcommon.SpanID{})
 		}

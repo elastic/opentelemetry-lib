@@ -654,35 +654,6 @@ func TestElasticTransactionEnrich(t *testing.T) {
 				elasticattr.TransactionType:                "mobile",
 			},
 		},
-		{
-			name: "span_id_set_when_enabled",
-			input: func() ptrace.Span {
-				span := getElasticTxn()
-				span.SetName("testtxn")
-				span.Attributes().PutInt(string(semconv25.HTTPStatusCodeKey), http.StatusOK)
-				return span
-			}(),
-			config: func() config.ElasticTransactionConfig {
-				cfg := config.Enabled().Transaction
-				cfg.SpanID.Enabled = true
-				return cfg
-			}(),
-			enrichedAttrs: map[string]any{
-				elasticattr.TimestampUs:                    startTs.AsTime().UnixMicro(),
-				elasticattr.TransactionSampled:             true,
-				elasticattr.TransactionRoot:                true,
-				elasticattr.TransactionID:                  "0100000000000000",
-				elasticattr.SpanID:                         "0100000000000000",
-				elasticattr.TransactionName:                "testtxn",
-				elasticattr.ProcessorEvent:                 "transaction",
-				elasticattr.TransactionRepresentativeCount: float64(1),
-				elasticattr.TransactionDurationUs:          expectedDuration.Microseconds(),
-				elasticattr.EventOutcome:                   "success",
-				elasticattr.SuccessCount:                   int64(1),
-				elasticattr.TransactionResult:              "HTTP 2xx",
-				elasticattr.TransactionType:                "request",
-			},
-		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			expectedSpan := ptrace.NewSpan()

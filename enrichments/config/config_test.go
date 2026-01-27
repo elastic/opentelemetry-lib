@@ -38,7 +38,6 @@ func assertAllEnabled(t *testing.T, cfg reflect.Value) {
 
 	// Fields that are intentionally disabled by default
 	disabledByDefault := map[string]bool{
-		"SpanID":        true,
 		"ClearSpanID":   true,
 		"ClearSpanName": true,
 	}

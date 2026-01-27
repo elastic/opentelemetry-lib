@@ -52,11 +52,6 @@ type ElasticTransactionConfig struct {
 	TimestampUs AttributeConfig `mapstructure:"timestamp_us"`
 	Sampled     AttributeConfig `mapstructure:"sampled"`
 	ID          AttributeConfig `mapstructure:"id"`
-	// SpanID sets the `span.id` attribute which is always equal to
-	// `transaction.id` attribute.
-	// Applicable only when ID is enabled.
-	// Disabled by default.
-	SpanID AttributeConfig `mapstructure:"span_id"`
 	// ClearSpanID sets the span ID to an empty value so that the
 	// ID is only represented by the `transaction.id` attribute.
 	// Applicable only when ID is enabled.
