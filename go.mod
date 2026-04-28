@@ -16,7 +16,7 @@ require (
 	go.opentelemetry.io/collector/confmap/xconfmap v0.150.0
 	go.opentelemetry.io/collector/pdata v1.56.0
 	go.opentelemetry.io/otel/sdk v1.43.0
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 )
 
 require (
