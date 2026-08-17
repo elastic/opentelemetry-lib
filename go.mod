@@ -13,7 +13,6 @@ require (
 	go.opentelemetry.io/collector/config/configcompression v1.64.0
 	go.opentelemetry.io/collector/config/confighttp v0.158.0
 	go.opentelemetry.io/collector/confmap v1.64.0
-	go.opentelemetry.io/collector/confmap/xconfmap v0.158.0
 	go.opentelemetry.io/collector/pdata v1.64.0
 	go.opentelemetry.io/otel/sdk v1.45.0
 	go.uber.org/zap v1.28.0
