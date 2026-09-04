@@ -60,25 +60,25 @@ func TestConfig(t *testing.T) {
 			id:         "confighttp_endpoint",
 			configFile: "config.yaml",
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "https://elastic.example.com:9200"
+				cfg.ClientConfig.Endpoint = "https://elastic.example.com:9200"
 			}),
 		},
 		{
 			id:         "compression_none",
 			configFile: "config.yaml",
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "https://elastic.example.com:9200"
+				cfg.ClientConfig.Endpoint = "https://elastic.example.com:9200"
 
-				cfg.Compression = "none"
+				cfg.ClientConfig.Compression = "none"
 			}),
 		},
 		{
 			id:         "compression_gzip",
 			configFile: "config.yaml",
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "https://elastic.example.com:9200"
+				cfg.ClientConfig.Endpoint = "https://elastic.example.com:9200"
 
-				cfg.Compression = "gzip"
+				cfg.ClientConfig.Compression = "gzip"
 			}),
 		},
 	}
@@ -97,7 +97,7 @@ func TestConfig(t *testing.T) {
 			assert.NoError(t, confmap.Validate(cfg))
 			assert.Equal(t, tt.expected, &cfg)
 
-			_, err = cfg.ToClient(context.Background(), nil, componenttest.NewNopTelemetrySettings())
+			_, err = cfg.ClientConfig.ToClient(context.Background(), nil, componenttest.NewNopTelemetrySettings())
 			require.NoError(t, err)
 		})
 	}
@@ -154,7 +154,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		"endpoint and endpoints both set": {
 			config: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "http://test:9200"
+				cfg.ClientConfig.Endpoint = "http://test:9200"
 				cfg.Endpoints = []string{"http://test:9200"}
 			}),
 			err: "exactly one of [endpoint, endpoints, cloudid] must be specified",
@@ -168,7 +168,7 @@ func TestConfig_Validate(t *testing.T) {
 		"compression unsupported": {
 			config: withDefaultConfig(func(cfg *ClientConfig) {
 				cfg.Endpoints = []string{"http://test:9200"}
-				cfg.Compression = configcompression.TypeSnappy
+				cfg.ClientConfig.Compression = configcompression.TypeSnappy
 			}),
 			err: `compression must be one of [none, gzip]`,
 		},
