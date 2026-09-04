@@ -67,7 +67,7 @@ func NewDefaultClientConfig() ClientConfig {
 }
 
 type ClientConfig struct {
-	confighttp.ClientConfig `mapstructure:",squash"`
+	ClientConfig confighttp.ClientConfig `mapstructure:",squash"`
 
 	// CloudID holds the cloud ID to identify the Elastic Cloud cluster to send events to.
 	// https://www.elastic.co/guide/en/cloud/current/ec-cloud-id.html
@@ -137,7 +137,7 @@ func (cfg *ClientConfig) Validate() error {
 		}
 	}
 
-	if cfg.Compression != "none" && cfg.Compression != configcompression.TypeGzip {
+	if cfg.ClientConfig.Compression != "none" && cfg.ClientConfig.Compression != configcompression.TypeGzip {
 		return errors.New("compression must be one of [none, gzip]")
 	}
 
@@ -170,9 +170,9 @@ func (cfg *ClientConfig) endpoints() ([]string, error) {
 	var endpoints []string
 	var numEndpointConfigs int
 
-	if cfg.Endpoint != "" {
+	if cfg.ClientConfig.Endpoint != "" {
 		numEndpointConfigs++
-		endpoints = []string{cfg.Endpoint}
+		endpoints = []string{cfg.ClientConfig.Endpoint}
 	}
 	if len(cfg.Endpoints) > 0 {
 		numEndpointConfigs++
@@ -213,9 +213,9 @@ func parseCloudID(input string) (*url.URL, error) {
 		return nil, err
 	}
 
-	before, after, ok := strings.Cut(string(decoded), "$")
-	if !ok {
+	parts := strings.Split(string(decoded), "$")
+	if len(parts) < 2 {
 		return nil, fmt.Errorf("invalid decoded CloudID %q", string(decoded))
 	}
-	return url.Parse(fmt.Sprintf("https://%s.%s", after, before))
+	return url.Parse(fmt.Sprintf("https://%s.%s", parts[1], parts[0]))
 }

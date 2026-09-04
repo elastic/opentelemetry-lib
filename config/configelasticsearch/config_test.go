@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/elastic/elastic-transport-go/v8/elastictransport"
+	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/component"
@@ -38,6 +40,9 @@ func TestConfig(t *testing.T) {
 		configFile string
 		id         string
 		expected   component.Config
+		// expectedURLs are the addresses the Elasticsearch client
+		// returned by ToClient should be configured with.
+		expectedURLs []string
 	}{
 		{
 			id:         "multiple_endpoints",
@@ -48,6 +53,10 @@ func TestConfig(t *testing.T) {
 					"http://localhost:8080",
 				}
 			}),
+			expectedURLs: []string{
+				"http://localhost:9200",
+				"http://localhost:8080",
+			},
 		},
 		{
 			id:         "with_cloudid",
@@ -55,31 +64,36 @@ func TestConfig(t *testing.T) {
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
 				cfg.CloudID = "foo:YmFyLmNsb3VkLmVzLmlvJGFiYzEyMyRkZWY0NTY="
 			}),
+			// The cloud ID decodes to "bar.cloud.es.io$abc123$def456".
+			expectedURLs: []string{"https://abc123.bar.cloud.es.io"},
 		},
 		{
 			id:         "confighttp_endpoint",
 			configFile: "config.yaml",
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "https://elastic.example.com:9200"
+				cfg.ClientConfig.Endpoint = "https://elastic.example.com:9200"
 			}),
+			expectedURLs: []string{"https://elastic.example.com:9200"},
 		},
 		{
 			id:         "compression_none",
 			configFile: "config.yaml",
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "https://elastic.example.com:9200"
+				cfg.ClientConfig.Endpoint = "https://elastic.example.com:9200"
 
-				cfg.Compression = "none"
+				cfg.ClientConfig.Compression = "none"
 			}),
+			expectedURLs: []string{"https://elastic.example.com:9200"},
 		},
 		{
 			id:         "compression_gzip",
 			configFile: "config.yaml",
 			expected: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "https://elastic.example.com:9200"
+				cfg.ClientConfig.Endpoint = "https://elastic.example.com:9200"
 
-				cfg.Compression = "gzip"
+				cfg.ClientConfig.Compression = "gzip"
 			}),
+			expectedURLs: []string{"https://elastic.example.com:9200"},
 		},
 	}
 
@@ -97,10 +111,23 @@ func TestConfig(t *testing.T) {
 			assert.NoError(t, confmap.Validate(cfg))
 			assert.Equal(t, tt.expected, &cfg)
 
-			_, err = cfg.ToClient(context.Background(), nil, componenttest.NewNopTelemetrySettings())
+			client, err := cfg.ToClient(context.Background(), nil, componenttest.NewNopTelemetrySettings())
 			require.NoError(t, err)
+			assert.Equal(t, tt.expectedURLs, clientURLs(t, client))
 		})
 	}
+}
+
+// clientURLs returns the addresses the Elasticsearch client is configured with.
+func clientURLs(t *testing.T, client *elasticsearch.Client) []string {
+	t.Helper()
+	transport, ok := client.Transport.(*elastictransport.Client)
+	require.True(t, ok, "expected *elastictransport.Client, got %T", client.Transport)
+	urls := make([]string, 0, len(transport.URLs()))
+	for _, u := range transport.URLs() {
+		urls = append(urls, u.String())
+	}
+	return urls
 }
 
 // TestConfig_Validate tests the error cases of Config.Validate.
@@ -154,7 +181,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		"endpoint and endpoints both set": {
 			config: withDefaultConfig(func(cfg *ClientConfig) {
-				cfg.Endpoint = "http://test:9200"
+				cfg.ClientConfig.Endpoint = "http://test:9200"
 				cfg.Endpoints = []string{"http://test:9200"}
 			}),
 			err: "exactly one of [endpoint, endpoints, cloudid] must be specified",
@@ -168,7 +195,7 @@ func TestConfig_Validate(t *testing.T) {
 		"compression unsupported": {
 			config: withDefaultConfig(func(cfg *ClientConfig) {
 				cfg.Endpoints = []string{"http://test:9200"}
-				cfg.Compression = configcompression.TypeSnappy
+				cfg.ClientConfig.Compression = configcompression.TypeSnappy
 			}),
 			err: `compression must be one of [none, gzip]`,
 		},
