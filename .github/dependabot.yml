@@ -5,6 +5,10 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      exclude:
+        - "go.opentelemetry.io/*"
+        - "github.com/open-telemetry/*"
     groups:
       otel:
         patterns:
